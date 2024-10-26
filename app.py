@@ -48,7 +48,7 @@ logging.info("Starting up...")
 git_cmd = ['git', 'rev-parse', '--short', 'HEAD']
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode('utf-8').rstrip()
 
-logging.info("Connecting to S3 Bucket {0}".format(app.config["BUCKET_NAME"]))
+logging.info(f"Connecting to S3 Bucket {app.config['BUCKET_NAME']}")
 
 s3_bucket = S3Bucket(app.config["BUCKET_NAME"], app.config["S3_KEY"], app.config["S3_SECRET"], app.config["S3_URL"])
 
