@@ -10,7 +10,7 @@ from functools import wraps
 from random import shuffle
 from PIL import Image as PilImage
 from datetime import datetime, timezone
-from db import db
+from db import db, Mural, Artist, Image, Tag, ArtistMuralRelation, ImageMuralRelation, MuralTag, Feedback
 from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
 from typing import Optional
 import shutil
