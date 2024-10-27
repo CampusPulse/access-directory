@@ -1,7 +1,6 @@
 import os
 import subprocess
-from flask import Flask, render_template, request, redirect, abort, url_for, send_file
-import psycopg2
+from flask import Flask, render_template, request, redirect, abort, url_for
 import logging
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import HTTPException
