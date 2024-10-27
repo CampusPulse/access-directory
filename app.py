@@ -11,9 +11,7 @@ from functools import wraps
 from random import shuffle
 from PIL import Image as PilImage
 from datetime import datetime, timezone
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func, ForeignKey, text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from db import db
 from s3 import get_bucket, get_file_s3, upload_file, remove_file, get_file_list
 from typing import Optional
 import shutil
@@ -58,11 +56,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://{0}:{1}@{2}:{3}/{4}'.forma
 )
 
 logging.info("Connecting to DB {0}".format(app.config["DBNAME"]))
-
-try:
-    db = SQLAlchemy(app)
-except KeyboardInterrupt:
-    logging.error("Keyboard Interrupt during DB acquisition")
+db.init_app(app)
 
 with app.app_context():
     db.create_all()
