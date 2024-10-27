@@ -1,3 +1,4 @@
+from typing import Optional
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
