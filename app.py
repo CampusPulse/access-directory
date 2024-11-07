@@ -22,6 +22,7 @@ from db import (
     MuralTag,
     Feedback,
 )
+from flask_migrate import Migrate
 from s3 import S3Bucket
 from typing import Optional
 import shutil
@@ -75,6 +76,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
 
 logging.info(f"Connecting to DB {app.config['DBNAME']}")
 db.init_app(app)
+
+migrate = Migrate(app, db)
 
 with app.app_context():
     db.create_all()
