@@ -7,11 +7,22 @@ from datetime import datetime
 class Base(DeclarativeBase):
     pass
 
+class Building(Base):
+    __tablename__ = "buildings"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    number: Mapped[str]
+    name: Mapped[str]  # Example: "Main Library", "Engineering Hall"
+    address: Mapped[Optional[str]]  # Optional: Full address if needed
+    additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
+
+    # Relationship to Access Points
+    access_points = relationship("AccessPoint", back_populates="building")
+
 class AccessPoint(Base):
     __tablename__ = "access_points"
     id: Mapped[int] = mapped_column(primary_key=True)
     type: Mapped[str]  # e.g., "Elevator", "Accessible Door Button", "Ramp"
-    building_name: Mapped[str]  # Name of the building
+    building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"))
     location_details: Mapped[str]  # Example: "Main entrance", "Hallway near room 205"
     installation_year: Mapped[Optional[int]]  # Optional field for when it was installed
     status: Mapped[str]  # Example: "Operational", "Out of Service"
