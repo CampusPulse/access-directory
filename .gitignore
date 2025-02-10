@@ -2,5 +2,6 @@ config.py
 __*
 venv/*
 
-
+*.env
+.env
 compose.env

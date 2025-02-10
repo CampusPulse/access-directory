@@ -16,12 +16,17 @@ from typing import Optional
 import shutil
 import pandas as pd
 import json_log_formatter
+from pathlib import Path
+from dotenv import load_dotenv
 
 
 app = Flask(__name__)
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+# loading variables from .env file
+load_dotenv() 
 
 
 logging.info("Starting up...")

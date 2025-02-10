@@ -7,6 +7,7 @@
 * Fork the repo and run the following commands in that directory:
 * `pip install pipenv --user` (if you dont already have it installed)
 * `pipenv install`
+* `cp sample.env .env`
 * `pipenv run python3 app.py`
 
 ## Database Schema
