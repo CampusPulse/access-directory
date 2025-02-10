@@ -2,31 +2,35 @@ from typing import Optional
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-
+from datetime import datetime
 
 class Base(DeclarativeBase):
     pass
 
-class Mural(Base):
-    __tablename__ = "murals"
+class AccessPoint(Base):
+    __tablename__ = "access_points"
     id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str]
-    artistknown: Mapped[bool]
+    type: Mapped[str]  # e.g., "Elevator", "Accessible Door Button", "Ramp"
+    building_name: Mapped[str]  # Name of the building
+    location_details: Mapped[str]  # Example: "Main entrance", "Hallway near room 205"
+    installation_year: Mapped[Optional[int]]  # Optional field for when it was installed
+    status: Mapped[str]  # Example: "Operational", "Out of Service"
     remarks: Mapped[str]
-    notes: Mapped[str]
     private_notes: Mapped[str]
-    year: Mapped[int]
-    location: Mapped[str]
-    nextmuralid: Mapped[Optional[int]] = mapped_column(ForeignKey("murals.id"))
-    nextmural: Mapped[Optional["Mural"]] = relationship()
-    active: Mapped[bool]
-    spotify: Mapped[str]
+    active: Mapped[bool]  # Whether the access point is still in use
 
-class Artist(Base):
-    __tablename__ = "artists"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str]
-    notes: Mapped[str]
+class AccessPointMetadata(Base):
+    """
+    Stores custom key-value metadata for each access point type.
+    Example:
+      - Elevator: {"capacity": "1000 lbs", "manufacturer": "Otis"}
+      - Door Button: {"height": "40 inches", "power_source": "Battery"}
+    """
+    __tablename__ = "access_point_metadata"
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"), primary_key=True)
+    key: Mapped[str] = mapped_column(primary_key=True)  # Example: "capacity", "height"
+    value: Mapped[str]  # Example: "1000 lbs", "40 inches"
+    access_point: Mapped[AccessPoint] = relationship()
 
 class Image(Base):
     __tablename__ = "images"
@@ -42,29 +46,22 @@ class Image(Base):
 class Tag(Base):
     __tablename__ = "tags"
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str]
+    name: Mapped[str]  # Example: "ADA Compliant", "Automatic Door", "Braille Signage"
     description: Mapped[str]
 
-class ArtistMuralRelation(Base):
-    __tablename__ = "artistmuralrelation"
-    artist_id: Mapped[int] = mapped_column(ForeignKey("artists.id"), primary_key=True)
-    artist: Mapped[Artist] = relationship()
-    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"), primary_key=True)
-    mural: Mapped[Mural] = relationship()
-
-class ImageMuralRelation(Base):
-    __tablename__ = "imagemuralrelation"
-    image_id: Mapped[int] = mapped_column(ForeignKey("images.id"), primary_key=True)
-    image: Mapped[Image] = relationship()
-    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"), primary_key=True)
-    mural: Mapped[Mural] = relationship()
-
-class MuralTag(Base):
-    __tablename__ = "mural_tags"
+class AccessPointTag(Base):
+    __tablename__ = "access_point_tags"
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"), primary_key=True)
     tag: Mapped[Tag] = relationship()
-    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"), primary_key=True)
-    mural: Mapped[Mural] = relationship()
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"), primary_key=True)
+    access_point: Mapped[AccessPoint] = relationship()
+
+class AccessPointImageRelation(Base):
+    __tablename__ = "access_point_image_relation"
+    image_id: Mapped[int] = mapped_column(ForeignKey("images.id"), primary_key=True)
+    image: Mapped[Image] = relationship()
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"), primary_key=True)
+    access_point: Mapped[AccessPoint] = relationship()
 
 class Feedback(Base):
     __tablename__ = "feedback"
@@ -72,7 +69,7 @@ class Feedback(Base):
     notes: Mapped[str]
     contact: Mapped[str]
     time: Mapped[str]
-    mural_id: Mapped[int] = mapped_column(ForeignKey("murals.id"))
-    mural: Mapped[Mural] = relationship()
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"))
+    access_point: Mapped[AccessPoint] = relationship()
 
 db = SQLAlchemy(model_class=Base)
