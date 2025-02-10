@@ -27,6 +27,11 @@ class AccessPoint(Base):
     status_history = relationship("AccessPointStatus", back_populates="access_point", order_by="AccessPointStatus.timestamp")    remarks: Mapped[str]
 
 class AccessPointStatus(Base):
+    """
+    Enables the storage of status history for each access point.
+    Current status can be retrieved by getting the latest item in the table by timestamp
+    Notes can be added by updating the status to the same value with a new note 
+    """
     __tablename__ = "access_point_status"
     id: Mapped[int] = mapped_column(primary_key=True)
     access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"))
