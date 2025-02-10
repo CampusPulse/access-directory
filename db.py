@@ -24,11 +24,7 @@ class AccessPoint(Base):
     type: Mapped[str]  # e.g., "Elevator", "Accessible Door Button", "Ramp"
     building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"))
     location_details: Mapped[str]  # Example: "Main entrance", "Hallway near room 205"
-    installation_year: Mapped[Optional[int]]  # Optional field for when it was installed
     status: Mapped[str]  # Example: "Operational", "Out of Service"
-    remarks: Mapped[str]
-    private_notes: Mapped[str]
-    active: Mapped[bool]  # Whether the access point is still in use
 
 class AccessPointMetadata(Base):
     """
