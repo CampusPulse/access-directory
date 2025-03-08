@@ -79,6 +79,16 @@ class DoorButton(AccessPoint):
         "polymorphic_identity": "door_button",
     }
 
+class Elevator(AccessPoint):
+    __tablename__ = "elevator"
+    id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
+    floor_min: Mapped[int]
+    floor_max: Mapped[int]
+
+    __mapper_args__ = {
+        "polymorphic_identity": "elevator",
+    }
+
 
 
 class AccessPointStatus(Base):
