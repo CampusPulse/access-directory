@@ -8,22 +8,29 @@ class Base(DeclarativeBase):
     pass
 
 class Building(Base):
-    __tablename__ = "buildings"
+    __tablename__ = "building"
     id: Mapped[int] = mapped_column(primary_key=True)
     number: Mapped[str]
     name: Mapped[str]  # Example: "Main Library", "Engineering Hall"
     address: Mapped[Optional[str]]  # Optional: Full address if needed
     additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
 
-    # Relationship to Access Points
-    access_points = relationship("AccessPoint", back_populates="building")
+
+class Location(Base):
+    __tablename__ = "location"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    building_id: Mapped[int] = mapped_column(ForeignKey("building.id"))
+    floor_number: Mapped[int] # negative -> Basement, 0 - any, positive -> floors
+    room_number: Mapped[int] # only the room portion
+    nickname: Mapped[str]  # Example: "Main Library", "Engineering Hall"
+    additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
+
 
 class AccessPoint(Base):
     __tablename__ = "access_points"
     id: Mapped[int] = mapped_column(primary_key=True)
     type: Mapped[str]  # e.g., "Elevator", "Accessible Door Button", "Ramp"
-    building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"))
-    location_details: Mapped[str]  # Example: "Main entrance", "Hallway near room 205"
+    location_id: Mapped[int] = mapped_column(ForeignKey("location.id"))
     status_history = relationship("AccessPointStatus", back_populates="access_point", order_by="AccessPointStatus.timestamp"),
     remarks: Mapped[str]
 
