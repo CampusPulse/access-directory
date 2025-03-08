@@ -27,6 +27,23 @@ class AccessPoint(Base):
     status_history = relationship("AccessPointStatus", back_populates="access_point", order_by="AccessPointStatus.timestamp"),
     remarks: Mapped[str]
 
+    __mapper_args__ = {
+        "polymorphic_identity": "access_point",
+        "polymorphic_on": "type",
+    }
+
+
+class DoorButton(AccessPoint):
+    __tablename__ = "door_button"
+    id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
+    engineer_name: Mapped[str]
+
+    __mapper_args__ = {
+        "polymorphic_identity": "door_button",
+    }
+
+
+
 class AccessPointStatus(Base):
     """
     Enables the storage of status history for each access point.
@@ -42,20 +59,6 @@ class AccessPointStatus(Base):
 
     # Relationship to AccessPoint
     access_point = relationship("AccessPoint", back_populates="status_history")
-
-
-class AccessPointMetadata(Base):
-    """
-    Stores custom key-value metadata for each access point type.
-    Example:
-      - Elevator: {"capacity": "1000 lbs", "manufacturer": "Otis"}
-      - Door Button: {"height": "40 inches", "power_source": "Battery"}
-    """
-    __tablename__ = "access_point_metadata"
-    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"), primary_key=True)
-    key: Mapped[str] = mapped_column(primary_key=True)  # Example: "capacity", "height"
-    value: Mapped[str]  # Example: "1000 lbs", "40 inches"
-    access_point: Mapped[AccessPoint] = relationship()
 
 class Image(Base):
     __tablename__ = "images"
