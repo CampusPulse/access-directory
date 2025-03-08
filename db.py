@@ -59,6 +59,7 @@ class AccessPoint(Base):
     location_id: Mapped[int] = mapped_column(ForeignKey("location.id"))
     status_history = relationship("AccessPointStatus", back_populates="access_point", order_by="AccessPointStatus.timestamp"),
     remarks: Mapped[str]
+    active: Mapped[bool]  # Whether the access point is still in use
 
     __mapper_args__ = {
         "polymorphic_identity": "access_point",
