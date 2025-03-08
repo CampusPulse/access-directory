@@ -1,30 +1,35 @@
 from typing import Optional
 import enum
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func, ForeignKey, text, Enum
+from sqlalchemy import func, ForeignKey, text, Enum as EnumType
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
 
 
 
 class ShelterType(enum.Enum):
+    UNKNOWN = 0
     INTERIOR = 1
     EXTERIOR = 2
     VESTIBULE = 3
 
 class ButtonActivation(enum.Enum):
+    UNKNOWN = 0
     PUSH = 1
     WAVE = 2
 
 class MountSurface(enum.Enum):
+    UNKNOWN = 0
     WALL = 1
     POLE = 2
 
 class MountStyle(enum.Enum):
+    UNKNOWN = 0
     PROTRUDING = 1
     RECESSED = 2
 
 class PowerSource(enum.Enum):
+    UNKNOWN = 0
     HARDWIRED = 1
     BATTERY = 2
 
@@ -70,11 +75,21 @@ class AccessPoint(Base):
 class DoorButton(AccessPoint):
     __tablename__ = "door_button"
     id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
-    shelter: Mapped[Optional[Enum(ShelterType)]]
-    activation: Mapped[Optional[Enum(ButtonActivation)]]
-    mount_surface: Mapped[Optional[Enum(MountSurface)]]
-    mount_style: Mapped[Optional[Enum(MountStyle)]]
-    powered_by: Mapped[Optional[Enum(PowerSource)]]
+    shelter: Mapped[EnumType(ShelterType)] = mapped_column(
+        server_default=ShelterType.UNKNOWN.value
+    )
+    activation: Mapped[EnumType(ButtonActivation)] = mapped_column(
+        server_default=ButtonActivation.UNKNOWN.value
+    )
+    mount_surface: Mapped[EnumType(MountSurface)] = mapped_column(
+        server_default=MountSurface.UNKNOWN.value
+    )
+    mount_style: Mapped[EnumType(MountStyle)] = mapped_column(
+        server_default=MountStyle.UNKNOWN.value
+    )
+    powered_by: Mapped[EnumType(PowerSource)] = mapped_column(
+        server_default=PowerSource.UNKNOWN.value
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": "door_button",
