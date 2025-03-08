@@ -53,7 +53,7 @@ class Location(Base):
 
 
 class AccessPoint(Base):
-    __tablename__ = "access_points"
+    __tablename__ = "access_point"
     id: Mapped[int] = mapped_column(primary_key=True)
     type: Mapped[str]  # e.g., "Elevator", "Accessible Door Button", "Ramp"
     location_id: Mapped[int] = mapped_column(ForeignKey("location.id"))
@@ -100,7 +100,7 @@ class AccessPointStatus(Base):
     """
     __tablename__ = "access_point_status"
     id: Mapped[int] = mapped_column(primary_key=True)
-    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"))
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"))
     status: Mapped[str]  # Example: "Operational", "Out of Service", "Maintenance"
     timestamp: Mapped[datetime]  # When the status was recorded
     notes: Mapped[Optional[str]]  # Additional context if needed
@@ -129,14 +129,14 @@ class AccessPointTag(Base):
     __tablename__ = "access_point_tags"
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"), primary_key=True)
     tag: Mapped[Tag] = relationship()
-    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"), primary_key=True)
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
     access_point: Mapped[AccessPoint] = relationship()
 
 class AccessPointImageRelation(Base):
     __tablename__ = "access_point_image_relation"
     image_id: Mapped[int] = mapped_column(ForeignKey("images.id"), primary_key=True)
     image: Mapped[Image] = relationship()
-    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"), primary_key=True)
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
     access_point: Mapped[AccessPoint] = relationship()
 
 class Feedback(Base):
@@ -145,7 +145,7 @@ class Feedback(Base):
     notes: Mapped[str]
     contact: Mapped[str]
     time: Mapped[str]
-    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_points.id"))
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"))
     access_point: Mapped[AccessPoint] = relationship()
 
 db = SQLAlchemy(model_class=Base)
