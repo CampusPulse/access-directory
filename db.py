@@ -24,7 +24,8 @@ class AccessPoint(Base):
     type: Mapped[str]  # e.g., "Elevator", "Accessible Door Button", "Ramp"
     building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"))
     location_details: Mapped[str]  # Example: "Main entrance", "Hallway near room 205"
-    status_history = relationship("AccessPointStatus", back_populates="access_point", order_by="AccessPointStatus.timestamp")    remarks: Mapped[str]
+    status_history = relationship("AccessPointStatus", back_populates="access_point", order_by="AccessPointStatus.timestamp"),
+    remarks: Mapped[str]
 
 class AccessPointStatus(Base):
     """
