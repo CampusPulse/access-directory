@@ -218,11 +218,7 @@ def searchAccessPoints(query):
             access_point_json,
             db.session.execute(
                 db.select(AccessPoint)
-                .where(
-                    text(
-                        "access_point.text_search_index @@ websearch_to_tsquery(:query)"
-                    )
-                )
+                .where(text("access_point.text_search_index @@ websearch_to_tsquery(:query)"))
                 .order_by(AccessPoint.id)
                 .limit(150),
                 {"query": query},
@@ -303,9 +299,7 @@ def getAllAccessPointsFromYear(year):
         map(
             access_point_json,
             db.paginate(
-                db.select(AccessPoint)
-                .where(AccessPoint.year == year)
-                .order_by(AccessPoint.title.asc()),
+                db.select(AccessPoint).where(AccessPoint.year == year).order_by(AccessPoint.title.asc()),
                 per_page=150,
             ).items,
         )
@@ -367,9 +361,7 @@ def export_database(dir, public):
 
     access_points_df = pd.read_sql(access_point_select, db.engine)
 
-    access_points_df["tags"] = access_points_df.apply(
-        lambda x: getTags(x["id"]), axis=1
-    )
+    access_points_df["tags"] = access_points_df.apply(lambda x: getTags(x["id"]), axis=1)
     images_select = (
         db.select(
             Image.id, Image.caption, Image.alttext, Image.attribution, Image.datecreated
@@ -393,16 +385,12 @@ Exports images to <path>/images
 
 
 def export_images(path):
-    access_points = db.session.execute(
-        db.select(AccessPoint).order_by(AccessPoint.id.asc())
-    ).scalars()
+    access_points = db.session.execute(db.select(AccessPoint).order_by(AccessPoint.id.asc())).scalars()
 
     for m in access_points:
         images = db.session.execute(
             db.select(Image)
-            .join(
-                ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id
-            )
+            .join(ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id)
             .where(ImageAccessPointRelation.access_point_id == m.id)
             .filter(Image.ordering != 0)
         ).scalars()
@@ -431,9 +419,7 @@ Get access point details
 
 
 def getAccessPoint(id):
-    access_point = db.session.execute(
-        db.select(AccessPoint).where(AccessPoint.id == id)
-    ).scalar()
+    access_point = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar()
 
     if access_point == None:
         logging.warning("DB Response was None")
@@ -463,10 +449,7 @@ def checkAccessPointExists(id):
     if not id.isdigit():
         return False
 
-    return (
-        db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar()
-        != None
-    )
+    return db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar() != None
 
 
 """
@@ -506,7 +489,6 @@ def getTags(access_point_id=None):
                 .where(AccessPointTag.access_point_id == access_point_id)
             ).scalars()
         )
-
 
 """
 Get a random assortment of images from DB, excluding thumbnails
@@ -562,10 +544,7 @@ def catalog():
     query = request.args.get("q")
     if query == None:
         return render_template(
-            "catalog.html",
-            q=query,
-            accessPoints=getAccessPointsPaginated(0),
-            tags=getAllTags(),
+            "catalog.html", q=query, accessPoints=getAccessPointsPaginated(0), tags=getAllTags()
         )
     else:
         return render_template(
@@ -606,9 +585,7 @@ def paginated():
         return render_template("404.html"), 404
     else:
         return render_template(
-            "paginated.html",
-            page=(page + 1),
-            accessPoints=getAccessPointsPaginated(page),
+            "paginated.html", page=(page + 1), accessPoints=getAccessPointsPaginated(page)
         )
 
 
@@ -621,13 +598,10 @@ Page for specific access point details
 def access_point(id):
     if checkAccessPointExists(id):
         return render_template(
-            "access_point.html",
-            accessPointDetails=getAccessPoint(id),
-            spotify=getAccessPoint(id)["spotify"],
+            "access_point.html", accessPointDetails=getAccessPoint(id), spotify=getAccessPoint(id)["spotify"]
         )
     else:
         return render_template("404.html"), 404
-
 
 """
 Page for specific year
@@ -740,20 +714,16 @@ def deleteAccessPointEntry(id):
         per_page=150,
     ).items
     db.session.execute(
-        db.delete(ImageAccessPointRelation).where(
-            ImageAccessPointRelation.access_point_id == id
-        )
+        db.delete(ImageAccessPointRelation).where(ImageAccessPointRelation.access_point_id == id)
     )
-    db.session.execute(
-        db.delete(AccessPointTag).where(AccessPointTag.access_point_id == id)
-    )
+    db.session.execute(db.delete(AccessPointTag).where(AccessPointTag.access_point_id == id))
     db.session.execute(db.delete(Feedback).where(Feedback.access_point_id == id))
 
-    m = db.session.execute(
-        db.select(AccessPoint).where(AccessPoint.id == id)
-    ).scalar_one()
+    m = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar_one()
 
-    db.session.query(AccessPoint).filter_by(nextid=id).update({"nextid": m.nextid})
+    db.session.query(AccessPoint).filter_by(nextid=id).update(
+        {"nextid": m.nextid}
+    )
     db.session.execute(db.delete(AccessPoint).where(AccessPoint.id == id))
     for image in images:
         s3_bucket.remove_file(image.imghash)
@@ -872,7 +842,6 @@ def submit_suggestion():
 Route to delete Tag
 """
 
-
 @app.route("/deleteTag/<name>", methods=["POST"])
 @debug_only
 def deleteTag(name):
@@ -904,14 +873,10 @@ Sets all fields based on http form
 @app.route("/editaccesspoint/<id>", methods=["POST"])
 @debug_only
 def editAccessPoint(id):
-    m = db.session.execute(
-        db.select(AccessPoint).where(AccessPoint.id == id)
-    ).scalar_one()
+    m = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar_one()
 
     # Remove existing tag relationships
-    db.session.execute(
-        db.delete(AccessPointTag).where(AccessPointTag.access_point_id == m.id)
-    )
+    db.session.execute(db.delete(AccessPointTag).where(AccessPointTag.access_point_id == m.id))
 
     # Relate access point and submitted tags
     if "tags" in request.form:
@@ -957,7 +922,6 @@ def edit_tag(name):
     db.session.commit()
     return ("", 204)
 
-
 """
 Route to edit access point title
 Sets access point title based on http form
@@ -967,9 +931,7 @@ Sets access point title based on http form
 @app.route("/edittitle/<id>", methods=["POST"])
 @debug_only
 def editTitle(id):
-    m = db.session.execute(
-        db.select(AccessPoint).where(AccessPoint.id == id)
-    ).scalar_one()
+    m = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar_one()
     m.title = request.form["title"]
     db.session.commit()
     return ("", 204)
@@ -1052,9 +1014,7 @@ def deleteImage(id):
     for image in images:
         s3_bucket.remove_file(image.imghash)
         db.session.execute(
-            db.delete(ImageAccessPointRelation).where(
-                ImageAccessPointRelation.image_id == id
-            )
+            db.delete(ImageAccessPointRelation).where(ImageAccessPointRelation.image_id == id)
         )
         db.session.execute(db.delete(Image).where(Image.id == id))
     db.session.commit()
@@ -1199,9 +1159,7 @@ def upload():
                 db.session.flush()
                 img_id = img.id
                 db.session.add(
-                    ImageAccessPointRelation(
-                        image_id=img_id, access_point_id=access_point_id
-                    )
+                    ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
                 )
 
             db.session.commit()
