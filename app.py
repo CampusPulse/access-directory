@@ -113,7 +113,7 @@ def mural_json(mural: Mural):
                     .join(
                         ArtistMuralRelation, Artist.id == ArtistMuralRelation.artist_id
                     )
-                    .where(ArtistMuralRelation.mural_id == mural.id)
+                    .where(ArtistMuralRelation.access_point_id == mural.id)
                 ).scalars(),
             )
         )
@@ -125,7 +125,7 @@ def mural_json(mural: Mural):
     image_data = db.session.execute(
         db.select(Image)
         .join(ImageMuralRelation, Image.id == ImageMuralRelation.image_id)
-        .where(ImageMuralRelation.mural_id == mural.id)
+        .where(ImageMuralRelation.access_point_id == mural.id)
         .order_by(Image.ordering)
     ).scalars()
     images = []
@@ -169,7 +169,7 @@ def feedback_json(feedback: Feedback):
 
     return {
         "id": feedback.feedback_id,
-        "mural_id": feedback.mural_id,
+        "access_point_id": feedback.access_point_id,
         "notes": feedback.notes,
         "contact": feedback.contact,
         "approxtime": f"{diff.days} days ago",  # approx_time,
@@ -303,12 +303,12 @@ Get Feedback for a Mural
 """
 
 
-def getMuralFeedback(mural_id):
+def getMuralFeedback(access_point_id):
     return list(
         map(
             feedback_json,
             db.session.execute(
-                db.select(Feedback).where(Feedback.mural_id == mural_id)
+                db.select(Feedback).where(Feedback.access_point_id == access_point_id)
             ),
         )
     )
@@ -351,7 +351,9 @@ def getAllMuralsFromArtist(id):
             mural_json,
             db.paginate(
                 db.select(Mural)
-                .join(ArtistMuralRelation, Mural.id == ArtistMuralRelation.mural_id)
+                .join(
+                    ArtistMuralRelation, Mural.id == ArtistMuralRelation.access_point_id
+                )
                 .where(ArtistMuralRelation.artist_id == id)
                 .order_by(Mural.id.asc()),
                 per_page=150,
@@ -449,7 +451,7 @@ def export_images(path):
         images = db.session.execute(
             db.select(Image)
             .join(ImageMuralRelation, ImageMuralRelation.image_id == Image.id)
-            .where(ImageMuralRelation.mural_id == m.id)
+            .where(ImageMuralRelation.access_point_id == m.id)
             .filter(Image.ordering != 0)
         ).scalars()
 
@@ -529,7 +531,7 @@ def getMuralsTagged(tag):
                 db.select(Mural)
                 .select_from(MuralTag)
                 .join(Tag, MuralTag.tag_id == Tag.id)
-                .join(Mural, Mural.id == MuralTag.mural_id)
+                .join(Mural, Mural.id == MuralTag.access_point_id)
                 .where(Tag.name == tag)
             ).scalars(),
         )
@@ -538,19 +540,19 @@ def getMuralsTagged(tag):
 
 """
 Get all tags / Get all tags on certain mural
-(logic based on whether mural_id is passed in)
+(logic based on whether access_point_id is passed in)
 """
 
 
-def getTags(mural_id=None):
-    if mural_id == None:
+def getTags(access_point_id=None):
+    if access_point_id == None:
         return db.session.execute(db.select(Tag.name)).scalars()
     else:
         return list(
             db.session.execute(
                 db.select(Tag.name)
                 .join(MuralTag, MuralTag.tag_id == Tag.id)
-                .where(MuralTag.mural_id == mural_id)
+                .where(MuralTag.access_point_id == access_point_id)
             ).scalars()
         )
 
@@ -560,12 +562,12 @@ Get artist names for given mural
 """
 
 
-def getArtists(mural_id):
+def getArtists(access_point_id):
     return list(
         db.session.execute(
             db.select(Artist.name)
             .join(ArtistMuralRelation, Artist.id == ArtistMuralRelation.artist_id)
-            .where(ArtistMuralRelation.mural_id == mural_id)
+            .where(ArtistMuralRelation.access_point_id == access_point_id)
         ).scalars()
     )
 
@@ -764,7 +766,7 @@ def debug_only(f):
     return wrapped
 
 
-def make_thumbnail(mural_id, file):
+def make_thumbnail(access_point_id, file):
 
     with PilImage.open(file) as im:
         if im.width == 256 or im.height == 256:
@@ -790,7 +792,9 @@ def make_thumbnail(mural_id, file):
         db.session.flush()
 
         img_id = img.id
-        db.session.add(ImageMuralRelation(image_id=img_id, mural_id=mural_id))
+        db.session.add(
+            ImageMuralRelation(image_id=img_id, access_point_id=access_point_id)
+        )
         db.session.commit()
 
 
@@ -829,17 +833,17 @@ def deleteMuralEntry(id):
     images = db.paginate(
         db.select(Image)
         .join(ImageMuralRelation, Image.id == ImageMuralRelation.image_id)
-        .where(ImageMuralRelation.mural_id == id),
+        .where(ImageMuralRelation.access_point_id == id),
         per_page=150,
     ).items
     db.session.execute(
-        db.delete(ImageMuralRelation).where(ImageMuralRelation.mural_id == id)
+        db.delete(ImageMuralRelation).where(ImageMuralRelation.access_point_id == id)
     )
     db.session.execute(
-        db.delete(ArtistMuralRelation).where(ArtistMuralRelation.mural_id == id)
+        db.delete(ArtistMuralRelation).where(ArtistMuralRelation.access_point_id == id)
     )
-    db.session.execute(db.delete(MuralTag).where(MuralTag.mural_id == id))
-    db.session.execute(db.delete(Feedback).where(Feedback.mural_id == id))
+    db.session.execute(db.delete(MuralTag).where(MuralTag.access_point_id == id))
+    db.session.execute(db.delete(Feedback).where(Feedback.access_point_id == id))
 
     m = db.session.execute(db.select(Mural).where(Mural.id == id)).scalar_one()
 
@@ -859,7 +863,7 @@ Upload fullsize and resized image, add relation to mural given ID
 """
 
 
-def uploadImageResize(file, mural_id, count):
+def uploadImageResize(file, access_point_id, count):
     fullsizehash = hashlib.md5(file.read()).hexdigest()
     file.seek(0)
 
@@ -894,7 +898,9 @@ def uploadImageResize(file, mural_id, count):
         db.session.add(img)
         db.session.flush()
         img_id = img.id
-        db.session.add(ImageMuralRelation(image_id=img_id, mural_id=mural_id))
+        db.session.add(
+            ImageMuralRelation(image_id=img_id, access_point_id=access_point_id)
+        )
     db.session.commit()
 
 
@@ -951,7 +957,7 @@ def submit_suggestion():
             notes=request.form["notes"],
             contact=request.form["contact"],
             time=str(dt),
-            mural_id=request.form["muralid"],
+            access_point_id=request.form["muralid"],
         )
     )
     db.session.commit()
@@ -1008,7 +1014,7 @@ def editMural(id):
     m = db.session.execute(db.select(Mural).where(Mural.id == id)).scalar_one()
 
     # Remove existing tag relationships
-    db.session.execute(db.delete(MuralTag).where(MuralTag.mural_id == m.id))
+    db.session.execute(db.delete(MuralTag).where(MuralTag.access_point_id == m.id))
 
     # Relate mural and submitted tags
     if "tags" in request.form:
@@ -1018,19 +1024,21 @@ def editMural(id):
                     db.select(Tag.id).where(Tag.name == tag)
                 ).scalar()
 
-                rel = MuralTag(tag_id=tag_id, mural_id=m.id)
+                rel = MuralTag(tag_id=tag_id, access_point_id=m.id)
                 db.session.add(rel)
 
     # Remove existing artist relationships
     # (If artists is not in the form submission, the multiselect was blank)
     db.session.execute(
-        db.delete(ArtistMuralRelation).where(ArtistMuralRelation.mural_id == m.id)
+        db.delete(ArtistMuralRelation).where(
+            ArtistMuralRelation.access_point_id == m.id
+        )
     )
 
     if "artists" in request.form:
         # Relate mural and submitted artists
         for artist_id in request.form.getlist("artists"):
-            rel = ArtistMuralRelation(artist_id=int(artist_id), mural_id=m.id)
+            rel = ArtistMuralRelation(artist_id=int(artist_id), access_point_id=m.id)
             db.session.add(rel)
 
     m.active = True if "active" in request.form else False
@@ -1127,14 +1135,14 @@ Route:
 @app.route("/makethumbnail", methods=["POST"])
 @debug_only
 def makeThumbnail():
-    mural_id = request.args.get("muralid", None)
+    access_point_id = request.args.get("muralid", None)
     image_id = request.args.get("imageid", None)
 
     # Delete references to current thumbnail
     curr_thumbnail = db.session.execute(
         db.select(Image)
         .join(ImageMuralRelation, ImageMuralRelation.image_id == Image.id)
-        .where(ImageMuralRelation.mural_id == mural_id)
+        .where(ImageMuralRelation.access_point_id == access_point_id)
         .filter(Image.ordering == 0)
     ).scalar_one()
 
@@ -1155,9 +1163,9 @@ def makeThumbnail():
     newfilename = f"/tmp/{image.id}.thumb"
 
     s3_bucket.get_file(image.imghash, newfilename)
-    make_thumbnail(mural_id, newfilename)
+    make_thumbnail(access_point_id, newfilename)
 
-    return redirect(f"/edit/{mural_id}")
+    return redirect(f"/edit/{access_point_id}")
 
 
 """
@@ -1254,7 +1262,7 @@ Route to upload new image
 @debug_only
 def uploadNewImage(id):
     count = db.session.execute(
-        db.select(func.count()).where(ImageMuralRelation.mural_id == id)
+        db.select(func.count()).where(ImageMuralRelation.access_point_id == id)
     ).scalar()
 
     for f in request.files.items(multi=True):
@@ -1286,7 +1294,7 @@ def upload():
     )
     db.session.add(mural)
     db.session.flush()
-    mural_id = mural.id
+    access_point_id = mural.id
 
     # Count is the order in which the images are shown
     #   0 is the thumbnail (only shown on mural card)
@@ -1335,7 +1343,9 @@ def upload():
                 db.session.add(img)
                 db.session.flush()
                 img_id = img.id
-                db.session.add(ImageMuralRelation(image_id=img_id, mural_id=mural_id))
+                db.session.add(
+                    ImageMuralRelation(image_id=img_id, access_point_id=access_point_id)
+                )
 
             db.session.commit()
             count += 1
@@ -1343,7 +1353,7 @@ def upload():
         # Begin adding full size to database
         f[1].seek(0)
 
-        uploadImageResize(f[1], mural_id, count)
+        uploadImageResize(f[1], access_point_id, count)
 
         count += 1
 
@@ -1364,12 +1374,14 @@ def upload():
                 db.session.flush()
                 artist_id = artist_obj.id
 
-            rel = ArtistMuralRelation(artist_id=artist_id, mural_id=mural_id)
+            rel = ArtistMuralRelation(
+                artist_id=artist_id, access_point_id=access_point_id
+            )
             db.session.add(rel)
 
     db.session.commit()
 
-    return redirect(f"/edit/{mural_id}")
+    return redirect(f"/edit/{access_point_id}")
 
 
 if __name__ == "__main__":
