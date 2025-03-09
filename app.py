@@ -27,7 +27,7 @@ from db import (
     Image,
     Tag,
     AccessPointTag,
-    AccessPointImageRelation,
+    ImageAccessPointRelation,
     Feedback,
 )
 from flask_migrate import Migrate, stamp

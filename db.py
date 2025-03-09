@@ -132,7 +132,7 @@ class AccessPointTag(Base):
     access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
     access_point: Mapped[AccessPoint] = relationship()
 
-class AccessPointImageRelation(Base):
+class ImageAccessPointRelation(Base):
     __tablename__ = "access_point_image_relation"
     image_id: Mapped[int] = mapped_column(ForeignKey("images.id"), primary_key=True)
     image: Mapped[Image] = relationship()
