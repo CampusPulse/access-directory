@@ -25,7 +25,7 @@ class S3Bucket:
         # If streaming begins prior to the time cutoff, s3 will allow
         # for the streaming to continue, uninterrupted.
         if (key == None):
-            print("Failed to fetch {0}".format(file_hash))
+            print(f"Failed to fetch {file_hash}")
             url = "../static/images/csh_tilted.png"
         else:
             url = self._client.generate_presigned_url('get_object', Params={'Bucket': self.name, 'Key': file_hash}, ExpiresIn=90)
