@@ -529,9 +529,9 @@ def getMuralsTagged(tag):
             mural_json,
             db.session.execute(
                 db.select(Mural)
-                .select_from(MuralTag)
-                .join(Tag, MuralTag.tag_id == Tag.id)
-                .join(Mural, Mural.id == MuralTag.access_point_id)
+                .select_from(AccessPointTag)
+                .join(Tag, AccessPointTag.tag_id == Tag.id)
+                .join(Mural, Mural.id == AccessPointTag.access_point_id)
                 .where(Tag.name == tag)
             ).scalars(),
         )
@@ -551,8 +551,8 @@ def getTags(access_point_id=None):
         return list(
             db.session.execute(
                 db.select(Tag.name)
-                .join(MuralTag, MuralTag.tag_id == Tag.id)
-                .where(MuralTag.access_point_id == access_point_id)
+                .join(AccessPointTag, AccessPointTag.tag_id == Tag.id)
+                .where(AccessPointTag.access_point_id == access_point_id)
             ).scalars()
         )
 
@@ -818,7 +818,7 @@ Delete tag and all relations from DB
 
 def deleteTagGivenName(name):
     t = db.session.execute(db.select(Tag).where(Tag.name == name)).scalar_one()
-    db.session.execute(db.delete(MuralTag).where(MuralTag.tag_id == t.id))
+    db.session.execute(db.delete(AccessPointTag).where(AccessPointTag.tag_id == t.id))
     db.session.execute(db.delete(Tag).where(Tag.id == t.id))
     db.session.commit()
 
@@ -842,7 +842,7 @@ def deleteMuralEntry(id):
     db.session.execute(
         db.delete(ArtistMuralRelation).where(ArtistMuralRelation.access_point_id == id)
     )
-    db.session.execute(db.delete(MuralTag).where(MuralTag.access_point_id == id))
+    db.session.execute(db.delete(AccessPointTag).where(AccessPointTag.access_point_id == id))
     db.session.execute(db.delete(Feedback).where(Feedback.access_point_id == id))
 
     m = db.session.execute(db.select(Mural).where(Mural.id == id)).scalar_one()
@@ -1014,7 +1014,7 @@ def editMural(id):
     m = db.session.execute(db.select(Mural).where(Mural.id == id)).scalar_one()
 
     # Remove existing tag relationships
-    db.session.execute(db.delete(MuralTag).where(MuralTag.access_point_id == m.id))
+    db.session.execute(db.delete(AccessPointTag).where(AccessPointTag.access_point_id == m.id))
 
     # Relate mural and submitted tags
     if "tags" in request.form:
@@ -1024,7 +1024,7 @@ def editMural(id):
                     db.select(Tag.id).where(Tag.name == tag)
                 ).scalar()
 
-                rel = MuralTag(tag_id=tag_id, access_point_id=m.id)
+                rel = AccessPointTag(tag_id=tag_id, access_point_id=m.id)
                 db.session.add(rel)
 
     # Remove existing artist relationships
