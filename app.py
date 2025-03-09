@@ -22,7 +22,7 @@ from db import (
     MuralTag,
     Feedback,
 )
-from flask_migrate import Migrate
+from flask_migrate import Migrate, stamp
 from s3 import S3Bucket
 from typing import Optional
 import shutil
@@ -81,6 +81,7 @@ migrate = Migrate(app, db)
 
 with app.app_context():
     db.create_all()
+    stamp(directory='migrations')
 
 ########################
 #
