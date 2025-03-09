@@ -89,7 +89,7 @@ migrate = Migrate(app, db)
 
 with app.app_context():
     db.create_all()
-    stamp(directory='migrations')
+    stamp(directory="migrations")
 
 ########################
 #
@@ -102,7 +102,7 @@ Create a JSON object for a mural
 """
 
 
-def mural_json(mural: Mural):
+def mural_json(mural: AccessPoint):
     artists = []
     if mural.artistknown:
         artists = list(
@@ -119,13 +119,13 @@ def mural_json(mural: Mural):
         )
 
     prevmuralid = db.session.execute(
-        db.select(Mural.id).where(Mural.nextmuralid == mural.id)
+        db.select(AccessPoint.id).where(AccessPoint.nextmuralid == mural.id)
     ).scalar()
 
     image_data = db.session.execute(
         db.select(Image)
-        .join(ImageMuralRelation, Image.id == ImageMuralRelation.image_id)
-        .where(ImageMuralRelation.access_point_id == mural.id)
+        .join(ImageAccessPointRelation, Image.id == ImageAccessPointRelation.image_id)
+        .where(ImageAccessPointRelation.access_point_id == mural.id)
         .order_by(Image.ordering)
     ).scalars()
     images = []
@@ -237,14 +237,14 @@ Search all murals given query
 """
 
 
-def searchMurals(query):
+def searchAccessPoints(query):
     return list(
         map(
             mural_json,
             db.session.execute(
-                db.select(Mural)
+                db.select(AccessPoint)
                 .where(text("murals.text_search_index @@ websearch_to_tsquery(:query)"))
-                .order_by(Mural.id)
+                .order_by(AccessPoint.id)
                 .limit(150),
                 {"query": query},
             ).scalars(),
@@ -257,14 +257,14 @@ Get murals in list, paginated
 """
 
 
-def getMuralsPaginated(page_num):
+def getAccessPointsPaginated(page_num):
     return list(
         map(
             mural_json,
             db.session.execute(
-                db.select(Mural)
-                .where(Mural.active == True)
-                .order_by(Mural.title.asc())
+                db.select(AccessPoint)
+                .where(AccessPoint.active == True)
+                .order_by(AccessPoint.title.asc())
                 .offset(page_num * app.config["ITEMSPERPAGE"])
                 .limit(app.config["ITEMSPERPAGE"])
             ).scalars(),
@@ -277,12 +277,12 @@ Get all murals
 """
 
 
-def getAllMurals():
+def getAllAccessPoints():
     return list(
         map(
             mural_json,
             db.paginate(
-                db.select(Mural).order_by(Mural.title.asc()),
+                db.select(AccessPoint).order_by(AccessPoint.title.asc()),
                 per_page=200,
             ).items,
         )
@@ -299,11 +299,11 @@ def getAllTags():
 
 
 """
-Get Feedback for a Mural
+Get Feedback for a AccessPoint
 """
 
 
-def getMuralFeedback(access_point_id):
+def getAccessPointFeedback(access_point_id):
     return list(
         map(
             feedback_json,
@@ -319,12 +319,12 @@ Get all murals from year
 """
 
 
-def getAllMuralsFromYear(year):
+def getAllAccessPointsFromYear(year):
     return list(
         map(
             mural_json,
             db.paginate(
-                db.select(Mural).where(Mural.year == year).order_by(Mural.title.asc()),
+                db.select(AccessPoint).where(AccessPoint.year == year).order_by(AccessPoint.title.asc()),
                 per_page=150,
             ).items,
         )
@@ -345,17 +345,17 @@ Get all murals from artist given artist ID
 """
 
 
-def getAllMuralsFromArtist(id):
+def getAllAccessPointsFromArtist(id):
     return list(
         map(
             mural_json,
             db.paginate(
-                db.select(Mural)
+                db.select(AccessPoint)
                 .join(
-                    ArtistMuralRelation, Mural.id == ArtistMuralRelation.access_point_id
+                    ArtistMuralRelation, AccessPoint.id == ArtistMuralRelation.access_point_id
                 )
                 .where(ArtistMuralRelation.artist_id == id)
-                .order_by(Mural.id.asc()),
+                .order_by(AccessPoint.id.asc()),
                 per_page=150,
             ).items,
         )
@@ -393,25 +393,25 @@ Stores in provided directory
 def export_database(dir, public):
     if public:
         mural_select = db.select(
-            Mural.id,
-            Mural.title,
-            Mural.notes,
-            Mural.remarks,
-            Mural.year,
-            Mural.location,
-            Mural.spotify,
-        ).order_by(Mural.id.asc())
+            AccessPoint.id,
+            AccessPoint.title,
+            AccessPoint.notes,
+            AccessPoint.remarks,
+            AccessPoint.year,
+            AccessPoint.location,
+            AccessPoint.spotify,
+        ).order_by(AccessPoint.id.asc())
     else:
         mural_select = db.select(
-            Mural.id,
-            Mural.title,
-            Mural.private_notes,
-            Mural.notes,
-            Mural.remarks,
-            Mural.year,
-            Mural.location,
-            Mural.spotify,
-        ).order_by(Mural.id.asc())
+            AccessPoint.id,
+            AccessPoint.title,
+            AccessPoint.private_notes,
+            AccessPoint.notes,
+            AccessPoint.remarks,
+            AccessPoint.year,
+            AccessPoint.location,
+            AccessPoint.spotify,
+        ).order_by(AccessPoint.id.asc())
 
         feedback_select = db.select(Feedback).order_by(Feedback.feedback_id.asc())
         feedback_df = pd.read_sql(feedback_select, db.engine)
@@ -445,13 +445,13 @@ Exports images to <path>/images
 
 
 def export_images(path):
-    murals = db.session.execute(db.select(Mural).order_by(Mural.id.asc())).scalars()
+    murals = db.session.execute(db.select(AccessPoint).order_by(AccessPoint.id.asc())).scalars()
 
     for m in murals:
         images = db.session.execute(
             db.select(Image)
-            .join(ImageMuralRelation, ImageMuralRelation.image_id == Image.id)
-            .where(ImageMuralRelation.access_point_id == m.id)
+            .join(ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id)
+            .where(ImageAccessPointRelation.access_point_id == m.id)
             .filter(Image.ordering != 0)
         ).scalars()
 
@@ -477,8 +477,8 @@ Get mural details
 """
 
 
-def getMural(id):
-    mural = db.session.execute(db.select(Mural).where(Mural.id == id)).scalar()
+def getAccessPoint(id):
+    mural = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar()
 
     if mural == None:
         logging.warning("DB Response was None")
@@ -510,12 +510,12 @@ def checkArtistExists(id):
     return db.session.execute(db.select(Artist).where(Artist.id == id)).scalar() != None
 
 
-def checkMuralExists(id):
+def checkAccessPointExists(id):
     # Check id is not bad
     if not id.isdigit():
         return False
 
-    return db.session.execute(db.select(Mural).where(Mural.id == id)).scalar() != None
+    return db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar() != None
 
 
 """
@@ -523,15 +523,15 @@ Get all murals with given tag
 """
 
 
-def getMuralsTagged(tag):
+def getAccessPointsTagged(tag):
     return list(
         map(
             mural_json,
             db.session.execute(
-                db.select(Mural)
+                db.select(AccessPoint)
                 .select_from(AccessPointTag)
                 .join(Tag, AccessPointTag.tag_id == Tag.id)
-                .join(Mural, Mural.id == AccessPointTag.access_point_id)
+                .join(AccessPoint, AccessPoint.id == AccessPointTag.access_point_id)
                 .where(Tag.name == tag)
             ).scalars(),
         )
@@ -635,7 +635,7 @@ def catalog():
     query = request.args.get("q")
     if query == None:
         return render_template(
-            "catalog.html", q=query, murals=getMuralsPaginated(0), tags=getAllTags()
+            "catalog.html", q=query, murals=getAccessPointsPaginated(0), tags=getAllTags()
         )
     else:
         return render_template(
@@ -643,7 +643,7 @@ def catalog():
             pageTitle=f"Query - {query}",
             subHeading="Search Query",
             q=query,
-            murals=searchMurals(query),
+            murals=searchAccessPoints(query),
         )
 
 
@@ -658,7 +658,7 @@ def tags():
             "filtered.html",
             pageTitle=f"Tag - {tag}",
             subHeading=getTagDetails(tag)["description"],
-            murals=getMuralsTagged(tag),
+            murals=getAccessPointsTagged(tag),
         )
 
 
@@ -676,7 +676,7 @@ def paginated():
         return render_template("404.html"), 404
     else:
         return render_template(
-            "paginated.html", page=(page + 1), murals=getMuralsPaginated(page)
+            "paginated.html", page=(page + 1), murals=getAccessPointsPaginated(page)
         )
 
 
@@ -687,9 +687,9 @@ Page for specific mural details
 
 @app.route("/murals/<id>")
 def mural(id):
-    if checkMuralExists(id):
+    if checkAccessPointExists(id):
         return render_template(
-            "mural.html", muralDetails=getMural(id), spotify=getMural(id)["spotify"]
+            "mural.html", muralDetails=getAccessPoint(id), spotify=getAccessPoint(id)["spotify"]
         )
     else:
         return render_template("404.html"), 404
@@ -707,7 +707,7 @@ def artist(id):
             "filtered.html",
             pageTitle=f"Artist: {getArtistDetails(id)['name']}",
             subHeading=getArtistDetails(id)["notes"],
-            murals=getAllMuralsFromArtist(id),
+            murals=getAllAccessPointsFromArtist(id),
         )
     else:
         return render_template("404.html"), 404
@@ -727,9 +727,9 @@ def year(year):
             readableYear = year
         return render_template(
             "filtered.html",
-            pageTitle=f"Murals from {readableYear}",
+            pageTitle=f"AccessPoints from {readableYear}",
             subHeading=None,
-            murals=getAllMuralsFromYear(year),
+            murals=getAllAccessPointsFromYear(year),
         )
     else:
         return render_template("404.html"), 404
@@ -793,7 +793,7 @@ def make_thumbnail(access_point_id, file):
 
         img_id = img.id
         db.session.add(
-            ImageMuralRelation(image_id=img_id, access_point_id=access_point_id)
+            ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
         )
         db.session.commit()
 
@@ -828,29 +828,29 @@ Delete mural entry, all relations, and all images from DB and S3
 """
 
 
-def deleteMuralEntry(id):
+def deleteAccessPointEntry(id):
     # Get all images relating to this mural from the DB
     images = db.paginate(
         db.select(Image)
-        .join(ImageMuralRelation, Image.id == ImageMuralRelation.image_id)
-        .where(ImageMuralRelation.access_point_id == id),
+        .join(ImageAccessPointRelation, Image.id == ImageAccessPointRelation.image_id)
+        .where(ImageAccessPointRelation.access_point_id == id),
         per_page=150,
     ).items
     db.session.execute(
-        db.delete(ImageMuralRelation).where(ImageMuralRelation.access_point_id == id)
+        db.delete(ImageAccessPointRelation).where(ImageAccessPointRelation.access_point_id == id)
     )
     db.session.execute(
-        db.delete(ArtistMuralRelation).where(ArtistMuralRelation.access_point_id == id)
+        db.delete(ArtistAccessPointRelation).where(ArtistAccessPointRelation.access_point_id == id)
     )
     db.session.execute(db.delete(AccessPointTag).where(AccessPointTag.access_point_id == id))
     db.session.execute(db.delete(Feedback).where(Feedback.access_point_id == id))
 
-    m = db.session.execute(db.select(Mural).where(Mural.id == id)).scalar_one()
+    m = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar_one()
 
-    db.session.query(Mural).filter_by(nextmuralid=id).update(
+    db.session.query(AccessPoint).filter_by(nextmuralid=id).update(
         {"nextmuralid": m.nextmuralid}
     )
-    db.session.execute(db.delete(Mural).where(Mural.id == id))
+    db.session.execute(db.delete(AccessPoint).where(AccessPoint.id == id))
     for image in images:
         s3_bucket.remove_file(image.imghash)
         db.session.execute(db.delete(Image).where(Image.id == image.id))
@@ -899,7 +899,7 @@ def uploadImageResize(file, access_point_id, count):
         db.session.flush()
         img_id = img.id
         db.session.add(
-            ImageMuralRelation(image_id=img_id, access_point_id=access_point_id)
+            ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
         )
     db.session.commit()
 
@@ -918,8 +918,8 @@ Route to edit mural page
 def edit(id):
     return render_template(
         "edit.html",
-        muralDetails=getMural(id),
-        muralFeedback=getMuralFeedback(id),
+        muralDetails=getAccessPoint(id),
+        muralFeedback=getAccessPointFeedback(id),
         tags=getAllTags(),
         artists=getAllArtists(),
     )
@@ -934,7 +934,7 @@ Route to the admin panel
 @debug_only
 def admin():
     return render_template(
-        "admin.html", tags=getAllTags(), murals=getAllMurals(), artists=getAllArtists()
+        "admin.html", tags=getAllTags(), murals=getAllAccessPoints(), artists=getAllArtists()
     )
 
 
@@ -995,8 +995,8 @@ Route to delete mural entry
 @app.route("/delete/<id>", methods=["POST"])
 @debug_only
 def delete(id):
-    if checkMuralExists(id):
-        deleteMuralEntry(id)
+    if checkAccessPointExists(id):
+        deleteAccessPointEntry(id)
         return redirect("/admin")
     else:
         return render_template("404.html"), 404
@@ -1010,8 +1010,8 @@ Sets all fields based on http form
 
 @app.route("/editmural/<id>", methods=["POST"])
 @debug_only
-def editMural(id):
-    m = db.session.execute(db.select(Mural).where(Mural.id == id)).scalar_one()
+def editAccessPoint(id):
+    m = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar_one()
 
     # Remove existing tag relationships
     db.session.execute(db.delete(AccessPointTag).where(AccessPointTag.access_point_id == m.id))
@@ -1098,7 +1098,7 @@ Sets mural title based on http form
 @app.route("/edittitle/<id>", methods=["POST"])
 @debug_only
 def editTitle(id):
-    m = db.session.execute(db.select(Mural).where(Mural.id == id)).scalar_one()
+    m = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar_one()
     m.title = request.form["title"]
     db.session.commit()
     return ("", 204)
@@ -1141,14 +1141,14 @@ def makeThumbnail():
     # Delete references to current thumbnail
     curr_thumbnail = db.session.execute(
         db.select(Image)
-        .join(ImageMuralRelation, ImageMuralRelation.image_id == Image.id)
-        .where(ImageMuralRelation.access_point_id == access_point_id)
+        .join(ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id)
+        .where(ImageAccessPointRelation.access_point_id == access_point_id)
         .filter(Image.ordering == 0)
     ).scalar_one()
 
     db.session.execute(
-        db.delete(ImageMuralRelation).where(
-            ImageMuralRelation.image_id == curr_thumbnail.id
+        db.delete(ImageAccessPointRelation).where(
+            ImageAccessPointRelation.image_id == curr_thumbnail.id
         )
     )
     db.session.execute(db.delete(Image).where(Image.id == curr_thumbnail.id))
@@ -1181,7 +1181,7 @@ def deleteImage(id):
     for image in images:
         s3_bucket.remove_file(image.imghash)
         db.session.execute(
-            db.delete(ImageMuralRelation).where(ImageMuralRelation.image_id == id)
+            db.delete(ImageAccessPointRelation).where(ImageAccessPointRelation.image_id == id)
         )
         db.session.execute(db.delete(Image).where(Image.id == id))
     db.session.commit()
@@ -1262,7 +1262,7 @@ Route to upload new image
 @debug_only
 def uploadNewImage(id):
     count = db.session.execute(
-        db.select(func.count()).where(ImageMuralRelation.access_point_id == id)
+        db.select(func.count()).where(ImageAccessPointRelation.access_point_id == id)
     ).scalar()
 
     for f in request.files.items(multi=True):
@@ -1284,7 +1284,7 @@ def upload():
     if not (request.form["year"].isdigit()):
         return render_template("404.html"), 404
 
-    mural = Mural(
+    mural = AccessPoint(
         title=request.form["title"],
         artistknown=artistKnown,
         notes=request.form["notes"],
@@ -1344,7 +1344,7 @@ def upload():
                 db.session.flush()
                 img_id = img.id
                 db.session.add(
-                    ImageMuralRelation(image_id=img_id, access_point_id=access_point_id)
+                    ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
                 )
 
             db.session.commit()
@@ -1374,7 +1374,7 @@ def upload():
                 db.session.flush()
                 artist_id = artist_obj.id
 
-            rel = ArtistMuralRelation(
+            rel = ArtistAccessPointRelation(
                 artist_id=artist_id, access_point_id=access_point_id
             )
             db.session.add(rel)
