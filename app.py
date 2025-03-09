@@ -103,21 +103,6 @@ Create a JSON object for a access_point
 
 
 def access_point_json(access_point: AccessPoint):
-    artists = []
-    if access_point.artistknown:
-        artists = list(
-            map(
-                artist_json,
-                db.session.execute(
-                    db.select(Artist)
-                    .join(
-                        ArtistMuralRelation, Artist.id == ArtistMuralRelation.artist_id
-                    )
-                    .where(ArtistMuralRelation.access_point_id == access_point.id)
-                ).scalars(),
-            )
-        )
-
     previd = db.session.execute(
         db.select(AccessPoint.id).where(AccessPoint.nextid == access_point.id)
     ).scalar()
@@ -148,7 +133,6 @@ def access_point_json(access_point: AccessPoint):
         "private_notes": access_point.private_notes,
         "active": "checked" if access_point.active else "unchecked",
         "thumbnail": thumbnail,
-        "artists": artists,
         "images": images,
         "spotify": access_point.spotify,
         "tags": getTags(access_point.id),
@@ -175,15 +159,6 @@ def feedback_json(feedback: Feedback):
         "approxtime": f"{diff.days} days ago",  # approx_time,
         "exacttime": fb_dt,
     }
-
-
-"""
-Create a JSON object for an artist
-"""
-
-
-def artist_json(artist: Artist):
-    return {"id": artist.id, "name": artist.name, "notes": artist.notes}
 
 
 """
@@ -243,7 +218,11 @@ def searchAccessPoints(query):
             access_point_json,
             db.session.execute(
                 db.select(AccessPoint)
-                .where(text("access_point.text_search_index @@ websearch_to_tsquery(:query)"))
+                .where(
+                    text(
+                        "access_point.text_search_index @@ websearch_to_tsquery(:query)"
+                    )
+                )
                 .order_by(AccessPoint.id)
                 .limit(150),
                 {"query": query},
@@ -324,7 +303,9 @@ def getAllAccessPointsFromYear(year):
         map(
             access_point_json,
             db.paginate(
-                db.select(AccessPoint).where(AccessPoint.year == year).order_by(AccessPoint.title.asc()),
+                db.select(AccessPoint)
+                .where(AccessPoint.year == year)
+                .order_by(AccessPoint.title.asc()),
                 per_page=150,
             ).items,
         )
@@ -338,39 +319,6 @@ Get all tags
 
 def getAllTags():
     return list(db.session.execute(db.select(Tag.name)).scalars())
-
-
-"""
-Get all access points from artist given artist ID
-"""
-
-
-def getAllAccessPointsFromArtist(id):
-    return list(
-        map(
-            access_point_json,
-            db.paginate(
-                db.select(AccessPoint)
-                .join(
-                    ArtistMuralRelation, AccessPoint.id == ArtistMuralRelation.access_point_id
-                )
-                .where(ArtistMuralRelation.artist_id == id)
-                .order_by(AccessPoint.id.asc()),
-                per_page=150,
-            ).items,
-        )
-    )
-
-
-"""
-Get artist details
-"""
-
-
-def getArtistDetails(id):
-    return artist_json(
-        db.session.execute(db.select(Artist).where(Artist.id == id)).scalar_one()
-    )
 
 
 """
@@ -419,9 +367,9 @@ def export_database(dir, public):
 
     access_points_df = pd.read_sql(access_point_select, db.engine)
 
-    access_points_df["tags"] = access_points_df.apply(lambda x: getTags(x["id"]), axis=1)
-    access_points_df["artists"] = access_points_df.apply(lambda x: getArtists(x["id"]), axis=1)
-
+    access_points_df["tags"] = access_points_df.apply(
+        lambda x: getTags(x["id"]), axis=1
+    )
     images_select = (
         db.select(
             Image.id, Image.caption, Image.alttext, Image.attribution, Image.datecreated
@@ -445,12 +393,16 @@ Exports images to <path>/images
 
 
 def export_images(path):
-    access_points = db.session.execute(db.select(AccessPoint).order_by(AccessPoint.id.asc())).scalars()
+    access_points = db.session.execute(
+        db.select(AccessPoint).order_by(AccessPoint.id.asc())
+    ).scalars()
 
     for m in access_points:
         images = db.session.execute(
             db.select(Image)
-            .join(ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id)
+            .join(
+                ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id
+            )
             .where(ImageAccessPointRelation.access_point_id == m.id)
             .filter(Image.ordering != 0)
         ).scalars()
@@ -479,7 +431,9 @@ Get access point details
 
 
 def getAccessPoint(id):
-    access_point = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar()
+    access_point = db.session.execute(
+        db.select(AccessPoint).where(AccessPoint.id == id)
+    ).scalar()
 
     if access_point == None:
         logging.warning("DB Response was None")
@@ -504,19 +458,15 @@ def checkYearExists(year):
     return True
 
 
-def checkArtistExists(id):
-    if not id.isdigit():
-        return False
-
-    return db.session.execute(db.select(Artist).where(Artist.id == id)).scalar() != None
-
-
 def checkAccessPointExists(id):
     # Check id is not bad
     if not id.isdigit():
         return False
 
-    return db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar() != None
+    return (
+        db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar()
+        != None
+    )
 
 
 """
@@ -556,30 +506,6 @@ def getTags(access_point_id=None):
                 .where(AccessPointTag.access_point_id == access_point_id)
             ).scalars()
         )
-
-
-"""
-Get artist names for given access point
-"""
-
-
-def getArtists(access_point_id):
-    return list(
-        db.session.execute(
-            db.select(Artist.name)
-            .join(ArtistMuralRelation, Artist.id == ArtistMuralRelation.artist_id)
-            .where(ArtistMuralRelation.access_point_id == access_point_id)
-        ).scalars()
-    )
-
-
-"""
-Get all artist IDs
-"""
-
-
-def getAllArtists():
-    return list(map(artist_json, db.session.execute(db.select(Artist)).scalars()))
 
 
 """
@@ -636,7 +562,10 @@ def catalog():
     query = request.args.get("q")
     if query == None:
         return render_template(
-            "catalog.html", q=query, accessPoints=getAccessPointsPaginated(0), tags=getAllTags()
+            "catalog.html",
+            q=query,
+            accessPoints=getAccessPointsPaginated(0),
+            tags=getAllTags(),
         )
     else:
         return render_template(
@@ -677,7 +606,9 @@ def paginated():
         return render_template("404.html"), 404
     else:
         return render_template(
-            "paginated.html", page=(page + 1), accessPoints=getAccessPointsPaginated(page)
+            "paginated.html",
+            page=(page + 1),
+            accessPoints=getAccessPointsPaginated(page),
         )
 
 
@@ -690,25 +621,9 @@ Page for specific access point details
 def access_point(id):
     if checkAccessPointExists(id):
         return render_template(
-            "access_point.html", accessPointDetails=getAccessPoint(id), spotify=getAccessPoint(id)["spotify"]
-        )
-    else:
-        return render_template("404.html"), 404
-
-
-"""
-Page for specific artist
-"""
-
-
-@app.route("/artist/<id>")
-def artist(id):
-    if checkArtistExists(id):
-        return render_template(
-            "filtered.html",
-            pageTitle=f"Artist: {getArtistDetails(id)['name']}",
-            subHeading=getArtistDetails(id)["notes"],
-            accessPoints=getAllAccessPointsFromArtist(id),
+            "access_point.html",
+            accessPointDetails=getAccessPoint(id),
+            spotify=getAccessPoint(id)["spotify"],
         )
     else:
         return render_template("404.html"), 404
@@ -800,19 +715,6 @@ def make_thumbnail(access_point_id, file):
 
 
 """
-Delete artist and all relations from DB
-"""
-
-
-def deleteArtistGivenID(id):
-    db.session.execute(
-        db.delete(ArtistMuralRelation).where(ArtistMuralRelation.artist_id == id)
-    )
-    db.session.execute(db.delete(Artist).where(Artist.id == id))
-    db.session.commit()
-
-
-"""
 Delete tag and all relations from DB
 """
 
@@ -838,19 +740,20 @@ def deleteAccessPointEntry(id):
         per_page=150,
     ).items
     db.session.execute(
-        db.delete(ImageAccessPointRelation).where(ImageAccessPointRelation.access_point_id == id)
+        db.delete(ImageAccessPointRelation).where(
+            ImageAccessPointRelation.access_point_id == id
+        )
     )
     db.session.execute(
-        db.delete(ArtistAccessPointRelation).where(ArtistAccessPointRelation.access_point_id == id)
+        db.delete(AccessPointTag).where(AccessPointTag.access_point_id == id)
     )
-    db.session.execute(db.delete(AccessPointTag).where(AccessPointTag.access_point_id == id))
     db.session.execute(db.delete(Feedback).where(Feedback.access_point_id == id))
 
-    m = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar_one()
+    m = db.session.execute(
+        db.select(AccessPoint).where(AccessPoint.id == id)
+    ).scalar_one()
 
-    db.session.query(AccessPoint).filter_by(nextid=id).update(
-        {"nextid": m.nextid}
-    )
+    db.session.query(AccessPoint).filter_by(nextid=id).update({"nextid": m.nextid})
     db.session.execute(db.delete(AccessPoint).where(AccessPoint.id == id))
     for image in images:
         s3_bucket.remove_file(image.imghash)
@@ -922,7 +825,6 @@ def edit(id):
         accessPointDetails=getAccessPoint(id),
         accessPointFeedback=getAccessPointFeedback(id),
         tags=getAllTags(),
-        artists=getAllArtists(),
     )
 
 
@@ -935,7 +837,7 @@ Route to the admin panel
 @debug_only
 def admin():
     return render_template(
-        "admin.html", tags=getAllTags(), accessPoints=getAllAccessPoints(), artists=getAllArtists()
+        "admin.html", tags=getAllTags(), accessPoints=getAllAccessPoints()
     )
 
 
@@ -967,18 +869,8 @@ def submit_suggestion():
 
 
 """
-Route to delete artist
+Route to delete Tag
 """
-
-
-@app.route("/deleteArtist/<id>", methods=["POST"])
-@debug_only
-def deleteArtist(id):
-    if checkArtistExists(id):
-        deleteArtistGivenID(id)
-        return redirect("/admin")
-    else:
-        return render_template("404.html"), 404
 
 
 @app.route("/deleteTag/<name>", methods=["POST"])
@@ -1012,10 +904,14 @@ Sets all fields based on http form
 @app.route("/editaccesspoint/<id>", methods=["POST"])
 @debug_only
 def editAccessPoint(id):
-    m = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar_one()
+    m = db.session.execute(
+        db.select(AccessPoint).where(AccessPoint.id == id)
+    ).scalar_one()
 
     # Remove existing tag relationships
-    db.session.execute(db.delete(AccessPointTag).where(AccessPointTag.access_point_id == m.id))
+    db.session.execute(
+        db.delete(AccessPointTag).where(AccessPointTag.access_point_id == m.id)
+    )
 
     # Relate access point and submitted tags
     if "tags" in request.form:
@@ -1027,20 +923,6 @@ def editAccessPoint(id):
 
                 rel = AccessPointTag(tag_id=tag_id, access_point_id=m.id)
                 db.session.add(rel)
-
-    # Remove existing artist relationships
-    # (If artists is not in the form submission, the multiselect was blank)
-    db.session.execute(
-        db.delete(ArtistMuralRelation).where(
-            ArtistMuralRelation.access_point_id == m.id
-        )
-    )
-
-    if "artists" in request.form:
-        # Relate access point and submitted artists
-        for artist_id in request.form.getlist("artists"):
-            rel = ArtistMuralRelation(artist_id=int(artist_id), access_point_id=m.id)
-            db.session.add(rel)
 
     m.active = True if "active" in request.form else False
 
@@ -1077,20 +959,6 @@ def edit_tag(name):
 
 
 """
-Route to edit Artist notes
-"""
-
-
-@app.route("/editArtist/<id>", methods=["POST"])
-@debug_only
-def edit_artist(id):
-    a = db.session.execute(db.select(Artist).where(Artist.id == id)).scalar_one()
-    a.notes = request.form["notes"]
-    db.session.commit()
-    return ("", 204)
-
-
-"""
 Route to edit access point title
 Sets access point title based on http form
 """
@@ -1099,7 +967,9 @@ Sets access point title based on http form
 @app.route("/edittitle/<id>", methods=["POST"])
 @debug_only
 def editTitle(id):
-    m = db.session.execute(db.select(AccessPoint).where(AccessPoint.id == id)).scalar_one()
+    m = db.session.execute(
+        db.select(AccessPoint).where(AccessPoint.id == id)
+    ).scalar_one()
     m.title = request.form["title"]
     db.session.commit()
     return ("", 204)
@@ -1182,7 +1052,9 @@ def deleteImage(id):
     for image in images:
         s3_bucket.remove_file(image.imghash)
         db.session.execute(
-            db.delete(ImageAccessPointRelation).where(ImageAccessPointRelation.image_id == id)
+            db.delete(ImageAccessPointRelation).where(
+                ImageAccessPointRelation.image_id == id
+            )
         )
         db.session.execute(db.delete(Image).where(Image.id == id))
     db.session.commit()
@@ -1220,22 +1092,6 @@ Route to perform data import
 @debug_only
 def import_data():
     return ("", 501)
-
-
-"""
-Add artist with blank notes
-"""
-
-
-@app.route("/addArtist", methods=["POST"])
-@debug_only
-def add_artist():
-    artist = Artist(name=request.form["name"], notes="")
-
-    db.session.add(artist)
-    db.session.commit()
-
-    return redirect("/admin")
 
 
 """
@@ -1281,13 +1137,11 @@ Route to add new access point entry
 @app.route("/upload", methods=["POST"])
 @debug_only
 def upload():
-    artistKnown = True if "artistKnown" in request.form else False
     if not (request.form["year"].isdigit()):
         return render_template("404.html"), 404
 
     access_point = AccessPoint(
         title=request.form["title"],
-        artistknown=artistKnown,
         notes=request.form["notes"],
         year=request.form["year"],
         location=request.form["location"],
@@ -1345,7 +1199,9 @@ def upload():
                 db.session.flush()
                 img_id = img.id
                 db.session.add(
-                    ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
+                    ImageAccessPointRelation(
+                        image_id=img_id, access_point_id=access_point_id
+                    )
                 )
 
             db.session.commit()
@@ -1357,28 +1213,6 @@ def upload():
         uploadImageResize(f[1], access_point_id, count)
 
         count += 1
-
-    if artistKnown:
-        artists = request.form["artists"].split(",")
-        for artist in artists:
-            count = db.session.execute(
-                db.select(func.count()).where(Artist.name == artist)
-            ).scalar()
-            artist_id = None
-            if count > 0:
-                artist_id = db.session.execute(
-                    db.select(Artist.id).where(Artist.name == artist)
-                ).scalar()
-            else:
-                artist_obj = Artist(name=artist)
-                db.session.add(artist_obj)
-                db.session.flush()
-                artist_id = artist_obj.id
-
-            rel = ArtistAccessPointRelation(
-                artist_id=artist_id, access_point_id=access_point_id
-            )
-            db.session.add(rel)
 
     db.session.commit()
 
