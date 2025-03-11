@@ -238,8 +238,8 @@ def getAccessPointsPaginated(page_num):
             access_point_json,
             db.session.execute(
                 db.select(AccessPoint)
-                .where(AccessPoint.active == True)
-                .order_by(AccessPoint.title.asc())
+                .where(AccessPoint.active)
+                .order_by(AccessPoint.id.asc())
                 .offset(page_num * app.config["ITEMSPERPAGE"])
                 .limit(app.config["ITEMSPERPAGE"])
             ).scalars(),
@@ -257,7 +257,7 @@ def getAllAccessPoints():
         map(
             access_point_json,
             db.paginate(
-                db.select(AccessPoint).order_by(AccessPoint.title.asc()),
+                db.select(AccessPoint).order_by(AccessPoint.id.asc()),
                 per_page=200,
             ).items,
         )
@@ -299,7 +299,7 @@ def getAllAccessPointsFromYear(year):
         map(
             access_point_json,
             db.paginate(
-                db.select(AccessPoint).where(AccessPoint.year == year).order_by(AccessPoint.title.asc()),
+                db.select(AccessPoint).where(AccessPoint.year == year).order_by(AccessPoint.id.asc()),
                 per_page=150,
             ).items,
         )
@@ -336,7 +336,6 @@ def export_database(dir, public):
     if public:
         access_point_select = db.select(
             AccessPoint.id,
-            AccessPoint.title,
             AccessPoint.notes,
             AccessPoint.remarks,
             AccessPoint.year,
