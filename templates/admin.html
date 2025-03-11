@@ -47,18 +47,7 @@
                         <label for="year" class="form-label">Year</label>
                         <input type="text" class="form-control" id="year" name="year" required>
                     </div>
-                    <div class="mb-3">
-                      <div class="form-check">
-                          <input class="form-check-input" type="checkbox" id="artistKnown" name="artistKnown">
-                          <label class="form-check-label" for="artistKnown">
-                              Group/Artists Known?
-                          </label>
-                      </div>
-                  </div>
-                  <div class="mb-3" id="artistsField" style="display:none;">
-                      <label for="artists" class="form-label">Artists (Comma Separated)</label>
-                      <input type="text" class="form-control" id="artists" name="artists">
-                  </div>
+                    
                     <div class="mb-3">
                         <label for="location" class="form-label">Location</label>
                         <input type="text" class="form-control" id="location" name="location">
@@ -148,19 +137,5 @@
         </div>
       </div>
     </div>
-
-    <script>
-      // JavaScript to toggle the visibility of the "Artists" field based on the checkbox state
-      const artistKnownCheckbox = document.getElementById("artistKnown");
-      const artistsField = document.getElementById("artistsField");
-
-      artistKnownCheckbox.addEventListener("change", function () {
-          if (artistKnownCheckbox.checked) {
-              artistsField.style.display = "block";
-          } else {
-              artistsField.style.display = "none";
-          }
-      });
-  </script>
 
 {% endblock %}
