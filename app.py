@@ -1096,8 +1096,6 @@ Route to add new access point entry
 @app.route("/upload/elevator", methods=["POST"])
 @debug_only
 def upload():
-    if not (request.form["year"].isdigit()):
-        return render_template("404.html"), 404
 
     access_point = AccessPoint(
         title=request.form["title"],
