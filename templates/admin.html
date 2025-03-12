@@ -1,4 +1,13 @@
 {% extends "header.html" %}
+
+<!-- This is a janky workaround to get stuff imported for just admin pages -->
+{% block metadata %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+{% endblock %}
+
 {% block dynamic_content %}
 
 <p>Admin Panel</p>
@@ -31,21 +40,45 @@
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingOne">
         <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-          Upload New Mural
+          Upload New Elevator
         </button>
       </h2>
       <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
         <div class="accordion-body">
             <div class="container mt-5">
-                <h2>New Mural</h2>
-                <form action="/upload" method="post" enctype="multipart/form-data">
+                <h2>New Elevator</h2>
+                <form action="/upload/elevator" method="post" enctype="multipart/form-data">
                     <div class="mb-3">
-                        <label for="title" class="form-label">Title</label>
-                        <input type="text" class="form-control" id="title" name="title" required>
+                      <label for="building" class="form-label">What building is this button in?</label>
+                      
+                      <select id="dropdown" name="building">
+                        <option value="default" name="default">Select a building</option>
+                        {% for bldg in buildings: %}
+                        {{bldg.name}}
+                        <option value="{{ bldg.short_name }}">{{bldg.number}} - {{bldg.name}}</option>
+                        
+                        {% endfor %}
+                      </select>
                     </div>
+                    <!-- buildings
+                    bldg_name
+
+                    room -->
+
                     <div class="mb-3">
-                        <label for="year" class="form-label">Year</label>
-                        <input type="text" class="form-control" id="year" name="year" required>
+                      <label for="room" class="form-label">What room number does this elevator have?</label>
+                      <p>Enter N for the floor number</p>
+                      <input type="room" class="form-control" id="room" name="room">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="min_floor" class="form-label">Minimum Floor</label>
+                        <input type="text" class="form-control" id="min_floor" name="min_floor">
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="max_floor" class="form-label">Maximum Floor</label>
+                      <input type="text" class="form-control" id="max_floor" name="max_floor">
                     </div>
                     
                     <div class="mb-3">
@@ -59,6 +92,10 @@
                     <div class="mb-3">
                         <label for="images" class="form-label">Multiple Images</label>
                         <input type="file" class="form-control" id="images" name="images[]" multiple>
+                    </div>
+                    <div class="mb-3">
+                      <label for="active" class="form-label">Is active?</label>
+                      <input type="checkbox" id="active" name="active" value="true"/>
                     </div>
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
@@ -137,5 +174,22 @@
         </div>
       </div>
     </div>
+
+    <script>
+
+      // Load data on page load
+        window.onload = () => {
+          // Initialize Select2 on the building dropdown
+          $('#dropdown').select2({
+            placeholder: "Search and select a building",
+            width: '100%',
+            minimumResultsForSearch: 0  // Always shows search bar
+          }).on('select2:open', function () {
+            // Automatically focus on the search box when dropdown opens
+            document.querySelector('.select2-search__field').focus();
+          });
+        };
+
+    </script>
 
 {% endblock %}

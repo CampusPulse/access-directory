@@ -1099,44 +1099,44 @@ def upload():
 
 
     # Step 1: Find the building by its number
-    stmt = select(Building).where(Building.name == request.form["bldg_name"])
-    building = session.execute(stmt).scalar_one_or_none()
+    stmt = db.select(Building).where(Building.short_name == request.form["building"])
+    building = db.session.execute(stmt).scalar_one_or_none()
 
     if not building:
-        raise ValueError(f"Building with number name {request.form["bldg_name"]} not found.")
+        raise ValueError(f"Building with short name {request.form['building']} not found.")
 
     # Step 2: Find or create the location
     # for now we consider elevators as being "located" on "all" floors using the special floor number "0" (we are following the american standard where 1 is ground)
-    room = request.form["room"]
-    stmt = select(Location).where(
+    floor, room = room_to_integer(request.form["room"])
+    stmt = db.select(Location).where(
         Location.building_id == building.id,
         Location.floor_number == 0,
         Location.room_number == room
     )
-    location = session.execute(stmt).scalar_one_or_none()
+    location = db.session.execute(stmt).scalar_one_or_none()
 
     if not location:
         location = Location(
             building_id=building.id,
             floor_number=0,
             room_number=room,
-            additional_info=None
+            additional_info=request.form["location"]
         )
-        session.add(location)
-        session.flush()  # Get the location ID
+        db.session.add(location)
+        db.session.flush()  # Get the location ID
 
     # Step 3: Insert the elevator access point
-    elevator = AccessPoint(
-        type="Elevator",
+    elevator = Elevator(
+        floor_min=floor_to_integer(request.form["min_floor"]),
+        floor_max=floor_to_integer(request.form["max_floor"]),
         location_id=location.id,
         remarks=request.form["notes"],
         active=request.form["active"] == "true"
     )
-    session.add(elevator)
+    db.session.add(elevator)
 
     # Commit the transaction
-    session.commit()
-
+    db.session.commit()
 
     # Count is the order in which the images are shown
     #   0 is the thumbnail (only shown on access point card)
