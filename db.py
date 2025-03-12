@@ -40,6 +40,7 @@ class Building(Base):
     short_name: Mapped[str]  # Example: "EH"
     address: Mapped[Optional[str]]  # Optional: Full address if needed
     additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
+    locations = relationship("Location", backref="building")
 
 
 class Location(Base):
@@ -50,6 +51,7 @@ class Location(Base):
     room_number: Mapped[int] # only the room portion
     nickname: Mapped[Optional[str]]  # Example: "Main Library", "Engineering Hall"
     additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
+    access_points = relationship("AccessPoint", backref="location")
 
 
 class AccessPoint(Base):
