@@ -105,7 +105,7 @@ Create a JSON object for a access_point
 
 def access_point_json(access_point: AccessPoint):
     previd = db.session.execute(
-        db.select(AccessPoint.id).where(AccessPoint.nextid == access_point.id)
+        db.select(AccessPoint.id).where(AccessPoint.id == access_point.id)
     ).scalar()
 
     image_data = db.session.execute(
@@ -121,21 +121,17 @@ def access_point_json(access_point: AccessPoint):
             thumbnail = s3_bucket.get_file_s3(image.imghash)
         else:
             images.append(image_json(image))
-
+    # TODO: use marshmallow to serialize
+    print(access_point)
     return {
         "id": access_point.id,
-        "title": access_point.title,
-        "year": access_point.year,
-        "location": access_point.location,
-        "remarks": access_point.remarks,
-        "notes": access_point.notes,
-        "previd": previd,
-        "nextid": access_point.nextid,
-        "private_notes": access_point.private_notes,
+        "building": access_point.location.building.id,
+        "room": access_point.location.room_number,
+        "floor": access_point.location.floor_number,
+        "notes": access_point.remarks,
         "active": "checked" if access_point.active else "unchecked",
         "thumbnail": thumbnail,
         "images": images,
-        "spotify": access_point.spotify,
         "tags": getTags(access_point.id),
     }
 
