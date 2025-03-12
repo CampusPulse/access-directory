@@ -38,6 +38,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
+from helpers import floor_to_integer
 
 
 app = Flask(__name__)
@@ -1089,9 +1090,8 @@ def uploadNewImage(id):
 
 
 """
-Route to add new access point entry
+Route to add new entry
 """
-
 
 @app.route("/upload/elevator", methods=["POST"])
 @debug_only
@@ -1111,7 +1111,7 @@ def upload():
     stmt = select(Location).where(
         Location.building_id == building.id,
         Location.floor_number == 0,
-        Location.room_number == 
+        Location.room_number == room
     )
     location = session.execute(stmt).scalar_one_or_none()
 
@@ -1136,10 +1136,7 @@ def upload():
 
     # Commit the transaction
     session.commit()
-    
 
-
-    access_point_id = access_point.id
 
     # Count is the order in which the images are shown
     #   0 is the thumbnail (only shown on access point card)
@@ -1189,7 +1186,7 @@ def upload():
                 db.session.flush()
                 img_id = img.id
                 db.session.add(
-                    ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
+                    ImageAccessPointRelation(image_id=img_id, access_point_id=elevator.id)
                 )
 
             db.session.commit()
