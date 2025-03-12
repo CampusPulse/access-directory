@@ -103,10 +103,7 @@ View Full Size Image</a>{% endif %}</pre>
             {% endif %}
             <h3>Year:</h3>
             <p><a href="/year/{{ accessPointDetails['year'] }}">{% if accessPointDetails["year"] != 0 %}{{ accessPointDetails["year"] }}{% else %}Unknown{% endif %}</a></p>
-            {%if spotify %}
-            <h3>Related Music:</h3>
-            <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/{{ spotify }}" width="100%" height="160" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-            {% endif %}
+            
             <h3>Location:</h3>
             <p>{{ accessPointDetails["location"] }} </p>
 
