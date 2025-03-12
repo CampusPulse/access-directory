@@ -17,6 +17,14 @@ def floor_to_integer(floor_val):
 
     return -99  # Default placeholder for unknown cases
 
+def integer_to_floor(floor:int):
+    if floor < 0:
+        return ord(A) + (-floor) -1 
+    elif floor == 0:
+        return "N"
+    else:
+        return str(floor)
+
 
 def room_to_integer(room_val):
     if isinstance(room_val, int):
@@ -41,3 +49,9 @@ def room_to_integer(room_val):
             raise ValueError(f"Room number {room_val} is invalid")
 
     return 0, 0
+
+def integer_to_room(floor:int, room:int):
+    if room < -10:
+        raise ValueError(f"default placeholder room value of {room} encountered")
+
+    return integer_to_floor(floor) + str(room)
