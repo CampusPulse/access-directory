@@ -264,6 +264,16 @@ def getAllAccessPoints():
         )
     )
 
+"""
+Get all access points
+"""
+
+
+def getAllBuildings():
+    b = db.session.execute(
+            db.select(Building).order_by(Building.id.asc())
+        ).scalars()
+    return b
 
 """
 Get all tags
@@ -807,7 +817,7 @@ Route to the admin panel
 @debug_only
 def admin():
     return render_template(
-        "admin.html", tags=getAllTags(), accessPoints=getAllAccessPoints()
+        "admin.html", tags=getAllTags(), accessPoints=getAllAccessPoints(), buildings=getAllBuildings()
     )
 
 
