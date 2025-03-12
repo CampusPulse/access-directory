@@ -16,3 +16,28 @@ def floor_to_integer(floor_val):
             return int(floor_val)
 
     return -99  # Default placeholder for unknown cases
+
+
+def room_to_integer(room_val):
+    if isinstance(room_val, int):
+        if room_val > 99 and room_val >= 999:
+            return 0, room_val  # Directly return integers if three digits
+        elif room_val > 999 and room_val <= 9999:
+            return int(str(room_val)[0]), int(str(room_val)[1:])
+        else:
+            raise ValueError(f"Room number {room_val} is invalid")
+
+    if isinstance(room_val, str):
+        room_val = room_val.strip().upper()
+
+        if room_val.startswith("N"):
+            room_val = room_val.replace("N", "0")
+        
+        if len(room_val) == 3:
+            return 0, int(room_val)  # Directly return integers if three digits
+        elif len(room_val) == 4:
+            return int(room_val[0]), int(room_val[1:])
+        else:
+            raise ValueError(f"Room number {room_val} is invalid")
+
+    return 0, 0

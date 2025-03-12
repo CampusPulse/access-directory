@@ -38,7 +38,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer
+from helpers import floor_to_integer, room_to_integer
 
 
 app = Flask(__name__)
