@@ -130,10 +130,14 @@ def access_point_json(access_point: AccessPoint):
         "floor": access_point.location.floor_number,
         "notes": access_point.remarks,
         "active": "checked" if access_point.active else "unchecked",
-        "thumbnail": thumbnail,
         "images": images,
         "tags": getTags(access_point.id),
     }
+
+    if thumbnail is not None:
+        base_data.update({
+            "thumbnail": thumbnail
+        })
 
     if isinstance(access_point, Elevator):
         title = f"{access_point.location.building.name}"
