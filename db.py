@@ -48,7 +48,7 @@ class Location(Base):
     building_id: Mapped[int] = mapped_column(ForeignKey("building.id"))
     floor_number: Mapped[int] # negative -> Basement, 0 - any, positive -> floors
     room_number: Mapped[int] # only the room portion
-    nickname: Mapped[str]  # Example: "Main Library", "Engineering Hall"
+    nickname: Mapped[Optional[str]]  # Example: "Main Library", "Engineering Hall"
     additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
 
 
