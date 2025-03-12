@@ -123,7 +123,7 @@ def access_point_json(access_point: AccessPoint):
             images.append(image_json(image))
     # TODO: use marshmallow to serialize
     print(access_point)
-    return {
+    base_data = {
         "id": access_point.id,
         "building": access_point.location.building.id,
         "room": access_point.location.room_number,
@@ -135,6 +135,14 @@ def access_point_json(access_point: AccessPoint):
         "tags": getTags(access_point.id),
     }
 
+    if isinstance(access_point, Elevator):
+        title = f"{access_point.location.building.name}"
+        if access_point.location.nickname is not None:
+            title += f" - {access_point.location.nickname}"
+        base_data.update({
+            "title":  title
+        })
+    return base_data
 
 """
 Create a JSON object for Feedback
