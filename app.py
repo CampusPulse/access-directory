@@ -1097,15 +1097,48 @@ Route to add new access point entry
 @debug_only
 def upload():
 
-    access_point = AccessPoint(
-        title=request.form["title"],
-        notes=request.form["notes"],
-        year=request.form["year"],
-        location=request.form["location"],
-        active=False,
+
+    # Step 1: Find the building by its number
+    stmt = select(Building).where(Building.name == request.form["bldg_name"])
+    building = session.execute(stmt).scalar_one_or_none()
+
+    if not building:
+        raise ValueError(f"Building with number name {request.form["bldg_name"]} not found.")
+
+    # Step 2: Find or create the location
+    # for now we consider elevators as being "located" on "all" floors using the special floor number "0" (we are following the american standard where 1 is ground)
+    room = request.form["room"]
+    stmt = select(Location).where(
+        Location.building_id == building.id,
+        Location.floor_number == 0,
+        Location.room_number == 
     )
-    db.session.add(access_point)
-    db.session.flush()
+    location = session.execute(stmt).scalar_one_or_none()
+
+    if not location:
+        location = Location(
+            building_id=building.id,
+            floor_number=0,
+            room_number=room,
+            additional_info=None
+        )
+        session.add(location)
+        session.flush()  # Get the location ID
+
+    # Step 3: Insert the elevator access point
+    elevator = AccessPoint(
+        type="Elevator",
+        location_id=location.id,
+        remarks=request.form["notes"],
+        active=request.form["active"] == "true"
+    )
+    session.add(elevator)
+
+    # Commit the transaction
+    session.commit()
+    
+
+
     access_point_id = access_point.id
 
     # Count is the order in which the images are shown
