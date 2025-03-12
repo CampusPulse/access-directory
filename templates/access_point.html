@@ -53,6 +53,12 @@
     }
 </style>
 <div class="container">
+    <div class="row text-start">
+        <div class="col-3">
+            <a href="/catalog" class=" text-left"> &lt; back to catalog</a>
+        </div>
+    </div>
+
     <h1>{{ accessPointDetails["title"] }} </h1>
     <div class="row">
         <div class="col-lg-8 col-md-12">
@@ -174,34 +180,6 @@ View Full Size Image</a>{% endif %}</pre>
                     </div>
                 </div>
             </div>
-        <div class="row text-center">
-            <div class="col-6">
-                {% if accessPointDetails['prevmuralid'] != None: %}
-                <a class="btn btn-primary" role="button" href="{{ accessPointDetails['prevmuralid'] }}">Prev</a>
-                {% endif %}
-            </div>
-            <div class="col-6">
-                {% if accessPointDetails['nextmuralid'] != None: %}
-                <a class="btn btn-primary" role="button" href="{{ accessPointDetails['nextmuralid'] }}">Next</a>
-                {% endif %}
-            </div>
-        </div>
-        <script>
-            document.addEventListener('keydown', function(event) {
-              switch(event.key) {
-                {% if accessPointDetails['prevmuralid'] != None: %}
-                case 'ArrowLeft':
-                  window.location.href = '{{ accessPointDetails['prevmuralid'] }}';
-                  break;
-                {% endif %}
-                {% if accessPointDetails['nextmuralid'] != None: %}
-                case 'ArrowRight':
-                  window.location.href = '{{ accessPointDetails['nextmuralid'] }}';
-                  break;
-                {% endif %}
-              }
-            });
-            </script>
     </div>
 </div>
 
