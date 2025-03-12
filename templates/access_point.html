@@ -168,12 +168,12 @@ View Full Size Image</a>{% endif %}</pre>
                                     <form action="/suggestion" method="post" enctype="multipart/form-data">
                                         <div class="mb-3">
                                             <label for="notes" class="form-label"><b>Notes</b></label>
-                                            <p class="thin">What could be improved with this mural listing?</p>
+                                            <p class="thin">What could be improved about this catalog listing?</p>
                                             <input type="text" class="form-control" style="margin-bottom: 10px; margin-top: -10px;" id="notes" name="notes" required>
                                             <label for="notes" class="form-label"><b>Your Contact</b></label>
                                             <p class="thin">How can we reach you to follow up?</p>
                                             <input type="text" class="form-control" id="contact" name="contact">
-                                            <input type="text" class="visually-hidden" id="muralid" name="muralid" value="{{ accessPointDetails['id'] }}">
+                                            <input type="text" class="visually-hidden" id="muralid" name="access_point_id" value="{{ accessPointDetails['id'] }}">
                                         </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Submit</button>

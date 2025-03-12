@@ -845,7 +845,7 @@ def submit_suggestion():
             notes=request.form["notes"],
             contact=request.form["contact"],
             time=str(dt),
-            access_point_id=request.form["accesspointid"],
+            access_point_id=request.form["access_point_id"],
         )
     )
     db.session.commit()
