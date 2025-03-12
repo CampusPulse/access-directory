@@ -1093,7 +1093,7 @@ Route to add new access point entry
 """
 
 
-@app.route("/upload", methods=["POST"])
+@app.route("/upload/elevator", methods=["POST"])
 @debug_only
 def upload():
     if not (request.form["year"].isdigit()):
