@@ -1,23 +1,23 @@
 {% extends "header.html" %}
 {% block title %}
-{{ muralDetails["title"] }} - TunnelVision
+{{ accessPointDetails["title"] }} - TunnelVision
 {% endblock %}
 {% block metadata %}
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://tunnelvision.csh.rit.edu/murals/{{ muralDetails['id'] }}" />
-<meta property="og:title" content="{{ muralDetails['title'] }}" />
-<meta property="og:description" content="{{ muralDetails['notes'] }}" />
-<meta property="og:image" content="{{ muralDetails['thumbnail'] }}" />
+<meta property="og:url" content="https://tunnelvision.csh.rit.edu/murals/{{ accessPointDetails['id'] }}" />
+<meta property="og:title" content="{{ accessPointDetails['title'] }}" />
+<meta property="og:description" content="{{ accessPointDetails['notes'] }}" />
+<meta property="og:image" content="{{ accessPointDetails['thumbnail'] }}" />
 <meta name="twitter:card" content="summary">
 <meta name="twitter:domain" value="tunnelvision.csh.rit.edu" />
-<meta name="twitter:title" value="{{ muralDetails['title'] }}" />
-<meta name="twitter:description" value="{{ muralDetails['notes'] }}" />
-<meta name="twitter:image" content="{{ muralDetails['thumbnail'] }}" />
-<meta name="twitter:url" value="https://tunnelvision.csh.rit.edu/murals/{{ muralDetails['id'] }}" />
+<meta name="twitter:title" value="{{ accessPointDetails['title'] }}" />
+<meta name="twitter:description" value="{{ accessPointDetails['notes'] }}" />
+<meta name="twitter:image" content="{{ accessPointDetails['thumbnail'] }}" />
+<meta name="twitter:url" value="https://tunnelvision.csh.rit.edu/murals/{{ accessPointDetails['id'] }}" />
 <meta name="twitter:label1" value="Year" />
-<meta name="twitter:data1" value="{{ muralDetails['year'] }}" />
+<meta name="twitter:data1" value="{{ accessPointDetails['year'] }}" />
 <meta name="twitter:label2" value="Location" />
-<meta name="twitter:data2" value="{{ muralDetails['location'] }}" />
+<meta name="twitter:data2" value="{{ accessPointDetails['location'] }}" />
 <meta name="description" value="TunnelVision is an interactive catalog of the mural under RIT's Residence Halls." />
 {% endblock %}
 {% block dynamic_content %}
@@ -58,7 +58,7 @@
         <div class="col-lg-8 col-md-12">
             <div id="muralImagesCaptions" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-indicators">
-                    {% for image in muralDetails["images"]: %}
+                    {% for image in accessPointDetails["images"]: %}
                     {% if loop.index == 1 %}
                         <button type="button" data-bs-target="muralImagesCaptions" data-bs-slide-to="{{ loop.index-1 }}" class="active" aria-current="true" aria-label="Slide {{ loop.index-1 }}"></button>
                     {% else %}
@@ -67,24 +67,24 @@
                     {% endfor %}
                 </div>
                 <div class="carousel-inner">
-                    {% for image in muralDetails["images"]: %}
+                    {% for image in accessPointDetails["images"]: %}
                     {% if loop.index == 1 %}
                     <div class="carousel-item active">
                     {% else %}
                     <div class="carousel-item text-center">
                     {% endif %}
-                        <img class="main-img" alt="{{ muralDetails['images'][loop.index-1]['alttext'] }}" src="{{ muralDetails['images'][loop.index-1]['imgurl'] }}">
+                        <img class="main-img" alt="{{ accessPointDetails['images'][loop.index-1]['alttext'] }}" src="{{ accessPointDetails['images'][loop.index-1]['imgurl'] }}">
                         <div class="carousel-caption d-none d-md-block banner-value">
-                            {% if muralDetails['images'][loop.index-1]['caption'] != None %}<p class="no-a-styles">
-{{ muralDetails['images'][loop.index-1]['caption'] }}</p>{% endif %}
-                            <pre style="font-family:inherit;font-size:inherit;text-wrap:wrap">{% if muralDetails['images'][loop.index-1]['attribution'] != None %}Photo: {{ muralDetails['images'][loop.index-1]['attribution']}}{% if muralDetails['images'][loop.index-1]['datecreated'] != None %}, {{ muralDetails['images'][loop.index-1]['datecreated'].strftime("%B %d, %Y") }}{% endif %}{% endif %}{% if muralDetails['images'][loop.index-1]['fullsizeimage']%}<a class="no-a-styles" href="{{ muralDetails['images'][loop.index-1]['fullsizeimage'] }}">
+                            {% if accessPointDetails['images'][loop.index-1]['caption'] != None %}<p class="no-a-styles">
+{{ accessPointDetails['images'][loop.index-1]['caption'] }}</p>{% endif %}
+                            <pre style="font-family:inherit;font-size:inherit;text-wrap:wrap">{% if accessPointDetails['images'][loop.index-1]['attribution'] != None %}Photo: {{ accessPointDetails['images'][loop.index-1]['attribution']}}{% if accessPointDetails['images'][loop.index-1]['datecreated'] != None %}, {{ accessPointDetails['images'][loop.index-1]['datecreated'].strftime("%B %d, %Y") }}{% endif %}{% endif %}{% if accessPointDetails['images'][loop.index-1]['fullsizeimage']%}<a class="no-a-styles" href="{{ accessPointDetails['images'][loop.index-1]['fullsizeimage'] }}">
 View Full Size Image</a>{% endif %}</pre>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 
-                {% if muralDetails["images"]|length > 1 %}
+                {% if accessPointDetails["images"]|length > 1 %}
                 <button class="carousel-control-prev" type="button" data-bs-target="#muralImagesCaptions" data-bs-slide="prev">
                   <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                   <span class="visually-hidden">Previous</span>
@@ -97,36 +97,36 @@ View Full Size Image</a>{% endif %}</pre>
             </div>
         </div>
         <div class="col-lg-4 col-md-12">
-            {% if muralDetails["notes"] != '' %}
+            {% if accessPointDetails["notes"] != '' %}
             <h3>Description:</h3>
-            <pre style="font-family:inherit;font-size:inherit; text-wrap:wrap">{{ muralDetails["notes"] }} </pre>
+            <pre style="font-family:inherit;font-size:inherit; text-wrap:wrap">{{ accessPointDetails["notes"] }} </pre>
             {% endif %}
             <h3>Year:</h3>
-            <p><a href="/year/{{ muralDetails['year'] }}">{% if muralDetails["year"] != 0 %}{{ muralDetails["year"] }}{% else %}Unknown{% endif %}</a></p>
+            <p><a href="/year/{{ accessPointDetails['year'] }}">{% if accessPointDetails["year"] != 0 %}{{ accessPointDetails["year"] }}{% else %}Unknown{% endif %}</a></p>
             {%if spotify %}
             <h3>Related Music:</h3>
             <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/{{ spotify }}" width="100%" height="160" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
             {% endif %}
             <h3>Location:</h3>
-            <p>{{ muralDetails["location"] }} </p>
+            <p>{{ accessPointDetails["location"] }} </p>
 
-            {% if muralDetails['tags']|length > 0 %}
+            {% if accessPointDetails['tags']|length > 0 %}
             <h3>Tags:</h3>
-            {% for tag in muralDetails['tags']: %}
+            {% for tag in accessPointDetails['tags']: %}
             <a href="/tags?t={{ tag }}"><p class="chip">{{ tag }}</p></a>
             {% endfor %}
             {% endif %}
             
-            {% if muralDetails["artists"]|length > 0: %}
+            {% if accessPointDetails["artists"]|length > 0: %}
             <h3>Painters:</h3>
             <ul>
-            {% for artist in muralDetails["artists"]: %}
+            {% for artist in accessPointDetails["artists"]: %}
             <li><a href="/artist/{{ artist['id'] }}">{{artist["name"]}}</a></li>
             {% endfor %}
             </ul>
             {% endif %}
             
-            {% if muralDetails["remarks"] %}
+            {% if accessPointDetails["remarks"] %}
             <div class="accordion" id="remarkdropdown">
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="remarkheading" title="Remarks can provide additional information about a piece, including details sourced from suggestions, conversations, and other casual sources.">
@@ -137,7 +137,7 @@ View Full Size Image</a>{% endif %}</pre>
                     <div id="remarkcollapse" class="accordion-collapse collapse" aria-labelledby="remarkheading" data-bs-parent="#remarkdropdown">
                         <div class="accordion-body">
                             <div class="container">
-                                <pre style="font-family:inherit;font-size:inherit;text-wrap:wrap">{{ muralDetails['remarks'] }}</pre>
+                                <pre style="font-family:inherit;font-size:inherit;text-wrap:wrap">{{ accessPointDetails['remarks'] }}</pre>
                             </div>
                         </div>
                     </div>
@@ -163,7 +163,7 @@ View Full Size Image</a>{% endif %}</pre>
                                         <label for="notes" class="form-label"><b>Your Contact</b></label>
                                         <p class="thin">How can we reach you to follow up?</p>
                                         <input type="text" class="form-control" id="contact" name="contact">
-                                        <input type="text" class="visually-hidden" id="muralid" name="muralid" value="{{ muralDetails['id'] }}">
+                                        <input type="text" class="visually-hidden" id="muralid" name="muralid" value="{{ accessPointDetails['id'] }}">
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Submit</button>
@@ -175,27 +175,27 @@ View Full Size Image</a>{% endif %}</pre>
             </div>
         <div class="row text-center">
             <div class="col-6">
-                {% if muralDetails['prevmuralid'] != None: %}
-                <a class="btn btn-primary" role="button" href="{{ muralDetails['prevmuralid'] }}">Prev</a>
+                {% if accessPointDetails['prevmuralid'] != None: %}
+                <a class="btn btn-primary" role="button" href="{{ accessPointDetails['prevmuralid'] }}">Prev</a>
                 {% endif %}
             </div>
             <div class="col-6">
-                {% if muralDetails['nextmuralid'] != None: %}
-                <a class="btn btn-primary" role="button" href="{{ muralDetails['nextmuralid'] }}">Next</a>
+                {% if accessPointDetails['nextmuralid'] != None: %}
+                <a class="btn btn-primary" role="button" href="{{ accessPointDetails['nextmuralid'] }}">Next</a>
                 {% endif %}
             </div>
         </div>
         <script>
             document.addEventListener('keydown', function(event) {
               switch(event.key) {
-                {% if muralDetails['prevmuralid'] != None: %}
+                {% if accessPointDetails['prevmuralid'] != None: %}
                 case 'ArrowLeft':
-                  window.location.href = '{{ muralDetails['prevmuralid'] }}';
+                  window.location.href = '{{ accessPointDetails['prevmuralid'] }}';
                   break;
                 {% endif %}
-                {% if muralDetails['nextmuralid'] != None: %}
+                {% if accessPointDetails['nextmuralid'] != None: %}
                 case 'ArrowRight':
-                  window.location.href = '{{ muralDetails['nextmuralid'] }}';
+                  window.location.href = '{{ accessPointDetails['nextmuralid'] }}';
                   break;
                 {% endif %}
               }

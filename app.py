@@ -604,7 +604,7 @@ Page for specific access point details
 def access_point(id):
     if checkAccessPointExists(id):
         return render_template(
-            "access_point.html", accessPointDetails=getAccessPoint(id), spotify=getAccessPoint(id)["spotify"]
+            "access_point.html", accessPointDetails=getAccessPoint(id)
         )
     else:
         return render_template("404.html"), 404
