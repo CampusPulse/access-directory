@@ -27,27 +27,28 @@
         text-decoration: none;
         color: white;
     }
+
     .img-zoom-container {
-    position: relative;
+        position: relative;
     }
 
     .img-zoom-lens {
-    position: absolute;
-    border: 1px solid #d4d4d4;
-    /*set the size of the lens:*/
-    width: 40px;
-    height: 40px;
+        position: absolute;
+        border: 1px solid #d4d4d4;
+        /*set the size of the lens:*/
+        width: 40px;
+        height: 40px;
     }
 
     .img-zoom-result {
-    border: 1px solid #d4d4d4;
-    /*set the size of the result div:*/
-    width: 300px;
-    height: 300px;
+        border: 1px solid #d4d4d4;
+        /*set the size of the result div:*/
+        width: 300px;
+        height: 300px;
     }
 
     .main-img {
-        width:100%;
+        width: 100%;
         height: 700px;
         object-fit: contain;
     }
@@ -66,9 +67,9 @@
                 <div class="carousel-indicators">
                     {% for image in accessPointDetails["images"]: %}
                     {% if loop.index == 1 %}
-                        <button type="button" data-bs-target="muralImagesCaptions" data-bs-slide-to="{{ loop.index-1 }}" class="active" aria-current="true" aria-label="Slide {{ loop.index-1 }}"></button>
+                    <button type="button" data-bs-target="muralImagesCaptions" data-bs-slide-to="{{ loop.index-1 }}" class="active" aria-current="true" aria-label="Slide {{ loop.index-1 }}"></button>
                     {% else %}
-                        <button type="button" data-bs-target="muralImagesCaptions" data-bs-slide-to="{{ loop.index-1 }}" aria-label="Slide {{ loop.index-1 }}"></button>
+                    <button type="button" data-bs-target="muralImagesCaptions" data-bs-slide-to="{{ loop.index-1 }}" aria-label="Slide {{ loop.index-1 }}"></button>
                     {% endif %}
                     {% endfor %}
                 </div>
@@ -76,102 +77,104 @@
                     {% for image in accessPointDetails["images"]: %}
                     {% if loop.index == 1 %}
                     <div class="carousel-item active">
-                    {% else %}
-                    <div class="carousel-item text-center">
-                    {% endif %}
-                        <img class="main-img" alt="{{ accessPointDetails['images'][loop.index-1]['alttext'] }}" src="{{ accessPointDetails['images'][loop.index-1]['imgurl'] }}">
-                        <div class="carousel-caption d-none d-md-block banner-value">
-                            {% if accessPointDetails['images'][loop.index-1]['caption'] != None %}<p class="no-a-styles">
-{{ accessPointDetails['images'][loop.index-1]['caption'] }}</p>{% endif %}
-                            <pre style="font-family:inherit;font-size:inherit;text-wrap:wrap">{% if accessPointDetails['images'][loop.index-1]['attribution'] != None %}Photo: {{ accessPointDetails['images'][loop.index-1]['attribution']}}{% if accessPointDetails['images'][loop.index-1]['datecreated'] != None %}, {{ accessPointDetails['images'][loop.index-1]['datecreated'].strftime("%B %d, %Y") }}{% endif %}{% endif %}{% if accessPointDetails['images'][loop.index-1]['fullsizeimage']%}<a class="no-a-styles" href="{{ accessPointDetails['images'][loop.index-1]['fullsizeimage'] }}">
+                        {% else %}
+                        <div class="carousel-item text-center">
+                            {% endif %}
+                            <img class="main-img" alt="{{ accessPointDetails['images'][loop.index-1]['alttext'] }}" src="{{ accessPointDetails['images'][loop.index-1]['imgurl'] }}">
+                            <div class="carousel-caption d-none d-md-block banner-value">
+                                {% if accessPointDetails['images'][loop.index-1]['caption'] != None %}<p class="no-a-styles">
+                                    {{ accessPointDetails['images'][loop.index-1]['caption'] }}</p>{% endif %}
+                                <pre style="font-family:inherit;font-size:inherit;text-wrap:wrap">{% if accessPointDetails['images'][loop.index-1]['attribution'] != None %}Photo: {{ accessPointDetails['images'][loop.index-1]['attribution']}}{% if accessPointDetails['images'][loop.index-1]['datecreated'] != None %}, {{ accessPointDetails['images'][loop.index-1]['datecreated'].strftime("%B %d, %Y") }}{% endif %}{% endif %}{% if accessPointDetails['images'][loop.index-1]['fullsizeimage']%}<a class="no-a-styles" href="{{ accessPointDetails['images'][loop.index-1]['fullsizeimage'] }}">
 View Full Size Image</a>{% endif %}</pre>
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+
+                    {% if accessPointDetails["images"]|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#muralImagesCaptions" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#muralImagesCaptions" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                    {% endif %}
                 </div>
-                
-                {% if accessPointDetails["images"]|length > 1 %}
-                <button class="carousel-control-prev" type="button" data-bs-target="#muralImagesCaptions" data-bs-slide="prev">
-                  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                  <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#muralImagesCaptions" data-bs-slide="next">
-                  <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                  <span class="visually-hidden">Next</span>
-                </button>
-                {% endif %}
             </div>
-        </div>
-        <div class="col-lg-4 col-md-12">
-            {% if accessPointDetails["notes"] != '' %}
-            <h3>Description:</h3>
-            <pre style="font-family:inherit;font-size:inherit; text-wrap:wrap">{{ accessPointDetails["notes"] }} </pre>
-            {% endif %}
-            
-            <h3>Location:</h3>
-            <p>
-                <strong>Building</strong>: {{ accessPointDetails["building_name"] }} <br>
-                {% if accessPointDetails["floor"] %}<strong>Floor</strong>: {{ accessPointDetails["floor"] }}
-                <br>{% endif %}
-                <strong>Room</strong>: {{ accessPointDetails["room"] }}
-            </p>
+            <div class="col-lg-4 col-md-12">
+                {% if accessPointDetails["notes"] != '' %}
+                <h3>Description:</h3>
+                <pre style="font-family:inherit;font-size:inherit; text-wrap:wrap">{{ accessPointDetails["notes"] }} </pre>
+                {% endif %}
+
+                <h3>Location:</h3>
+                <p>
+                    <strong>Building</strong>: {{ accessPointDetails["building_name"] }} <br>
+                    {% if accessPointDetails["floor"] %}<strong>Floor</strong>: {{ accessPointDetails["floor"] }}
+                    <br>{% endif %}
+                    <strong>Room</strong>: {{ accessPointDetails["room"] }}
+                </p>
 
 
-            {% if accessPointDetails['tags']|length > 0 %}
-            <h3>Tags:</h3>
-            {% for tag in accessPointDetails['tags']: %}
-            <a href="/tags?t={{ tag }}"><p class="chip">{{ tag }}</p></a>
-            {% endfor %}
-            {% endif %}
-            
-            {% if accessPointDetails["artists"]|length > 0: %}
-            <h3>Painters:</h3>
-            <ul>
-            {% for artist in accessPointDetails["artists"]: %}
-            <li><a href="/artist/{{ artist['id'] }}">{{artist["name"]}}</a></li>
-            {% endfor %}
-            </ul>
-            {% endif %}
-            
-            {% if accessPointDetails["remarks"] %}
-            <div class="accordion" id="remarkdropdown">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="remarkheading" title="Remarks can provide additional information about a piece, including details sourced from suggestions, conversations, and other casual sources.">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#remarkcollapse" aria-controls="remarkcollapse">
-                        Remarks
-                        </button>
-                    </h2>
-                    <div id="remarkcollapse" class="accordion-collapse collapse" aria-labelledby="remarkheading" data-bs-parent="#remarkdropdown">
-                        <div class="accordion-body">
-                            <div class="container">
-                                <pre style="font-family:inherit;font-size:inherit;text-wrap:wrap">{{ accessPointDetails['remarks'] }}</pre>
+                {% if accessPointDetails['tags']|length > 0 %}
+                <h3>Tags:</h3>
+                {% for tag in accessPointDetails['tags']: %}
+                <a href="/tags?t={{ tag }}">
+                    <p class="chip">{{ tag }}</p>
+                </a>
+                {% endfor %}
+                {% endif %}
+
+                {% if accessPointDetails["artists"]|length > 0: %}
+                <h3>Painters:</h3>
+                <ul>
+                    {% for artist in accessPointDetails["artists"]: %}
+                    <li><a href="/artist/{{ artist['id'] }}">{{artist["name"]}}</a></li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if accessPointDetails["remarks"] %}
+                <div class="accordion" id="remarkdropdown">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="remarkheading" title="Remarks can provide additional information about a piece, including details sourced from suggestions, conversations, and other casual sources.">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#remarkcollapse" aria-controls="remarkcollapse">
+                                Remarks
+                            </button>
+                        </h2>
+                        <div id="remarkcollapse" class="accordion-collapse collapse" aria-labelledby="remarkheading" data-bs-parent="#remarkdropdown">
+                            <div class="accordion-body">
+                                <div class="container">
+                                    <pre style="font-family:inherit;font-size:inherit;text-wrap:wrap">{{ accessPointDetails['remarks'] }}</pre>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            {% endif %}
+                {% endif %}
 
-            <div class="accordion" id="accordionExample">
-                <div class="accordion-item">
-                <h2 class="accordion-header" id="headingOne">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-controls="collapseOne">
-                    Suggestion? Feedback?
-                    </button>
-                </h2>
-                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
-                        <div class="accordion-body">
-                            <div class="container">
-                                <form action="/suggestion" method="post" enctype="multipart/form-data">
-                                    <div class="mb-3">
-                                        <label for="notes" class="form-label"><b>Notes</b></label>
-                                        <p class="thin">What could be improved with this mural listing?</p>
-                                        <input type="text" class="form-control" style="margin-bottom: 10px; margin-top: -10px;" id="notes" name="notes" required>
-                                        <label for="notes" class="form-label"><b>Your Contact</b></label>
-                                        <p class="thin">How can we reach you to follow up?</p>
-                                        <input type="text" class="form-control" id="contact" name="contact">
-                                        <input type="text" class="visually-hidden" id="muralid" name="muralid" value="{{ accessPointDetails['id'] }}">
-                                    </div>
+                <div class="accordion" id="accordionExample">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-controls="collapseOne">
+                                Suggestion? Feedback?
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                            <div class="accordion-body">
+                                <div class="container">
+                                    <form action="/suggestion" method="post" enctype="multipart/form-data">
+                                        <div class="mb-3">
+                                            <label for="notes" class="form-label"><b>Notes</b></label>
+                                            <p class="thin">What could be improved with this mural listing?</p>
+                                            <input type="text" class="form-control" style="margin-bottom: 10px; margin-top: -10px;" id="notes" name="notes" required>
+                                            <label for="notes" class="form-label"><b>Your Contact</b></label>
+                                            <p class="thin">How can we reach you to follow up?</p>
+                                            <input type="text" class="form-control" id="contact" name="contact">
+                                            <input type="text" class="visually-hidden" id="muralid" name="muralid" value="{{ accessPointDetails['id'] }}">
+                                        </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Submit</button>
                                 </form>
@@ -180,7 +183,7 @@ View Full Size Image</a>{% endif %}</pre>
                     </div>
                 </div>
             </div>
+        </div>
     </div>
-</div>
 
-{% endblock %}
+    {% endblock %}
