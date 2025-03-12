@@ -125,7 +125,7 @@ def access_point_json(access_point: AccessPoint):
     print(access_point)
     base_data = {
         "id": access_point.id,
-        "building": access_point.location.building.id,
+        "building_name": access_point.location.building.name,
         "room": access_point.location.room_number,
         "floor": access_point.location.floor_number,
         "notes": access_point.remarks,
@@ -144,7 +144,10 @@ def access_point_json(access_point: AccessPoint):
         if access_point.location.nickname is not None:
             title += f" - {access_point.location.nickname}"
         base_data.update({
-            "title":  title
+            "title":  title,
+            "floor": f"{integer_to_floor(access_point.floor_min)} to {integer_to_floor(access_point.floor_max)}",
+            "room": f"_{access_point.location.room_number}"
+
         })
     return base_data
 

@@ -103,7 +103,13 @@ View Full Size Image</a>{% endif %}</pre>
             {% endif %}
             
             <h3>Location:</h3>
-            <p>{{ accessPointDetails["location"] }} </p>
+            <p>
+                <strong>Building</strong>: {{ accessPointDetails["building_name"] }} <br>
+                <strong>Floor</strong>: {{ accessPointDetails["floor"] }}
+                <br>
+                <strong>Room</strong>: {{ accessPointDetails["room"] }}
+            </p>
+
 
             {% if accessPointDetails['tags']|length > 0 %}
             <h3>Tags:</h3>
