@@ -168,16 +168,16 @@
                 <button type="submit" class="btn btn-primary">Edit Details</button>
               </form>
 
-              {% if muralFeedback|length > 0 %}
+              {% if accessPointFeedback|length > 0 %}
               <h1>Feedback:</h1>
-              {% for feedback in muralFeedback: %}
+              {% for feedback in accessPointFeedback: %}
               <div class="list-group">
                 <a class="list-group-item">
                   <div class="d-flex w-100 justify-content-between">
-                    <p class="mb-1"><b>Notes:</b> {{ muralFeedback[loop.index-1]['notes'] }}</p>
-                    <p class="text-muted" title="{{ muralFeedback[loop.index-1]['exacttime'] }}">{{ muralFeedback[loop.index-1]['approxtime'] }}</p>
+                    <p class="mb-1"><b>Notes:</b> {{ accessPointFeedback[loop.index-1]['notes'] }}</p>
+                    <p class="text-muted" title="{{ accessPointFeedback[loop.index-1]['exacttime'] }}">{{ accessPointFeedback[loop.index-1]['approxtime'] }}</p>
                   </div>
-                  <small><b>Contact:</b> {{ muralFeedback[loop.index-1]['contact'] }}</small>
+                  <small><b>Contact:</b> {{ accessPointFeedback[loop.index-1]['contact'] }}</small>
                 </a>
               </div>
               {% endfor %}
