@@ -19,7 +19,7 @@ def floor_to_integer(floor_val):
 
 def integer_to_floor(floor:int):
     if floor < 0:
-        return ord('A') + (-floor) -1 
+        return chr(ord('A') + (-floor) -1 )
     elif floor == 0:
         return "N"
     else:
