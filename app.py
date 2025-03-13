@@ -760,6 +760,7 @@ def uploadImageResize(file, access_point_id, count, caption=None, alttext=None, 
     file_obj.seek(0)
 
     with PilImage.open(file_obj) as im:
+        exif = im.getexif()
         width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
 
         (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
@@ -767,7 +768,7 @@ def uploadImageResize(file, access_point_id, count, caption=None, alttext=None, 
         im = im.resize((width, height))
 
         im = im.convert("RGB")
-        im.save(fullsizehash + ".resized.jpg", "JPEG")
+        im.save(fullsizehash + ".resized.jpg", "JPEG", exif=exif)
 
     with open((fullsizehash + ".resized.jpg"), "rb") as rs:
 
