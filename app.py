@@ -920,16 +920,10 @@ def editAccessPoint(id):
         m.notes = request.form["notes"]
     if request.form["remarks"] != "None":
         m.remarks = request.form["remarks"]
-    if request.form["year"] != "None":
-        m.year = int(request.form["year"])
     if request.form["location"] != "None":
         m.location = request.form["location"]
-    if request.form["private_notes"] != "None":
-        m.private_notes = request.form["private_notes"]
-    if request.form["spotify"] != "None":
-        m.spotify = request.form["spotify"]
-    if request.form["nextid"] != "None":
-        m.nextid = request.form["nextid"]
+    # if request.form["private_notes"]  not in ("None", ""):
+    #     m.private_notes = request.form["private_notes"]
     db.session.commit()
     return ("", 204)
 
