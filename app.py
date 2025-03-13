@@ -40,7 +40,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, room_to_integer, integer_to_floor
+from helpers import floor_to_integer, RoomNumber, integer_to_floor
 
 
 app = Flask(__name__)
@@ -1132,7 +1132,8 @@ def upload():
 
     # Step 2: Find or create the location
     # for now we consider elevators as being "located" on "all" floors using the special floor number "0" (we are following the american standard where 1 is ground)
-    floor, room = room_to_integer(request.form["room"])
+    floor, room = RoomNumber.from_string(request.form["room"]).integers()
+
     stmt = db.select(Location).where(
         Location.building_id == building.id,
         Location.floor_number == 0,
