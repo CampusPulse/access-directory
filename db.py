@@ -113,11 +113,11 @@ class AccessPointStatus(Base):
 class Image(Base):
     __tablename__ = "images"
     id: Mapped[int] = mapped_column(primary_key=True)
-    caption: Mapped[str]
-    alttext: Mapped[str]
+    caption: Mapped[Optional[str]]
+    alttext: Mapped[Optional[str]]
     ordering: Mapped[int]
     imghash: Mapped[str]
-    attribution: Mapped[str]
+    attribution: Mapped[Optional[str]]
     datecreated: Mapped[datetime]
     fullsizehash: Mapped[Optional[str]]
 
