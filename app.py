@@ -10,6 +10,7 @@ import re
 from functools import wraps
 from random import shuffle
 from PIL import Image as PilImage
+from PIL.ExifTags import TAGS as EXIF_TAGS
 from datetime import datetime, timezone
 from db import (
     db,
@@ -766,6 +767,11 @@ def uploadImageResize(file, access_point_id, count, caption=None, alttext=None, 
         (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
         # print(width, height)
         im = im.resize((width, height))
+        for k,v in exif.items():
+            if EXIF_TAGS.get(k,k) == "ImageWidth":
+                exif[k] = width
+            elif EXIF_TAGS.get(k,k) == "ImageLength":
+                exif[k] = height
 
         im = im.convert("RGB")
         im.save(fullsizehash + ".resized.jpg", "JPEG", exif=exif)
