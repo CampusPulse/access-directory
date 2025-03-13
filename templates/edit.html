@@ -171,22 +171,6 @@
               </button>
             </div>
           </div>
-    <script>
-        document.addEventListener('keydown', function(event) {
-          switch(event.key) {
-            {% if accessPointDetails['prevmuralid'] != None: %}
-            case 'ArrowLeft':
-              window.location.href = '{{ accessPointDetails['prevmuralid'] }}';
-              break;
-            {% endif %}
-            {% if accessPointDetails['nextmuralid'] != None: %}
-            case 'ArrowRight':
-              window.location.href = '{{ accessPointDetails['nextmuralid'] }}';
-              break;
-            {% endif %}
-          }
-        });
-    </script>
 </div>
 
 {% endblock %}
