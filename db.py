@@ -50,6 +50,8 @@ class Location(Base):
     floor_number: Mapped[int] # negative -> Basement, 0 - any, positive -> floors
     room_number: Mapped[int] # only the room portion
     nickname: Mapped[Optional[str]]  # Example: "Main Library", "Engineering Hall"
+    latitude: Mapped[Optional[int]] # northing
+    longitude: Mapped[Optional[int]] # easting
     is_outside: Mapped[bool] = mapped_column(server_default='FALSE')
     additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
     access_points = relationship("AccessPoint", backref="location")
