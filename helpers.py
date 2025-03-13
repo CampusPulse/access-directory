@@ -50,3 +50,17 @@ class RoomNumber():
         if self.floor >= 10:
             raise ValueError(f"Floor value {self.floor} is greater than one digit")
         return integer_to_floor(self.floor) + str(self.room)
+
+class MapLocation():
+
+    @staticmethod
+    def from_lat_long(lat:float, long:float):
+        PRECISION = 5
+
+        return int(lat * (10 ** PRECISION)), int(long * (10 ** PRECISION))
+    
+    @staticmethod
+    def to_lat_long(lat:int, long: int):
+        PRECISION = 5
+
+        return lat/(10 ** PRECISION), long/(10 ** PRECISION)
