@@ -117,6 +117,7 @@ def access_point_json(access_point: AccessPoint):
     for image in image_data:
         if image.ordering == 0:
             thumbnail = s3_bucket.get_file_s3(image.imghash)
+            images.append(image_json(image))
         else:
             images.append(image_json(image))
     # TODO: use marshmallow to serialize

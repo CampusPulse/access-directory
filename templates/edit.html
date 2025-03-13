@@ -34,7 +34,7 @@
             {% for image in accessPointDetails["images"]: %}
             <img style="width:100%;" src="{{ accessPointDetails['images'][loop.index-1]['imgurl'] }}">
             <form action="/makethumbnail?muralid={{ accessPointDetails['id'] }}&imageid={{ accessPointDetails['images'][loop.index-1]['id'] }}" method="post">
-                <button type="submit" class="btn btn-primary">Make this the thumbnail</button>
+                <button type="submit" class="btn btn-primary" disabled="{{accessPointDetails['images'][loop.index-1]['ordering'] == 0}}">Make this the thumbnail</button>
             </form>
             <form action="/editimage/{{ accessPointDetails['images'][loop.index-1]['id'] }}" method="post">
                 <div class="mb-3">
