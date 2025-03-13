@@ -13,6 +13,14 @@
 ## Database Schema
 This project uses SQLAlchemy to access a PostgresQL database. The DB schema is defined in `db.py`
 
+This project also uses flask-migrate to allow for database schema revisions
+
+to create a new revision:
+`pipenv run flask db revision --autogenerate -m "[message]"`
+
+to upgrade your schema:
+`pipenv run flask db upgrade`
+
 ## Docker Infrastructure:
 The docker compose config in this repository is intended to provide a small/simple suite of services for TunnelVision to rely on. This is for development and testing purposes.
 
