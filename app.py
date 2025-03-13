@@ -649,6 +649,7 @@ Generic error handler
 
 @app.errorhandler(HTTPException)
 def not_found(e):
+    logger.error(e)
     return render_template("404.html"), 404
 
 
