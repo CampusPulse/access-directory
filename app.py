@@ -1138,6 +1138,7 @@ def upload():
             building_id=building.id,
             floor_number=0,
             room_number=room,
+            nickname=request.form["location-nick"],
             additional_info=request.form["location"]
         )
         db.session.add(location)
