@@ -89,10 +89,6 @@ db.init_app(app)
 
 migrate = Migrate(app, db)
 
-with app.app_context():
-    db.create_all()
-    stamp(directory="migrations")
-
 ########################
 #
 #   Helpers
@@ -1227,6 +1223,10 @@ def upload():
 
 
 if __name__ == "__main__":
+    # TODO: figure out how to accept this via CLI arg:
+    # with app.app_context():
+    #     db.create_all()
+    #     stamp(directory="migrations")
     if not app.config["DEBUG"]:
         app.run(host="0.0.0.0", port=8080)
     else:
