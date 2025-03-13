@@ -136,6 +136,10 @@ def access_point_json(access_point: AccessPoint):
         base_data.update({
             "thumbnail": thumbnail
         })
+    if access_point.location.nickname is not None:
+        base_data.update({
+            "location_nick": access_point.location.nickname
+        })
 
     if isinstance(access_point, Elevator):
         title = f"{access_point.location.building.name}"
@@ -920,6 +924,8 @@ def editAccessPoint(id):
         m.notes = request.form["notes"]
     if request.form["remarks"]  not in ("None", ""):
         m.remarks = request.form["remarks"]
+    if request.form["location-nick"]  not in ("None", ""):
+        m.location.nickname = request.form["location-nick"]
     if request.form["location"] not in ("None", ""):
         m.location = request.form["location"]
     # if request.form["private_notes"]  not in ("None", ""):

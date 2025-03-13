@@ -138,6 +138,11 @@
                     <p class="thin">Describe the location of the mural. You don't have to have GPS coordinates, just say what building it's under, or if it's near a landmark like Corner Store.</p>
                     <input value="{{ accessPointDetails['location'] }}" type="text" class="form-control" id="location" name="location">
                 </div>
+                <div class="mb-3">
+                  <label for="location-nick" class="form-label">Location Nickname</label>
+                  <p class="thin">What would people commonly know this location as? Ideally something different from other locations that may be in the catalog (i.e. "South elevator", "Right" etc )</p>
+                  <input value="{{ accessPointDetails['location_nick'] }}" type="text" class="form-control" id="location-nick" name="location-nick">
+                </div>
                 <!-- <h1>Private Information</h1>
                 <div class="mb-3">
                     <label for="location" class="form-label">Private Notes</label>
