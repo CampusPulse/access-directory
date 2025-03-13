@@ -1136,7 +1136,8 @@ def upload():
     stmt = db.select(Location).where(
         Location.building_id == building.id,
         Location.floor_number == 0,
-        Location.room_number == room
+        Location.room_number == room,
+        Location.is_outside is False # elevators should not be outside
     )
     location = db.session.execute(stmt).scalar_one_or_none()
 
