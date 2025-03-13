@@ -193,9 +193,9 @@ def image_json(image: Image):
     out = {
         "imgurl": s3_bucket.get_file_s3(image.imghash),
         "ordering": image.ordering,
-        "caption": image.caption,
-        "alttext": image.alttext,
-        "attribution": image.attribution,
+        "caption": image.caption or "",
+        "alttext": image.alttext or "",
+        "attribution": image.attribution or "",
         "datecreated": image.datecreated,
         "id": image.id,
     }
