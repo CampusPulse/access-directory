@@ -771,14 +771,14 @@ def uploadImageResize(file, access_point_id, count):
         im = im.resize((width, height))
 
         im = im.convert("RGB")
-        im.save(fullsizehash + ".resized", "JPEG")
+        im.save(fullsizehash + ".resized.jpg", "JPEG")
 
-    with open((fullsizehash + ".resized"), "rb") as rs:
+    with open((fullsizehash + ".resized.jpg"), "rb") as rs:
 
         file_hash = hashlib.md5(rs.read()).hexdigest()
         rs.seek(0)
 
-        s3_bucket.upload_file(file_hash, rs, filename=fullsizehash + ".resized")
+        s3_bucket.upload_file(file_hash, rs, filename=fullsizehash + ".resized.jpg")
 
         # print(s3_bucket.get_file_s3(file_hash))
 
