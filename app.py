@@ -1,4 +1,5 @@
 import os
+import io
 import subprocess
 from flask import Flask, render_template, request, redirect, abort, url_for
 import logging
@@ -753,13 +754,16 @@ Upload fullsize and resized image, add relation to access point given ID
 
 
 def uploadImageResize(file, access_point_id, count):
+    file_obj = io.BytesIO(file.read())
     fullsizehash = hashlib.md5(file.read()).hexdigest()
     file.seek(0)
 
     # Upload full size img to S3
     s3_bucket.upload_file(fullsizehash, file)
 
-    with PilImage.open(file) as im:
+    file_obj.seek(0)
+
+    with PilImage.open(file_obj) as im:
         width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
 
         (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
