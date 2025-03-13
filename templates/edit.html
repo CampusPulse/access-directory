@@ -118,13 +118,6 @@
                   <option {{ 'selected' if t.name in accessPointDetails['tags'] else '' }} value="{{ t.name }}">{{ t.name }}</option>
                   {% endfor %}
                 </select>
-                <label for="artists">Artists:</label>
-                <p class="thin">Create more artists on the <a href="/admin">Admin Panel</a>.</p>
-                <select name="artists" class="form-select form-select-sm" multiple aria-label="multiple select">
-                  {% for a in artists %}
-                  <option {{ 'selected' if a.id in accessPointDetails['artists']|map(attribute='id') else '' }} value="{{ a.id }}">{{ a.name }}</option>
-                  {% endfor %}
-                </select>
                 <div class="mb-3">
                     <label for="active" class="form-label">Active</label>
                     <input {{ accessPointDetails['active'] }} type="checkbox" id="active" name="active">
@@ -141,30 +134,15 @@
                     <textarea type="text" class="form-control" id="remarks" name="remarks">{{ accessPointDetails['remarks'] }}</textarea>
                 </div>
                 <div class="mb-3">
-                    <label for="year" class="form-label">Year</label>
-                    <p class="thin">The approximate year this piece was painted. If painted over two years, use the lowest year. If the year is unknown, enter 0.</p>
-                    <input value="{{ accessPointDetails['year'] }}" type="text" class="form-control" id="year" name="year" required>
-                </div>
-                <div class="mb-3">
                     <label for="location" class="form-label">Location</label>
                     <p class="thin">Describe the location of the mural. You don't have to have GPS coordinates, just say what building it's under, or if it's near a landmark like Corner Store.</p>
                     <input value="{{ accessPointDetails['location'] }}" type="text" class="form-control" id="location" name="location">
                 </div>
-                <div class="mb-3">
-                  <label for="spotify" class="form-label">Spotify</label>
-                  <p class="thin">Add the song ID for a related song on Spotify. Copy the "song link" and paste the code after the "track/" portion of the URL. Also trim the "?si=xxx" portion of the url.</p>
-                  <input value="{{ accessPointDetails['spotify'] }}" type="text" class="form-control" id="spotify" name="spotify">
-                </div>
-                <div class="mb-3">
-                  <label for="nextmuralid" class="form-label">Next Mural</label>
-                  <p class="thin">The ID of the next mural in sequence</p>
-                  <input value="{{ accessPointDetails['nextmuralid'] }}" type="text" class="form-control" id="nextmuralid" name="nextmuralid">
-                </div>
-                <h1>Private Information</h1>
+                <!-- <h1>Private Information</h1>
                 <div class="mb-3">
                     <label for="location" class="form-label">Private Notes</label>
                     <textarea type="text" class="form-control" id="private_notes" name="private_notes">{{ accessPointDetails['private_notes'] }}</textarea>
-                </div>
+                </div> -->
                 <button type="submit" class="btn btn-primary">Edit Details</button>
               </form>
 
