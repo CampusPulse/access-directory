@@ -916,11 +916,11 @@ def editAccessPoint(id):
 
     m.active = True if "active" in request.form else False
 
-    if request.form["notes"] != "None":
+    if request.form["notes"] not in ("None", ""):
         m.notes = request.form["notes"]
-    if request.form["remarks"] != "None":
+    if request.form["remarks"]  not in ("None", ""):
         m.remarks = request.form["remarks"]
-    if request.form["location"] != "None":
+    if request.form["location"] not in ("None", ""):
         m.location = request.form["location"]
     # if request.form["private_notes"]  not in ("None", ""):
     #     m.private_notes = request.form["private_notes"]
