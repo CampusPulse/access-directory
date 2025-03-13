@@ -120,7 +120,6 @@ def access_point_json(access_point: AccessPoint):
         else:
             images.append(image_json(image))
     # TODO: use marshmallow to serialize
-    print(access_point)
     base_data = {
         "id": access_point.id,
         "building_name": access_point.location.building.name,
