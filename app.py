@@ -753,7 +753,7 @@ Upload fullsize and resized image, add relation to access point given ID
 """
 
 
-def uploadImageResize(file, access_point_id, count):
+def uploadImageResize(file, access_point_id, count, caption=None, alttext=None, attribution=None):
     file_obj = io.BytesIO(file.read())
     fullsizehash = hashlib.md5(file.read()).hexdigest()
     file.seek(0)
@@ -785,6 +785,9 @@ def uploadImageResize(file, access_point_id, count):
         img = Image(
             fullsizehash=fullsizehash,
             ordering=count,
+            caption=caption,
+            alttext=alttext,
+            attribution=attribution,
             imghash=file_hash,
             datecreated=datetime.now(),
         )
