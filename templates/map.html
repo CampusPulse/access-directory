@@ -1,0 +1,66 @@
+{% extends "header.html" %} 
+{% block title %}
+Map - CampusPulse Access
+{% endblock %}
+{% block metadata %}
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js"></script>
+{% endblock %}
+{% block content %}
+
+
+<div id="map" style="height: 100%;"></div>
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZGxsMzE4MiIsImEiOiJjbTd5MGl0Z2EwMmY4Mmtva3RwZGhsZzN2In0.IJf35DbJhKNps9DCMdpt0A';
+    v1 = new mapboxgl.LngLatBounds([-77.7203, 43.0668], [-77.6306, 43.1053]);
+    const map = new mapboxgl.Map({
+        container: 'map', // container ID
+        style: 'mapbox://styles/dll3182/cm83naqcq003701qvbsvm95v6', // Custom Mapbox style
+        center: [-77.6758, 43.0842], // Center on your school
+        zoom: 16, // Adjust the zoom level
+        maxBounds: v1 // Restrict the map to the campus bounds
+    });
+
+    map.on('load', () => {
+        // Add an image to use as a custom marker
+        map.loadImage(
+            'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png',
+            (error, image) => {
+                if (error) throw error;
+                map.addImage('custom-marker', image);
+
+                // Load the GeoJSON file using fetch
+                fetch('https://campuspulse.github.io/access-map-demo/accessiblitypoints.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Add the GeoJSON source
+                        map.addSource('points', {
+                            'type': 'geojson',
+                            'data': data
+                        });
+
+                        // Add a symbol layer
+                        map.addLayer({
+                            'id': 'points',
+                            'type': 'symbol',
+                            'source': 'points',
+                            'layout': {
+                                'icon-allow-overlap': true,
+                                'icon-image': 'custom-marker',
+                                // get the title name from the source's "title" property
+                                //'text-field': ['get', 'title'],
+                                'text-font': [
+                                    'Open Sans Semibold',
+                                    'Arial Unicode MS Bold'
+                                ],
+                                'text-offset': [0, 1.25],
+                                'text-anchor': 'top'
+                            }
+                        });
+                    })
+                    .catch(error => console.error('Error loading GeoJSON:', error));
+            }
+        );
+    });
+</script>
+{% endblock %}

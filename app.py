@@ -554,6 +554,10 @@ def home():
 def about():
     return render_template("about.html")
 
+@app.route("/map")
+def map_page():
+    return render_template("map.html")
+
 
 @app.route("/catalog?q=<query>")
 @app.route("/catalog")
