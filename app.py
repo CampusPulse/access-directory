@@ -1244,13 +1244,13 @@ def upload():
         # Begin adding full size to database
         f[1].seek(0)
 
-        uploadImageResize(f[1], access_point_id, count)
+        uploadImageResize(f[1], elevator.id, count)
 
         count += 1
 
     db.session.commit()
 
-    return redirect(f"/edit/{access_point_id}")
+    return redirect(f"/edit/{elevator.id}")
 
 
 if __name__ == "__main__":
