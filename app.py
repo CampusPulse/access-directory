@@ -656,6 +656,25 @@ def not_found(e):
     logger.error(e)
     return render_template("404.html"), 404
 
+########################
+#
+#   Ingest
+#
+########################
+
+@app.route("/email_webhook", methods=["POST"])
+def email_webhook():
+
+    # check to make sure the email is addressed to our internal address and FROM RIT's system
+    
+
+    # Log POST fields (headers and body)
+    for key, value in request.form.items():
+        logging.info(f"POST: {key} => {value}")
+
+    return ("", 200)
+
+
 
 ########################
 #
