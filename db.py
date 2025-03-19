@@ -28,6 +28,12 @@ class PowerSource(enum.Enum):
     HARDWIRED = 1
     BATTERY = 2
 
+class StatusType(enum.Enum):
+    UNKNOWN = 0
+    BROKEN = 1
+    IN_PROGRESS = 2
+    FIXED = 3
+    VERIFIED = 4
 
 class Base(DeclarativeBase):
     pass
@@ -107,8 +113,10 @@ class AccessPointStatus(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"))
     status: Mapped[str]  # Example: "Operational", "Out of Service", "Maintenance"
+    status_type: Mapped[EnumType(StatusType)] = mapped_column(EnumType(StatusType))
     timestamp: Mapped[datetime]  # When the status was recorded
     notes: Mapped[Optional[str]]  # Additional context if needed
+    ref: Mapped[str] # ticket number/reference
 
     # Relationship to AccessPoint
     access_point = relationship("AccessPoint", back_populates="status_history")
