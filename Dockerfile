@@ -11,6 +11,9 @@ RUN useradd -ms /bin/bash campuspulse
 USER campuspulse
 WORKDIR /app
 
+# needed because we changed users
+RUN git config --global --add safe.directory /app
+
 # ADD Pipfile.lock Pipfile .
 COPY Pipfile.lock Pipfile.lock
 COPY Pipfile Pipfile
