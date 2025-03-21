@@ -60,7 +60,7 @@ class Location(Base):
     latitude: Mapped[Optional[int]] # northing
     longitude: Mapped[Optional[int]] # easting
     is_outside: Mapped[bool] = mapped_column(server_default='FALSE')
-    additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
+    additional_info: Mapped[Optional[str]]  # Example: "The accessible entrance between X and Y"
     access_points = relationship("AccessPoint", backref="location")
 
 
