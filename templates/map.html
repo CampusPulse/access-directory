@@ -30,7 +30,7 @@ Map - CampusPulse Access
                 map.addImage('custom-marker', image);
 
                 // Load the GeoJSON file using fetch
-                fetch('https://campuspulse.github.io/access-map-demo/accessiblitypoints.geojson')
+                fetch('/map.geojson')
                     .then(response => response.json())
                     .then(data => {
                         // Add the GeoJSON source
