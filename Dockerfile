@@ -24,7 +24,6 @@ COPY . .
 # Expose the port the Flask app runs on
 EXPOSE 5000
 
-ENV FLASK_APP=app.py
 
 # Run the Flask application
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+CMD python3 -m gunicorn --workers 2 --bind 0.0.0.0:5000 app:app

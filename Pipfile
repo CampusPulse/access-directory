@@ -43,6 +43,7 @@ zipp = "==3.19.2"
 pandas = "*"
 boto3 = "*"
 python-dotenv = "*"
+gunicorn = "*"
 
 [dev-packages]
 
