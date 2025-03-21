@@ -92,10 +92,9 @@ migrate = Migrate(app, db)
 
 ########################
 #
-#   Helpers
+#region Helpers
 #
 ########################
-
 """
 Create a JSON object for a access_point
 """
@@ -536,7 +535,7 @@ def getRandomImages(count):
 
 ########################
 #
-#   Pages
+#region Pages
 #
 ########################
 
@@ -658,7 +657,7 @@ def not_found(e):
 
 ########################
 #
-#   Ingest
+#region Ingest
 #
 ########################
 
@@ -678,12 +677,8 @@ def email_webhook():
 
 ########################
 #
-#   Management
+#region Management Helpers
 #
-########################
-
-########################
-# Helpers
 ########################
 
 
@@ -829,7 +824,7 @@ def uploadImageResize(file, access_point_id, count):
 
 
 ########################
-#   Pages
+#region Pages
 ########################
 
 """
@@ -862,7 +857,7 @@ def admin():
 
 
 ########################
-#   Form submissions
+#region Form submissions
 ########################
 
 """
