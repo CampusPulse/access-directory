@@ -857,7 +857,35 @@ def admin():
 
 
 ########################
-#region Form submissions
+# region API
+########################
+
+
+@app.route("/map.geojson")
+def mapdata():
+    return {
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "id": 99999999,
+                    "name": "Nothing to see here",
+                    "geometry_id": "99999999",
+                    "images": [],
+                },
+                "geometry": {
+                    "coordinates": [-77.6653, 43.08101],  # long/x  # lat/y
+                    "type": "Point",
+                },
+                "id": "02eaa87d832995f670c9ee7c846e6925",
+            }
+        ],
+        "type": "FeatureCollection"
+    }
+
+
+########################
+# region Form submissions
 ########################
 
 """
