@@ -43,7 +43,8 @@ class Building(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     number: Mapped[str]
     name: Mapped[str]  # Example: "Main Library", "Engineering Hall"
-    short_name: Mapped[str]  # Example: "EH"
+    acronym: Mapped[str]  # acronym Example: "EAS"
+    short_name: Mapped[Optional[str]]  # Example: "Eastman"
     address: Mapped[Optional[str]]  # Optional: Full address if needed
     additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
     locations = relationship("Location", backref="building")
