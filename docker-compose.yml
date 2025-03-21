@@ -24,6 +24,21 @@ services:
     volumes:
       - tunnelvision-db-data:/var/lib/postgresql/data
 
+  campuspulse-access:
+    image: localhost/access-directory:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: accessdirectory
+    restart: unless-stopped
+    env_file: "compose.env"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+      - minio
+  
+
 volumes:
   minio-data:
   tunnelvision-db-data:
