@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from db import (
     db,
     func,
+    inspect,
     ShelterType,
     ButtonActivation,
     MountSurface,
@@ -32,7 +33,7 @@ from db import (
     ImageAccessPointRelation,
     Feedback,
 )
-from flask_migrate import Migrate, stamp
+from flask_migrate import Migrate, stamp, upgrade
 from s3 import S3Bucket
 from typing import Optional
 import shutil
@@ -89,6 +90,20 @@ logging.info(f"Connecting to DB {app.config['DBNAME']}")
 db.init_app(app)
 
 migrate = Migrate(app, db)
+
+with app.app_context():
+    # detect if database is empty
+    # if so create and stamp it
+    insp = inspect(db.engine)
+    if not insp.get_table_names():
+        logger.info("No database tables found. Creating Database")
+        db.create_all()
+        stamp(directory="migrations")
+    else:
+        # if database wasnt empty, attempt to upgrade the db
+        # This should do nothing if its already up to date
+        logger.info("Checking for database schema upgrades...")
+        upgrade(directory="migrations")
 
 ########################
 #
