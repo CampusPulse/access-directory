@@ -25,7 +25,7 @@ services:
       - tunnelvision-db-data:/var/lib/postgresql/data
 
   campuspulse-access:
-    image: localhost/access-directory:latest
+    image: ghcr.io/campuspulse/access-directory:main
     build:
       context: .
       dockerfile: ./Dockerfile
