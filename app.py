@@ -1161,15 +1161,7 @@ def makeThumbnail():
     # Upload thumnail version
     s3_bucket.upload_file(file_hash, thumbnail_file, (newfilename + ".thumbnail.jpg"))
 
-    img = Image(imghash=file_hash, ordering=0)
-    db.session.add(img)
-    db.session.flush()
-
-    img_id = img.id
-    db.session.add(
-        ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
-    )
-    db.session.commit()
+    associate_thumbnail(file_hash, thumbnail_file, access_point_id)
 
     return redirect(f"/edit/{access_point_id}")
 
