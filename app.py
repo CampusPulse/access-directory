@@ -818,6 +818,11 @@ def creationTimeFromFileExif(file):
         exif_format = "%Y:%m:%d %H:%M:%S"
         return datetime.strptime(exifdate, exif_format)
 
+def scrubGPSFromExif(exif):
+    del exif[ExifBase.GPSInfo.value]
+    return exif
+
+
 """
 Upload fullsize and resized image, add relation to access point given ID
 """
@@ -842,11 +847,9 @@ def uploadImageResize(file, access_point_id, count):
         (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
         # print(width, height)
         im = im.resize((width, height))
-        for k, v in exif.items():
-            if EXIF_TAGS.get(k, k) == "ImageWidth":
-                exif[k] = width
-            elif EXIF_TAGS.get(k, k) == "ImageLength":
-                exif[k] = height
+        exif = scrubGPSFromExif(exif)
+        exif[ExifBase.ImageWidth.value] = width
+        exif[ExifBase.ImageLength.value] = height
                 
         im = im.convert("RGB")
         im.save(fullsizehash + ".resized.jpg", "JPEG", exif=exif)
