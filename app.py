@@ -755,23 +755,6 @@ def make_thumbnail(access_point_id, file):
         im = im.convert("RGB")
         im.save(file + ".thumbnail", "JPEG")
 
-    with open(file + ".thumbnail", "rb") as tb:
-
-        file_hash = hashlib.md5(tb.read()).hexdigest()
-        tb.seek(0)
-
-        # Upload thumnail version
-        s3_bucket.upload_file(file_hash, tb, (file + ".thumbnail"))
-
-        img = Image(imghash=file_hash, ordering=0)
-        db.session.add(img)
-        db.session.flush()
-
-        img_id = img.id
-        db.session.add(
-            ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
-        )
-        db.session.commit()
 
 
 """
