@@ -833,10 +833,14 @@ def deleteAccessPointEntry(id):
 
 
 
-def creationTimeFromFileExif(file):
+def creationTimeFromFileExif(file, default=datetime.now()):
     with PilImage.open(file) as im:
         exif = im.getexif()
-        exifdate = exif[ExifBase.DateTime.value]
+        try:
+            exifdate = exif[ExifBase.DateTime.value]
+        except KeyError:
+            # No Exif Data available
+            return default
         exif_format = "%Y:%m:%d %H:%M:%S"
         return datetime.strptime(exifdate, exif_format)
 
