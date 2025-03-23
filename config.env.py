@@ -14,4 +14,6 @@ S3_SECRET = os.getenv("S3_SECRET", default="")
 BUCKET_NAME = os.getenv("BUCKET_NAME", default="tunnelvision")
 ITEMSPERPAGE = 18
 
+WEBHOOK_CREDENTIAL = os.getenv("WEBHOOK_CREDENTIAL", default="")
+
 DEBUG = os.getenv("DEBUG", default=False)
