@@ -742,16 +742,15 @@ def debug_only(f):
     return wrapped
 
 
-def make_thumbnail(input_file, output_file):
+def make_thumbnail(input_file, output_file, raise_if_already=True):
     """
     Given an input file (as a filename to an image), downscale it to a thumbnail and store it in the (file or string filepath) represented by output_file
     """
 
     with PilImage.open(input_file) as im:
         if im.width == 256 or im.height == 256:
-            # Already a thumbnail
-            # print("Already a thumbnail...")
-            return False
+            if raise_if_already:
+                raise ValueError("Thumbnail requested from image that is already thumbnail size.")
         im = crop_center(im, min(im.size), min(im.size))
         im.thumbnail((256, 256))
 
