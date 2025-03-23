@@ -810,13 +810,20 @@ def deleteAccessPointEntry(id):
     db.session.commit()
 
 
+
+def creationTimeFromExif(file):
+    with PilImage.open(file) as im:
+        exif = im.getexif()
+        exifdate = exif[EXIF_TAGS["DateTime"]]
+        exif_format = "%Y:%m:%d %H:%M:%S"
+        return datetime.strptime(exifdate, exif_format)
+
 """
 Upload fullsize and resized image, add relation to access point given ID
 """
 
 
 def uploadImageResize(file, access_point_id, count):
-    imageTakenOn = None
     file_obj = io.BytesIO(file.read())
     fullsizehash = hashlib.md5(file.read()).hexdigest()
     file.seek(0)
@@ -824,6 +831,8 @@ def uploadImageResize(file, access_point_id, count):
     # Upload full size img to S3
     s3_bucket.upload_file(fullsizehash, file)
 
+    file_obj.seek(0)
+    imageTakenOn = creationTimeFromExif(file_obj)
     file_obj.seek(0)
 
     with PilImage.open(file_obj) as im:
@@ -838,10 +847,7 @@ def uploadImageResize(file, access_point_id, count):
                 exif[k] = width
             elif EXIF_TAGS.get(k, k) == "ImageLength":
                 exif[k] = height
-            elif EXIF_TAGS.get(k, k) == "DateTime":
-                exif_format = "%Y:%m:%d %H:%M:%S"
-                imageTakenOn = datetime.strptime(v, exif_format)
-
+                
         im = im.convert("RGB")
         im.save(fullsizehash + ".resized.jpg", "JPEG", exif=exif)
 
