@@ -757,6 +757,31 @@ def make_thumbnail(input_file, output_file, raise_if_already=True):
         im = im.convert("RGB")
         im.save(output_file, "JPEG")
 
+   
+def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
+    """
+    associate a thumbnail from S3 with a particular item in the database
+    """
+    thumbnail_file.seek(0)
+    created = creationTimeFromFileExif(thumbnail_file)
+
+
+    img = Image(
+        imghash=file_hash,
+        ordering=0,
+        datecreated=created
+    )
+    db.session.add(img)
+    db.session.flush()
+    img_id = img.id
+    db.session.add(
+        ImageAccessPointRelation(
+            image_id=img_id, access_point_id=item_identifier
+        )
+    )
+
+    db.session.commit()
+
 
 
 """
@@ -1332,18 +1357,8 @@ def upload():
             # Upload thumnail version
             s3_bucket.upload_file(file_hash, thumbnail_file, (fullsizehash + ".thumbnail"))
             
+            associate_thumbnail(file_hash, thumbnail_file, elevator.id)
             
-            img = Image(imghash=file_hash, ordering=0)
-            db.session.add(img)
-            db.session.flush()
-            img_id = img.id
-            db.session.add(
-                ImageAccessPointRelation(
-                    image_id=img_id, access_point_id=elevator.id
-                )
-            )
-
-            db.session.commit()
             count += 1
 
         # Begin adding full size to database
