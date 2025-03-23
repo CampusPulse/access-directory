@@ -60,8 +60,15 @@ class S3Bucket:
         # There is most certainly a better way to do this but w/e
         if filename == "":
             filename = f.filename
-
+        print(filename)
         content_type = mimetypes.guess_type(filename)[0]
+
+        if content_type is None:
+            mgk = magic.Magic(mime=True)
+            # less than 2048 bytes may produce incorrect identification, but unsure if this applies to image file types
+            content_type = mgk.from_buffer(f.read(2048))
+            f.seek(0)
+        print(content_type)
         # Upload the file
         self._client.upload_fileobj(
             f, self.name, file_hash, ExtraArgs={"ContentType": content_type}

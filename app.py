@@ -10,7 +10,7 @@ import re
 from functools import wraps
 from random import shuffle
 from PIL import Image as PilImage
-from PIL.ExifTags import TAGS as EXIF_TAGS
+from PIL.ExifTags import TAGS as EXIF_TAGS, Base as ExifBase
 from datetime import datetime, timezone
 from db import (
     db,
@@ -814,7 +814,7 @@ def deleteAccessPointEntry(id):
 def creationTimeFromExif(file):
     with PilImage.open(file) as im:
         exif = im.getexif()
-        exifdate = exif[EXIF_TAGS["DateTime"]]
+        exifdate = exif[ExifBase.DateTime.value]
         exif_format = "%Y:%m:%d %H:%M:%S"
         return datetime.strptime(exifdate, exif_format)
 
