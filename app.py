@@ -811,7 +811,7 @@ def deleteAccessPointEntry(id):
 
 
 
-def creationTimeFromExif(file):
+def creationTimeFromFileExif(file):
     with PilImage.open(file) as im:
         exif = im.getexif()
         exifdate = exif[ExifBase.DateTime.value]
@@ -832,7 +832,7 @@ def uploadImageResize(file, access_point_id, count):
     s3_bucket.upload_file(fullsizehash, file)
 
     file_obj.seek(0)
-    imageTakenOn = creationTimeFromExif(file_obj)
+    imageTakenOn = creationTimeFromFileExif(file_obj)
     file_obj.seek(0)
 
     with PilImage.open(file_obj) as im:
