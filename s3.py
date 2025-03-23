@@ -4,6 +4,13 @@
 
 import mimetypes
 import boto3
+from io import BufferedReader
+
+
+# based on https://github.com/boto/s3transfer/issues/80#issuecomment-482534256
+class NonCloseableBufferedReader(BufferedReader):
+    def close(self):
+        self.flush()
 
 
 class S3Bucket:
@@ -63,9 +70,11 @@ class S3Bucket:
 
         content_type = mimetypes.guess_type(filename)[0]
         # Upload the file
+        buffer = NonCloseableBufferedReader(f)
         self._client.upload_fileobj(
-            f, self.name, file_hash, ExtraArgs={"ContentType": content_type}
+            buffer, self.name, file_hash, ExtraArgs={"ContentType": content_type}
         )
+        buffer.detach()
 
     def remove_file(self, file_hash):
         # Does anybody read these comments
