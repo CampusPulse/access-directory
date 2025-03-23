@@ -1124,7 +1124,27 @@ def makeThumbnail():
     newfilename = f"/tmp/{image.id}.thumb"
 
     s3_bucket.get_file(image.imghash, newfilename)
-    make_thumbnail(access_point_id, newfilename)
+    thumbnail_file = io.BytesIO()
+    try:
+        make_thumbnail(newfilename, thumbnail_file)
+    except ValueError as e:
+        logger.error(f"Exception encountered generating thumbnail: {e}")
+
+    file_hash = hashlib.md5(thumbnail_file.read()).hexdigest()
+    thumbnail_file.seek(0)
+
+    # Upload thumnail version
+    s3_bucket.upload_file(file_hash, thumbnail_file, (newfilename + ".thumbnail.jpg"))
+
+    img = Image(imghash=file_hash, ordering=0)
+    db.session.add(img)
+    db.session.flush()
+
+    img_id = img.id
+    db.session.add(
+        ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
+    )
+    db.session.commit()
 
     return redirect(f"/edit/{access_point_id}")
 
