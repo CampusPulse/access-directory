@@ -742,9 +742,12 @@ def debug_only(f):
     return wrapped
 
 
-def make_thumbnail(access_point_id, file):
+def make_thumbnail(input_file, output_file):
+    """
+    Given an input file (as a filename to an image), downscale it to a thumbnail and store it in the (file or string filepath) represented by output_file
+    """
 
-    with PilImage.open(file) as im:
+    with PilImage.open(input_file) as im:
         if im.width == 256 or im.height == 256:
             # Already a thumbnail
             # print("Already a thumbnail...")
@@ -753,7 +756,7 @@ def make_thumbnail(access_point_id, file):
         im.thumbnail((256, 256))
 
         im = im.convert("RGB")
-        im.save(file + ".thumbnail", "JPEG")
+        im.save(output_file, "JPEG")
 
 
 
