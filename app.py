@@ -816,6 +816,7 @@ Upload fullsize and resized image, add relation to access point given ID
 
 
 def uploadImageResize(file, access_point_id, count):
+    imageTakenOn = None
     file_obj = io.BytesIO(file.read())
     fullsizehash = hashlib.md5(file.read()).hexdigest()
     file.seek(0)
@@ -837,6 +838,9 @@ def uploadImageResize(file, access_point_id, count):
                 exif[k] = width
             elif EXIF_TAGS.get(k, k) == "ImageLength":
                 exif[k] = height
+            elif EXIF_TAGS.get(k, k) == "DateTime":
+                exif_format = "%Y:%m:%d %H:%M:%S"
+                imageTakenOn = datetime.strptime(v, exif_format)
 
         im = im.convert("RGB")
         im.save(fullsizehash + ".resized.jpg", "JPEG", exif=exif)
@@ -854,7 +858,7 @@ def uploadImageResize(file, access_point_id, count):
             fullsizehash=fullsizehash,
             ordering=count,
             imghash=file_hash,
-            datecreated=datetime.now(),
+            datecreated=imageTakenOn or datetime.now(),
         )
         db.session.add(img)
         db.session.flush()
