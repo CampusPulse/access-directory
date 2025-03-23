@@ -1,4 +1,4 @@
-
+from dataclasses import dataclass
 
 ANY_FLOOR_CHAR = "_"
 
@@ -24,6 +24,7 @@ def integer_to_floor(floor_int:int):
     else:
         return str(floor_int)
 
+@dataclass
 class RoomNumber():
     """A helper class to enable conversion from human readable room numbers to a neat integer system for database storage
     """
