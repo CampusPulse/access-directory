@@ -1337,7 +1337,7 @@ def upload():
             
             thumbnail_file = io.BytesIO()
             try:
-                make_thumbnail(newfilename, thumbnail_file)
+                make_thumbnail(fullsizehash, thumbnail_file)
             except ValueError as e:
                 logger.error(f"Exception encountered generating thumbnail: {e}")
                 # dont crash, process the next image
