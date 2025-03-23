@@ -1317,34 +1317,31 @@ def upload():
             with open(fullsizehash, "wb") as file:
                 f[1].seek(0)
                 f[1].save(file)
+            
+            thumbnail_file = io.BytesIO()
+            try:
+                make_thumbnail(newfilename, thumbnail_file)
+            except ValueError as e:
+                logger.error(f"Exception encountered generating thumbnail: {e}")
+                # dont crash, process the next image
+                continue
 
-            with PilImage.open(fullsizehash) as im:
-                if im.width == 256 or im.height == 256:
-                    # Already a thumbnail
-                    # print("Already a thumbnail...")
-                    continue
-                im = crop_center(im, min(im.size), min(im.size))
-                im.thumbnail((256, 256))
+            file_hash = hashlib.md5(thumbnail_file.read()).hexdigest()
+            thumbnail_file.seek(0)
 
-                im = im.convert("RGB")
-                im.save(fullsizehash + ".thumbnail", "JPEG")
-
-            with open(fullsizehash + ".thumbnail", "rb") as tb:
-
-                file_hash = hashlib.md5(tb.read()).hexdigest()
-                tb.seek(0)
-
-                # Upload thumnail version
-                s3_bucket.upload_file(file_hash, tb, (fullsizehash + ".thumbnail"))
-                img = Image(imghash=file_hash, ordering=0)
-                db.session.add(img)
-                db.session.flush()
-                img_id = img.id
-                db.session.add(
-                    ImageAccessPointRelation(
-                        image_id=img_id, access_point_id=elevator.id
-                    )
+            # Upload thumnail version
+            s3_bucket.upload_file(file_hash, thumbnail_file, (fullsizehash + ".thumbnail"))
+            
+            
+            img = Image(imghash=file_hash, ordering=0)
+            db.session.add(img)
+            db.session.flush()
+            img_id = img.id
+            db.session.add(
+                ImageAccessPointRelation(
+                    image_id=img_id, access_point_id=elevator.id
                 )
+            )
 
             db.session.commit()
             count += 1
