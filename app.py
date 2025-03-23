@@ -233,6 +233,18 @@ def crop_center(pil_img, crop_width, crop_height):
     )
 
 
+
+def limit_height(pil_img, height_limit):
+    """
+    Scale an image such that the height is equal to the height limit and the aspect ratio remains the same
+    """
+    # scale width proportionally to height
+    width = (pil_img.width * height_limit) // pil_img.height
+    (width, height) = (width, height_limit)
+    # set new dimensions
+    return pil_img.resize((width, height))
+
+
 """
 Search all access points given query
 """
@@ -842,11 +854,7 @@ def uploadImageResize(file, access_point_id, count):
 
     with PilImage.open(file_obj) as im:
         exif = im.getexif()
-        width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
-
-        (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
-        # print(width, height)
-        im = im.resize((width, height))
+        im = limit_height(im, app.config["MAX_IMG_HEIGHT"])
         exif = scrubGPSFromExif(exif)
         exif[ExifBase.ImageWidth.value] = width
         exif[ExifBase.ImageLength.value] = height
