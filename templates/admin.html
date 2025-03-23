@@ -55,16 +55,11 @@
                         <option value="default" name="default">Select a building</option>
                         {% for bldg in buildings: %}
                         {{bldg.name}}
-                        <option value="{{ bldg.short_name }}">{{bldg.number}} - {{bldg.name}}</option>
+                        <option value="{{ bldg.acronym }}">{{bldg.number}} - {{bldg.name}}</option>
                         
                         {% endfor %}
                       </select>
                     </div>
-                    <!-- buildings
-                    bldg_name
-
-                    room -->
-
                     <div class="mb-3">
                       <label for="room" class="form-label">What room number does this elevator have?</label>
                       <p>Enter N for the floor number</p>

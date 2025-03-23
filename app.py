@@ -1223,12 +1223,12 @@ Route to add new entry
 def upload():
 
     # Step 1: Find the building by its number
-    stmt = db.select(Building).where(Building.short_name == request.form["building"])
+    stmt = db.select(Building).where(Building.acronym == request.form["building"])
     building = db.session.execute(stmt).scalar_one_or_none()
 
     if not building:
         raise ValueError(
-            f"Building with short name {request.form['building']} not found."
+            f"Building with acronym {request.form['building']} not found."
         )
 
     # Step 2: Find or create the location
