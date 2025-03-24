@@ -4,6 +4,14 @@
 
 import mimetypes
 import boto3
+import magic
+from io import BufferedReader
+
+
+# based on https://github.com/boto/s3transfer/issues/80#issuecomment-482534256
+class NonCloseableBufferedReader(BufferedReader):
+    def close(self):
+        self.flush()
 
 
 class S3Bucket:
@@ -62,10 +70,18 @@ class S3Bucket:
             filename = f.filename
 
         content_type = mimetypes.guess_type(filename)[0]
+
+        if content_type is None:
+            mgk = magic.Magic(mime=True)
+            # less than 2048 bytes may produce incorrect identification, but unsure if this applies to image file types
+            content_type = mgk.from_buffer(f.read(2048))
+            f.seek(0)
         # Upload the file
+        buffer = NonCloseableBufferedReader(f)
         self._client.upload_fileobj(
-            f, self.name, file_hash, ExtraArgs={"ContentType": content_type}
+            buffer, self.name, file_hash, ExtraArgs={"ContentType": content_type}
         )
+        buffer.detach()
 
     def remove_file(self, file_hash):
         # Does anybody read these comments

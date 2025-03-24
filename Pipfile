@@ -44,6 +44,7 @@ pandas = "*"
 boto3 = "*"
 python-dotenv = "*"
 gunicorn = "*"
+python-magic = "*"
 
 [dev-packages]
 
