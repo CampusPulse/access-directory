@@ -97,6 +97,7 @@ class Elevator(AccessPoint):
     id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
     floor_min: Mapped[int]
     floor_max: Mapped[int]
+    door_count: Mapped[int] = mapped_column(server_default="1" )
 
     __mapper_args__ = {
         "polymorphic_identity": "elevator",
