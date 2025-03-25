@@ -1,7 +1,7 @@
 FROM python:3.10-slim
 
 # git is needed for getting the repo commit
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y git libmagic1
 RUN pip install pipenv
 
 
