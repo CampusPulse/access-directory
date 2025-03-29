@@ -24,19 +24,21 @@ services:
     volumes:
       - tunnelvision-db-data:/var/lib/postgresql/data
 
-  campuspulse-access:
-    image: ghcr.io/campuspulse/access-directory:main
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    container_name: accessdirectory
-    restart: unless-stopped
-    env_file: "compose.env"
-    ports:
-      - "5000:5000"
-    depends_on:
-      - db
-      - minio
+  # uncomment this section to run the app in a configuration more similar to production.
+  # Pass --build to the `compose up` command to rebuild the container
+  # campuspulse-access:
+  #   image: ghcr.io/campuspulse/access-directory:main
+  #   build:
+  #     context: .
+  #     dockerfile: ./Dockerfile
+  #   container_name: accessdirectory
+  #   restart: unless-stopped
+  #   env_file: "compose.env"
+  #   ports:
+  #     - "5000:5000"
+  #   depends_on:
+  #     - db
+  #     - minio
   
 
 volumes:

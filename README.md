@@ -12,8 +12,9 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 * Fork the repo and run the following commands in that directory:
 * `pip install pipenv --user` (if you dont already have it installed)
 * `pipenv install`
-* `cp sample.env .env`
-* `pipenv run python3 app.py`
+<!-- * `cp sample.env .env` -->
+* `podman compose up` (this starts up the database and minio for S3, docker should also work well too)
+* `pipenv run python3 app.py` (this runs the app in development mode)
 
 ## Database Schema
 This project uses SQLAlchemy to access a PostgresQL database. The DB schema is defined in `db.py`
