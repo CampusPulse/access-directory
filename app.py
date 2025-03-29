@@ -862,7 +862,7 @@ def uploadImageResize(file, access_point_id, count):
 
 
 ########################
-# region Pages
+# region Admin Pages
 ########################
 
 """
