@@ -845,7 +845,10 @@ def creationTimeFromFileExif(file, default=datetime.now()):
         return datetime.strptime(exifdate, exif_format)
 
 def scrubGPSFromExif(exif):
-    del exif[ExifBase.GPSInfo.value]
+    try:
+        del exif[ExifBase.GPSInfo.value]
+    except KeyError as e:
+        print(e)
     return exif
 
 
