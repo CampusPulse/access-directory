@@ -873,8 +873,8 @@ def uploadImageResize(file, access_point_id, count):
         exif = im.getexif()
         im = limit_height(im, app.config["MAX_IMG_HEIGHT"])
         exif = scrubGPSFromExif(exif)
-        exif[ExifBase.ImageWidth.value] = width
-        exif[ExifBase.ImageLength.value] = height
+        exif[ExifBase.ImageWidth.value] = im.width
+        exif[ExifBase.ImageLength.value] = im.height
                 
         im = im.convert("RGB")
         im.save(fullsizehash + ".resized.jpg", "JPEG", exif=exif)
