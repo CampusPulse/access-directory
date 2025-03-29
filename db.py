@@ -69,6 +69,7 @@ class AccessPoint(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     type: Mapped[str]  # e.g., "Elevator", "Accessible Door Button", "Ramp"
     location_id: Mapped[int] = mapped_column(ForeignKey("location.id"))
+    thumbnail_ref: Mapped[int] = mapped_column(ForeignKey("images.id"), nullable=True)
     status_history = relationship("AccessPointStatus", back_populates="access_point", order_by="AccessPointStatus.timestamp")
     remarks: Mapped[str]
     active: Mapped[bool]  # Whether the access point is still in use
