@@ -867,7 +867,7 @@ Upload fullsize and resized image, add relation to access point given ID
 """
 
 
-def uploadImageResize(file, access_point_id, count):
+def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
     file_obj = io.BytesIO(file.read())
     fullsizehash = hashlib.md5(file.read()).hexdigest()
     file.seek(0)
@@ -922,6 +922,9 @@ def uploadImageResize(file, access_point_id, count):
         db.session.add(
             ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
         )
+
+        # if is_thumbnail:
+        #   associate_thumbnail(file_hash, thumbnail_file, access_point_id)
     db.session.commit()
 
 
@@ -1385,7 +1388,7 @@ def upload():
         # Begin adding full size to database
         f[1].seek(0)
 
-        uploadImageResize(f[1], elevator.id, count)
+        uploadImageResize(f[1], elevator.id, count, is_thumbnail=(count == 0))
 
         count += 1
 
