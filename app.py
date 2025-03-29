@@ -10,7 +10,7 @@ import re
 from functools import wraps
 from random import shuffle
 from PIL import Image as PilImage
-from PIL.ExifTags import TAGS as EXIF_TAGS
+from PIL.ExifTags import TAGS as EXIF_TAGS, Base as ExifBase
 from datetime import datetime, timezone
 from db import (
     db,
@@ -231,6 +231,18 @@ def crop_center(pil_img, crop_width, crop_height):
             (img_height + crop_height) // 2,
         )
     )
+
+
+
+def limit_height(pil_img, height_limit):
+    """
+    Scale an image such that the height is equal to the height limit and the aspect ratio remains the same
+    """
+    # scale width proportionally to height
+    width = (pil_img.width * height_limit) // pil_img.height
+    (width, height) = (width, height_limit)
+    # set new dimensions
+    return pil_img.resize((width, height))
 
 
 """
@@ -726,36 +738,46 @@ def debug_only(f):
     return wrapped
 
 
-def make_thumbnail(access_point_id, file):
+def make_thumbnail(input_file, output_file, raise_if_already=True):
+    """
+    Given an input file (as a filename to an image), downscale it to a thumbnail and store it in the (file or string filepath) represented by output_file
+    """
 
-    with PilImage.open(file) as im:
+    with PilImage.open(input_file) as im:
         if im.width == 256 or im.height == 256:
-            # Already a thumbnail
-            # print("Already a thumbnail...")
-            return False
+            if raise_if_already:
+                raise ValueError("Thumbnail requested from image that is already thumbnail size.")
         im = crop_center(im, min(im.size), min(im.size))
         im.thumbnail((256, 256))
 
         im = im.convert("RGB")
-        im.save(file + ".thumbnail", "JPEG")
+        im.save(output_file, "JPEG")
 
-    with open(file + ".thumbnail", "rb") as tb:
+   
+def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
+    """
+    associate a thumbnail from S3 with a particular item in the database
+    """
+    thumbnail_file.seek(0)
+    created = creationTimeFromFileExif(thumbnail_file)
 
-        file_hash = hashlib.md5(tb.read()).hexdigest()
-        tb.seek(0)
 
-        # Upload thumnail version
-        s3_bucket.upload_file(file_hash, tb, (file + ".thumbnail"))
-
-        img = Image(imghash=file_hash, ordering=0)
-        db.session.add(img)
-        db.session.flush()
-
-        img_id = img.id
-        db.session.add(
-            ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
+    img = Image(
+        imghash=file_hash,
+        ordering=0,
+        datecreated=created
+    )
+    db.session.add(img)
+    db.session.flush()
+    img_id = img.id
+    db.session.add(
+        ImageAccessPointRelation(
+            image_id=img_id, access_point_id=item_identifier
         )
-        db.session.commit()
+    )
+
+    db.session.commit()
+
 
 
 """
@@ -806,6 +828,26 @@ def deleteAccessPointEntry(id):
     db.session.commit()
 
 
+
+def creationTimeFromFileExif(file, default=datetime.now()):
+    with PilImage.open(file) as im:
+        exif = im.getexif()
+        try:
+            exifdate = exif[ExifBase.DateTime.value]
+        except KeyError:
+            # No Exif Data available
+            return default
+        exif_format = "%Y:%m:%d %H:%M:%S"
+        return datetime.strptime(exifdate, exif_format)
+
+def scrubGPSFromExif(exif):
+    try:
+        del exif[ExifBase.GPSInfo.value]
+    except KeyError as e:
+        print(e)
+    return exif
+
+
 """
 Upload fullsize and resized image, add relation to access point given ID
 """
@@ -820,20 +862,16 @@ def uploadImageResize(file, access_point_id, count):
     s3_bucket.upload_file(fullsizehash, file)
 
     file_obj.seek(0)
+    imageTakenOn = creationTimeFromFileExif(file_obj)
+    file_obj.seek(0)
 
     with PilImage.open(file_obj) as im:
         exif = im.getexif()
-        width = (im.width * app.config["MAX_IMG_HEIGHT"]) // im.height
-
-        (width, height) = (width, app.config["MAX_IMG_HEIGHT"])
-        # print(width, height)
-        im = im.resize((width, height))
-        for k, v in exif.items():
-            if EXIF_TAGS.get(k, k) == "ImageWidth":
-                exif[k] = width
-            elif EXIF_TAGS.get(k, k) == "ImageLength":
-                exif[k] = height
-
+        im = limit_height(im, app.config["MAX_IMG_HEIGHT"])
+        exif = scrubGPSFromExif(exif)
+        exif[ExifBase.ImageWidth.value] = im.width
+        exif[ExifBase.ImageLength.value] = im.height
+                
         im = im.convert("RGB")
         im.save(fullsizehash + ".resized.jpg", "JPEG", exif=exif)
 
@@ -850,7 +888,7 @@ def uploadImageResize(file, access_point_id, count):
             fullsizehash=fullsizehash,
             ordering=count,
             imghash=file_hash,
-            datecreated=datetime.now(),
+            datecreated=imageTakenOn or datetime.now(),
         )
         db.session.add(img)
         db.session.flush()
@@ -1114,7 +1152,19 @@ def makeThumbnail():
     newfilename = f"/tmp/{image.id}.thumb"
 
     s3_bucket.get_file(image.imghash, newfilename)
-    make_thumbnail(access_point_id, newfilename)
+    thumbnail_file = io.BytesIO()
+    try:
+        make_thumbnail(newfilename, thumbnail_file)
+    except ValueError as e:
+        logger.error(f"Exception encountered generating thumbnail: {e}")
+
+    file_hash = hashlib.md5(thumbnail_file.read()).hexdigest()
+    thumbnail_file.seek(0)
+
+    # Upload thumnail version
+    s3_bucket.upload_file(file_hash, thumbnail_file, (newfilename + ".thumbnail.jpg"))
+
+    associate_thumbnail(file_hash, thumbnail_file, access_point_id)
 
     return redirect(f"/edit/{access_point_id}")
 
@@ -1287,36 +1337,23 @@ def upload():
             with open(fullsizehash, "wb") as file:
                 f[1].seek(0)
                 f[1].save(file)
+            
+            thumbnail_file = io.BytesIO()
+            try:
+                make_thumbnail(fullsizehash, thumbnail_file)
+            except ValueError as e:
+                logger.error(f"Exception encountered generating thumbnail: {e}")
+                # dont crash, process the next image
+                continue
 
-            with PilImage.open(fullsizehash) as im:
-                if im.width == 256 or im.height == 256:
-                    # Already a thumbnail
-                    # print("Already a thumbnail...")
-                    continue
-                im = crop_center(im, min(im.size), min(im.size))
-                im.thumbnail((256, 256))
+            file_hash = hashlib.md5(thumbnail_file.read()).hexdigest()
+            thumbnail_file.seek(0)
 
-                im = im.convert("RGB")
-                im.save(fullsizehash + ".thumbnail", "JPEG")
-
-            with open(fullsizehash + ".thumbnail", "rb") as tb:
-
-                file_hash = hashlib.md5(tb.read()).hexdigest()
-                tb.seek(0)
-
-                # Upload thumnail version
-                s3_bucket.upload_file(file_hash, tb, (fullsizehash + ".thumbnail"))
-                img = Image(imghash=file_hash, ordering=0)
-                db.session.add(img)
-                db.session.flush()
-                img_id = img.id
-                db.session.add(
-                    ImageAccessPointRelation(
-                        image_id=img_id, access_point_id=elevator.id
-                    )
-                )
-
-            db.session.commit()
+            # Upload thumnail version
+            s3_bucket.upload_file(file_hash, thumbnail_file, (fullsizehash + ".thumbnail"))
+            
+            associate_thumbnail(file_hash, thumbnail_file, elevator.id)
+            
             count += 1
 
         # Begin adding full size to database

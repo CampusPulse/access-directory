@@ -68,7 +68,7 @@ class S3Bucket:
         # There is most certainly a better way to do this but w/e
         if filename == "":
             filename = f.filename
-
+        print(filename)
         content_type = mimetypes.guess_type(filename)[0]
 
         if content_type is None:
