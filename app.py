@@ -753,9 +753,12 @@ def make_thumbnail(input_file, output_file, raise_if_already=True):
                 raise ValueError("Thumbnail requested from image that is already thumbnail size.")
         im = crop_center(im, min(im.size), min(im.size))
         im.thumbnail((256, 256))
+        exif = im.getexif()
+        exif[ExifBase.ImageWidth.value] = im.width
+        exif[ExifBase.ImageLength.value] = im.height
 
         im = im.convert("RGB")
-        im.save(output_file, "JPEG")
+        im.save(output_file, "JPEG", exif=exif)
 
    
 def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
