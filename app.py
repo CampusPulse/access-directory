@@ -573,11 +573,7 @@ def getRandomImages(count):
 
 @app.route("/")
 def home():
-    return render_template(
-        "home.html",
-        pageTitle="RIT's Overlooked Art Museum",
-        accessPointHighlights=getRandomImages(8),
-    )
+    return redirect("/map", code=302)
 
 
 @app.route("/about")
