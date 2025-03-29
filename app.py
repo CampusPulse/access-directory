@@ -902,11 +902,11 @@ def uploadImageResize(file, access_point_id, count):
         thumbnail_file = io.BytesIO()
 
         try:
-            make_thumbnail(thumb_filename, thumbnail_file)
+            make_thumbnail(resized_file, thumbnail_file)
         except ValueError as e:
             logger.error(f"Exception encountered generating thumbnail: {e}")
         
-        thumb_filename.seek(0)
+        thumbnail_file.seek(0)
 
         s3_bucket.upload_file(thumb_filename, thumbnail_file, filename=thumb_filename)
 
