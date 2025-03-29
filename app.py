@@ -141,7 +141,7 @@ def access_point_json(access_point: AccessPoint):
     thumbnail = None
     for image in image_data:
         if image.ordering == 0:
-            thumbnail = s3_bucket.get_file_s3(image.imghash)
+            thumbnail = s3_bucket.get_file_s3(thumbnail_path_for_image(image.fullsizehash))
             images.append(image_json(image))
         else:
             images.append(image_json(image))
@@ -214,7 +214,7 @@ Create a JSON object for an image
 
 def image_json(image: Image):
     out = {
-        "imgurl": s3_bucket.get_file_s3(image.imghash),
+        "imgurl": s3_bucket.get_file_s3(resized_path_for_image(image.fullsizehash)),
         "ordering": image.ordering,
         "caption": image.caption or "",
         "alttext": image.alttext or "",
@@ -223,7 +223,7 @@ def image_json(image: Image):
         "id": image.id,
     }
     if image.fullsizehash != None:
-        out["fullsizeimage"] = s3_bucket.get_file_s3(image.fullsizehash)
+        out["fullsizeimage"] = s3_bucket.get_file_s3(original_path_for_image(image.fullsizehash))
     return out
 
 
