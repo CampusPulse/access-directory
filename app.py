@@ -857,12 +857,16 @@ Upload fullsize and resized image, add relation to access point given ID
 
 
 def uploadImageResize(file, access_point_id, count):
+    original_filename = f"{fullsizehash}/original.jpg"
+    resized_filename = f"{file_hash}/resized.jpg"
+    thumb_filename = f"{file_hash}/thumb.jpg"
+
     file_obj = io.BytesIO(file.read())
     fullsizehash = hashlib.md5(file.read()).hexdigest()
     file.seek(0)
 
     # Upload full size img to S3
-    s3_bucket.upload_file(fullsizehash, file)
+    s3_bucket.upload_file(original_filename, file, filename=original_filename)
 
     file_obj.seek(0)
     imageTakenOn = creationTimeFromFileExif(file_obj)
@@ -876,21 +880,29 @@ def uploadImageResize(file, access_point_id, count):
         exif[ExifBase.ImageLength.value] = im.height
                 
         im = im.convert("RGB")
-        im.save(fullsizehash + ".resized.jpg", "JPEG", exif=exif)
 
-    with open((fullsizehash + ".resized.jpg"), "rb") as rs:
+        resized_file = io.BytesIO()
+        im.save(resized_file, "JPEG", exif=exif)
+        resized_file.seek(0)
 
-        file_hash = hashlib.md5(rs.read()).hexdigest()
-        rs.seek(0)
+        s3_bucket.upload_file(resized_filename, resized_file, filename=resized_filename)
 
-        s3_bucket.upload_file(file_hash, rs, filename=fullsizehash + ".resized.jpg")
+        
+        thumbnail_file = io.BytesIO()
 
-        # print(s3_bucket.get_file_s3(file_hash))
+        try:
+            make_thumbnail(thumb_filename, thumbnail_file)
+        except ValueError as e:
+            logger.error(f"Exception encountered generating thumbnail: {e}")
+        
+        thumb_filename.seek(0)
+
+        s3_bucket.upload_file(thumb_filename, thumbnail_file, filename=thumb_filename)
 
         img = Image(
             fullsizehash=fullsizehash,
             ordering=count,
-            imghash=file_hash,
+            imghash="",# TODO: remove me
             datecreated=imageTakenOn or datetime.now(),
         )
         db.session.add(img)
