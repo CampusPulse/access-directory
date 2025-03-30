@@ -11,11 +11,8 @@ Map - CampusPulse Access
 
 <div id="map" style="height: 100%;"></div>
 <script>
-    {% if config['DEBUG'] %}
     mapboxgl.accessToken = 'pk.eyJ1IjoiZGxsMzE4MiIsImEiOiJjbTd5MGl0Z2EwMmY4Mmtva3RwZGhsZzN2In0.IJf35DbJhKNps9DCMdpt0A';
-    {% else %}
-    mapboxgl.accessToken = 'pk.eyJ1IjoiZGxsMzE4MiIsImEiOiJjbThrb2toaGoxMnZ1MmpwbWY2cmxraWFiIn0.eM7JfT_wm5EODecHL3Fidg';
-    {% endif %}
+    
     v1 = new mapboxgl.LngLatBounds([-77.7203, 43.0668], [-77.6306, 43.1053]);
     const map = new mapboxgl.Map({
         container: 'map', // container ID
