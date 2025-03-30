@@ -128,9 +128,6 @@ Create a JSON object for a access_point
 
 
 def access_point_json(access_point: AccessPoint):
-    previd = db.session.execute(
-        db.select(AccessPoint.id).where(AccessPoint.id == access_point.id)
-    ).scalar()
 
     image_data = db.session.execute(
         db.select(Image)
