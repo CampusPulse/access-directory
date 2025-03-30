@@ -112,14 +112,14 @@ with app.app_context():
 ########################
 
 def thumbnail_path_for_image(file_hash:str) -> str:
-    return f"{file_hash}/thumb.jpg"
+    return f"{file_hash}_thumb.jpg"
 
 
 def original_path_for_image(file_hash:str) -> str:
-    return f"{file_hash}/original.jpg"
+    return f"{file_hash}_original.jpg"
 
 def resized_path_for_image(file_hash:str) -> str:
-    return f"{file_hash}/resized.jpg"
+    return f"{file_hash}_resized.jpg"
     
 """
 Create a JSON object for a access_point
