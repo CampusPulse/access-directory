@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from db import (
     db,
     func,
+    text,
     inspect,
     with_polymorphic,
     ShelterType,
