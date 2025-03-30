@@ -220,7 +220,6 @@ Create a JSON object for an image
 def image_json(image: Image):
     out = {
         "imgurl": s3_bucket.get_file_s3(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version)),
-        "ordering": image.ordering,
         "caption": image.caption or "",
         "alttext": image.alttext or "",
         "attribution": image.attribution or "",
