@@ -973,7 +973,7 @@ def generateImageHash(file):
     file.seek(0)
     hashvalue = hashlib.md5(file.read()).hexdigest()
 
-    if hashvalue == hashlib.md5("").hexdigest():
+    if hashvalue == hashlib.md5("".encode("utf8")).hexdigest():
         raise ValueError("The data to be hashed was empty")
 
     file.seek(0)
