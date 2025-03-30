@@ -791,11 +791,12 @@ def get_item_thumbnail(item):
 
     thumbnail = None
 
-    # query item by ID to validate its existence
-    # check thumbnail_ref for a ref
-    #  if not null return that ref
     if item.thumbnail_ref is not None:
-        thumbnail = item.thumbnail_ref
+        # theres probably a better, more "sqlalchemy" way to do this tbh
+        thumbnail = db.session.execute(
+            db.select(Image)
+            .where(Image.id == item.thumbnail_ref)
+        ).scalars().first()
     
     if thumbnail is None:
 
