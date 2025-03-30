@@ -137,14 +137,10 @@ def access_point_json(access_point: AccessPoint):
         .where(ImageAccessPointRelation.access_point_id == access_point.id)
         .order_by(Image.ordering)
     ).scalars()
-    images = []
-    thumbnail = None
-    for image in image_data:
-        if image.ordering == 0:
-            thumbnail = s3_bucket.get_file_s3(thumbnail_path_for_image(image.fullsizehash))
-            images.append(image_json(image))
-        else:
-            images.append(image_json(image))
+    images = [image_json(i) for i in image_data]
+    thumbnail = get_item_thumbnail(access_point)
+    thumbnail = thumbnail.fullsizehash if thumbnail is not None else None
+    thumbnail = s3_bucket.get_file_s3(thumbnail_path_for_image(thumbnail))
     # TODO: use marshmallow to serialize
     base_data = {
         "id": access_point.id,
