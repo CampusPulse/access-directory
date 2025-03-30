@@ -143,7 +143,7 @@ def access_point_json(access_point: AccessPoint):
         db.select(Image)
         .join(ImageAccessPointRelation, Image.id == ImageAccessPointRelation.image_id)
         .where(ImageAccessPointRelation.access_point_id == access_point.id)
-        .order_by(Image.ordering)
+        .order_by(ImageAccessPointRelation.ordering)
     ).scalars()
     images = [image_json(i) for i in image_data]
     thumbnail = get_item_thumbnail(access_point)
@@ -437,7 +437,10 @@ def export_database(dir, public):
         db.select(
             Image.id, Image.caption, Image.alttext, Image.attribution, Image.datecreated
         )
-        .where(Image.ordering != 0)
+        .join(
+            ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id
+        )
+        .where(ImageAccessPointRelation.ordering != 0)
         .order_by(Image.id.asc())
     )
 
@@ -467,7 +470,7 @@ def export_images(path):
                 ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id
             )
             .where(ImageAccessPointRelation.access_point_id == m.id)
-            .filter(Image.ordering != 0)
+            .filter(ImageAccessPointRelation.ordering != 0)
         ).scalars()
 
         basepath = path + "images/" + str(m.id) + "/"
@@ -582,7 +585,10 @@ def getRandomImages(count):
             image_json,
             db.session.execute(
                 db.select(Image)
-                .where(Image.ordering != 0)
+                .join(
+                    ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id
+                )
+                .where(ImageAccessPointRelation.ordering != 0)
                 .order_by(func.random())
                 .limit(count)
             ).scalars(),
@@ -805,7 +811,7 @@ def get_item_thumbnail(item):
             db.select(Image)
             .join(ImageAccessPointRelation, Image.id == ImageAccessPointRelation.image_id)
             .where(ImageAccessPointRelation.access_point_id == item.id)
-            .order_by(Image.ordering)
+            .order_by(ImageAccessPointRelation.ordering)
         ).scalars().first()
 
     return thumbnail
