@@ -1032,7 +1032,6 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
 
         img = Image(
             fullsizehash=fullsizehash,
-            ordering=count,
             datecreated=imageTakenOn or datetime.now(),
             naming_version=name_ver
         )
@@ -1040,7 +1039,9 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
         db.session.flush()
         img_id = img.id
         db.session.add(
-            ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
+            ImageAccessPointRelation(image_id=img_id, 
+            ordering=count,
+            access_point_id=access_point_id)
         )
 
         if is_thumbnail:
