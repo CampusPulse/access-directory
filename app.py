@@ -110,6 +110,17 @@ with app.app_context():
 # region Helpers
 #
 ########################
+
+def thumbnail_path_for_image(file_hash:str) -> str:
+    return f"{file_hash}_thumb.jpg"
+
+
+def original_path_for_image(file_hash:str) -> str:
+    return f"{file_hash}_original.jpg"
+
+def resized_path_for_image(file_hash:str) -> str:
+    return f"{file_hash}_resized.jpg"
+    
 """
 Create a JSON object for a access_point
 """
@@ -126,14 +137,10 @@ def access_point_json(access_point: AccessPoint):
         .where(ImageAccessPointRelation.access_point_id == access_point.id)
         .order_by(Image.ordering)
     ).scalars()
-    images = []
-    thumbnail = None
-    for image in image_data:
-        if image.ordering == 0:
-            thumbnail = s3_bucket.get_file_s3(image.imghash)
-            images.append(image_json(image))
-        else:
-            images.append(image_json(image))
+    images = [image_json(i) for i in image_data]
+    thumbnail = get_item_thumbnail(access_point)
+    thumbnail = thumbnail.fullsizehash if thumbnail is not None else None
+    thumbnail = s3_bucket.get_file_s3(thumbnail_path_for_image(thumbnail))
     # TODO: use marshmallow to serialize
     base_data = {
         "id": access_point.id,
@@ -203,7 +210,7 @@ Create a JSON object for an image
 
 def image_json(image: Image):
     out = {
-        "imgurl": s3_bucket.get_file_s3(image.imghash),
+        "imgurl": s3_bucket.get_file_s3(resized_path_for_image(image.fullsizehash)),
         "ordering": image.ordering,
         "caption": image.caption or "",
         "alttext": image.alttext or "",
@@ -212,7 +219,7 @@ def image_json(image: Image):
         "id": image.id,
     }
     if image.fullsizehash != None:
-        out["fullsizeimage"] = s3_bucket.get_file_s3(image.fullsizehash)
+        out["fullsizeimage"] = s3_bucket.get_file_s3(original_path_for_image(image.fullsizehash))
     return out
 
 
@@ -757,6 +764,43 @@ def make_thumbnail(input_file, output_file, raise_if_already=True):
         im.save(output_file, "JPEG", exif=exif)
 
    
+def set_thumbnail(item, image):
+
+    item.thumbnail_ref = image.id
+    db.session.update(item)
+    # db.session.commit()
+
+def get_item_thumbnail(item):
+    """Fetch the thumbnail image for the provided item.
+    This first checks the item's `thumbnail_ref` column for a reference to the Image that should be used. If it cant find one, it grabs the first image associated with that item sorted by the image's `ordering` column.
+
+    Args:
+        item (AccessPoint): The item (in this case AccessPoint) to fetch an image for
+
+    Returns:
+        Image: The image representing the thumbnail (or None if no images could be found by either method)
+    """
+
+    thumbnail = None
+
+    # query item by ID to validate its existence
+    # check thumbnail_ref for a ref
+    #  if not null return that ref
+    if item.thumbnail_ref is not None:
+        thumbnail = item.thumbnail_ref
+    
+    if thumbnail is None:
+
+        # else lookup the related images and get the first one by order
+        thumbnail = db.session.execute(
+            db.select(Image)
+            .join(ImageAccessPointRelation, Image.id == ImageAccessPointRelation.image_id)
+            .where(ImageAccessPointRelation.access_point_id == item.id)
+            .order_by(Image.ordering)
+        ).scalars().first()
+
+    return thumbnail
+
 def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
     """
     associate a thumbnail from S3 with a particular item in the database
@@ -856,13 +900,17 @@ Upload fullsize and resized image, add relation to access point given ID
 """
 
 
-def uploadImageResize(file, access_point_id, count):
+def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
     file_obj = io.BytesIO(file.read())
     fullsizehash = hashlib.md5(file.read()).hexdigest()
     file.seek(0)
 
+    original_filename = original_path_for_image(fullsizehash)
+    resized_filename = resized_path_for_image(fullsizehash)
+    thumb_filename = thumbnail_path_for_image(fullsizehash)
+
     # Upload full size img to S3
-    s3_bucket.upload_file(fullsizehash, file)
+    s3_bucket.upload_file(original_filename, file, filename=original_filename)
 
     file_obj.seek(0)
     imageTakenOn = creationTimeFromFileExif(file_obj)
@@ -876,21 +924,29 @@ def uploadImageResize(file, access_point_id, count):
         exif[ExifBase.ImageLength.value] = im.height
                 
         im = im.convert("RGB")
-        im.save(fullsizehash + ".resized.jpg", "JPEG", exif=exif)
 
-    with open((fullsizehash + ".resized.jpg"), "rb") as rs:
+        resized_file = io.BytesIO()
+        im.save(resized_file, "JPEG", exif=exif)
+        resized_file.seek(0)
 
-        file_hash = hashlib.md5(rs.read()).hexdigest()
-        rs.seek(0)
+        s3_bucket.upload_file(resized_filename, resized_file, filename=resized_filename)
 
-        s3_bucket.upload_file(file_hash, rs, filename=fullsizehash + ".resized.jpg")
+        
+        thumbnail_file = io.BytesIO()
 
-        # print(s3_bucket.get_file_s3(file_hash))
+        try:
+            make_thumbnail(resized_file, thumbnail_file)
+        except ValueError as e:
+            logger.error(f"Exception encountered generating thumbnail: {e}")
+        
+        thumbnail_file.seek(0)
+
+        s3_bucket.upload_file(thumb_filename, thumbnail_file, filename=thumb_filename)
 
         img = Image(
             fullsizehash=fullsizehash,
             ordering=count,
-            imghash=file_hash,
+            imghash="",# TODO: remove me
             datecreated=imageTakenOn or datetime.now(),
         )
         db.session.add(img)
@@ -899,6 +955,13 @@ def uploadImageResize(file, access_point_id, count):
         db.session.add(
             ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
         )
+
+        if is_thumbnail:
+            access_point = db.select(AccessPoint).where(AccessPoint.id == access_point_id).scalar_one()
+            if access_point is None:
+                print(f"access point not found with id {access_point_id}")
+                return render_template("404.html"), 404
+              set_thumbnail(access_point, img)
     db.session.commit()
 
 
@@ -1130,44 +1193,16 @@ def makeThumbnail():
     access_point_id = request.args.get("accesspointid", None)
     image_id = request.args.get("imageid", None)
 
-    # Delete references to current thumbnail
-    curr_thumbnail = db.session.execute(
-        db.select(Image)
-        .join(ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id)
-        .where(ImageAccessPointRelation.access_point_id == access_point_id)
-        .filter(Image.ordering == 0)
-    ).scalar_one()
+    # verify both exist
+    image = db.select(Image).where(Image.id == image_id).scalar_one()
 
-    db.session.execute(
-        db.delete(ImageAccessPointRelation).where(
-            ImageAccessPointRelation.image_id == curr_thumbnail.id
-        )
-    )
-    db.session.execute(db.delete(Image).where(Image.id == curr_thumbnail.id))
+    access_point = db.select(AccessPoint).where(AccessPoint.id == access_point_id).scalar_one()
 
-    # Remove file from S3
-    s3_bucket.remove_file(curr_thumbnail.imghash)
+    if image is None or access_point is None:
+        return render_template("404.html"), 404
 
-    # Download base photo, turn it into thumbnail
-    image = db.session.execute(
-        db.select(Image).where(Image.id == image_id)
-    ).scalar_one()
-    newfilename = f"/tmp/{image.id}.thumb"
+    set_thumbnail(access_point, image)
 
-    s3_bucket.get_file(image.imghash, newfilename)
-    thumbnail_file = io.BytesIO()
-    try:
-        make_thumbnail(newfilename, thumbnail_file)
-    except ValueError as e:
-        logger.error(f"Exception encountered generating thumbnail: {e}")
-
-    file_hash = hashlib.md5(thumbnail_file.read()).hexdigest()
-    thumbnail_file.seek(0)
-
-    # Upload thumnail version
-    s3_bucket.upload_file(file_hash, thumbnail_file, (newfilename + ".thumbnail.jpg"))
-
-    associate_thumbnail(file_hash, thumbnail_file, access_point_id)
 
     return redirect(f"/edit/{access_point_id}")
 
@@ -1335,34 +1370,10 @@ def upload():
             # print(fullsizehash)
             return render_template("404.html"), 404
 
-        # Begin creating thumbnail version
-        if count == 0:
-            with open(fullsizehash, "wb") as file:
-                f[1].seek(0)
-                f[1].save(file)
-            
-            thumbnail_file = io.BytesIO()
-            try:
-                make_thumbnail(fullsizehash, thumbnail_file)
-            except ValueError as e:
-                logger.error(f"Exception encountered generating thumbnail: {e}")
-                # dont crash, process the next image
-                continue
-
-            file_hash = hashlib.md5(thumbnail_file.read()).hexdigest()
-            thumbnail_file.seek(0)
-
-            # Upload thumnail version
-            s3_bucket.upload_file(file_hash, thumbnail_file, (fullsizehash + ".thumbnail"))
-            
-            associate_thumbnail(file_hash, thumbnail_file, elevator.id)
-            
-            count += 1
-
         # Begin adding full size to database
         f[1].seek(0)
 
-        uploadImageResize(f[1], elevator.id, count)
+        uploadImageResize(f[1], elevator.id, count, is_thumbnail=(count == 0))
 
         count += 1
 
