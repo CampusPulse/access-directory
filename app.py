@@ -776,7 +776,6 @@ def make_thumbnail(input_file, output_file, raise_if_already=True):
 def set_thumbnail(item, image):
 
     item.thumbnail_ref = image.id
-    db.session.update(item)
     # db.session.commit()
 
 def get_item_thumbnail(item):
