@@ -1238,7 +1238,10 @@ def deleteImage(id):
     images = db.session.execute(db.select(Image).where(Image.id == id)).scalars()
 
     for image in images:
-        s3_bucket.remove_file(image.imghash)
+        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.ORIGINAL, naming_version=image.naming_version))
+        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version))
+        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.THUMB, naming_version=image.naming_version))
+
         db.session.execute(
             db.delete(ImageAccessPointRelation).where(
                 ImageAccessPointRelation.image_id == id
