@@ -598,6 +598,66 @@ def getRandomImages(count):
     return images
 
 
+def detachAllImagesFromItem(item_id: int, keep_files=False):
+    """De-associates or deletes all images from the database given the id of the item to detach from
+    If images are used more than once, they are kept, and only the reference is removed. If image has no other references, its deletion is determined by `keep_files` 
+
+    Args:
+        item_id (int): the id of the item to remove the images from
+        keep_files (bool, optional): Whether to keep files when they would otherwise be deleted. Defaults to False.
+    """
+
+    image_refs = db.session.execute(
+        db.select(ImageAccessPointRelation).where(ImageAccessPointRelation.access_point_id == item_id)
+    ).scalars()
+    
+    for image_ref in image_refs:
+        detachImageByRef(image_ref)
+
+
+def detachImageByID(image_id: int, item_id: int, keep_files=False):
+    """De-associates or deletes images from the database given the id of an image and the item to detach it from
+    If images are used more than once, they are kept, and only the reference is removed. If image has no other references, its deletion is determined by `keep_files` 
+
+    Args:
+        image_id (int): the id of the image to remove
+        item_id (int): the id of the item to remove the images from
+        keep_files (bool, optional): Whether to keep files when they would otherwise be deleted. Defaults to False.
+    """
+
+    image = db.session.execute(
+        db.select(Image).where(Image.id == image_id)
+    ).scalars().first()
+
+    image_ref = db.session.execute(
+        db.select(ImageAccessPointRelation).where(ImageAccessPointRelation.image_id == image_id, ImageAccessPointRelation.access_point_id == item_id )
+    ).scalars().first()
+
+    detachImageByRef(image_ref)
+    
+
+def detachImageByRef(image_ref, keep_files=False):
+
+    image = image_ref.image
+
+    # check how many total references to this image exist
+    total_ref_count = db.session.execute(
+        db.select(func.count()).where(
+            ImageAccessPointRelation.image_id == image.id
+        )
+    ).scalar()
+
+    #if theres only this one reference, remove all three images from S3 and remove it from the database
+    if total_ref_count <= 1:
+        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.ORIGINAL, naming_version=image.naming_version))
+        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version))
+        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.THUMB, naming_version=image.naming_version))  
+
+        db.session.delete(image)
+
+    # remove the reference to this image
+    db.session.delete(image_ref)
+
 ########################
 #
 # region Pages
@@ -867,6 +927,7 @@ def deleteAccessPointEntry(id):
         .where(ImageAccessPointRelation.access_point_id == id),
         per_page=150,
     ).items
+    # we are deleting the whole access point, so remove all image references
     db.session.execute(
         db.delete(ImageAccessPointRelation).where(
             ImageAccessPointRelation.access_point_id == id
@@ -880,25 +941,8 @@ def deleteAccessPointEntry(id):
     m = db.session.execute(
         db.select(AccessPoint).where(AccessPoint.id == id)
     ).scalar_one()
-
-    db.session.query(AccessPoint).filter_by(nextid=id).update({"nextid": m.nextid})
-    db.session.execute(db.delete(AccessPoint).where(AccessPoint.id == id))
-    for image in images:
-        # check how many total references to this image exist
-        count = db.session.execute(
-            db.select(func.count()).where(
-                ImageAccessPointRelation.image_id == image.id
-            )
-        ).scalar()
-
-        #if theres only this one reference, remove all three images from S3 and remove it from the database
-        if count == 1:
-            s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.ORIGINAL, naming_version=image.naming_version))
-            s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version))
-            s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.THUMB, naming_version=image.naming_version))
-
-            db.session.execute(db.delete(Image).where(Image.id == image.id))
-
+    detachAllImagesFromItem(m.id)
+    db.session.delete(m)
     db.session.commit()
 
 
@@ -1244,22 +1288,12 @@ Route to delete image
 """
 
 
-@app.route("/deleteimage/<id>", methods=["POST"])
+@app.route("/detachimage/<image_id>/from/<item_id>", methods=["POST"])
 @debug_only
-def deleteImage(id):
-    images = db.session.execute(db.select(Image).where(Image.id == id)).scalars()
+def detachImageEndpoint(image_id, item_id):
 
-    for image in images:
-        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.ORIGINAL, naming_version=image.naming_version))
-        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version))
-        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.THUMB, naming_version=image.naming_version))
-
-        db.session.execute(
-            db.delete(ImageAccessPointRelation).where(
-                ImageAccessPointRelation.image_id == id
-            )
-        )
-        db.session.execute(db.delete(Image).where(Image.id == id))
+    detachImageByID(image_id, item_id)
+    
     db.session.commit()
 
     return ("", 204)
