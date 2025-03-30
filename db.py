@@ -130,11 +130,10 @@ class Image(Base):
     caption: Mapped[Optional[str]]
     alttext: Mapped[Optional[str]]
     ordering: Mapped[int]
-    imghash: Mapped[str]
     attribution: Mapped[Optional[str]]
     datecreated: Mapped[datetime]
-    fullsizehash: Mapped[Optional[str]]
-    naming_version: Mapped[int] = mapped_column(server_default='0')
+    fullsizehash: Mapped[str]
+    naming_version: Mapped[int] = mapped_column(server_default='1')
 
 class Tag(Base):
     __tablename__ = "tags"
