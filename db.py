@@ -134,6 +134,7 @@ class Image(Base):
     attribution: Mapped[Optional[str]]
     datecreated: Mapped[datetime]
     fullsizehash: Mapped[Optional[str]]
+    naming_version: Mapped[int] = mapped_column(server_default='0')
 
 class Tag(Base):
     __tablename__ = "tags"
