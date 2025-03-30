@@ -2,7 +2,7 @@ from typing import Optional
 import enum
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey, text, Enum as EnumType, inspect
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, with_polymorphic
 from datetime import datetime
 
 

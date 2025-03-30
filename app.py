@@ -16,6 +16,7 @@ from db import (
     db,
     func,
     inspect,
+    with_polymorphic,
     ShelterType,
     ButtonActivation,
     MountSurface,
@@ -127,9 +128,6 @@ Create a JSON object for a access_point
 
 
 def access_point_json(access_point: AccessPoint):
-    previd = db.session.execute(
-        db.select(AccessPoint.id).where(AccessPoint.id == access_point.id)
-    ).scalar()
 
     image_data = db.session.execute(
         db.select(Image)
@@ -862,12 +860,13 @@ def deleteAccessPointEntry(id):
     )
     db.session.execute(db.delete(Feedback).where(Feedback.access_point_id == id))
 
-    m = db.session.execute(
-        db.select(AccessPoint).where(AccessPoint.id == id)
-    ).scalar_one()
+    # https://docs.sqlalchemy.org/en/21/orm/queryguide/inheritance.html#using-with-polymorphic
+    ap_poly = with_polymorphic(AccessPoint, "*")
 
-    db.session.query(AccessPoint).filter_by(nextid=id).update({"nextid": m.nextid})
-    db.session.execute(db.delete(AccessPoint).where(AccessPoint.id == id))
+    m = db.session.execute(
+        db.select(ap_poly).where(AccessPoint.id == id)
+    ).scalar_one()
+    db.session.delete(m)
     for image in images:
         s3_bucket.remove_file(image.imghash)
         db.session.execute(db.delete(Image).where(Image.id == image.id))
