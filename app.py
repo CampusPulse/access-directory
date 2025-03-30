@@ -884,8 +884,20 @@ def deleteAccessPointEntry(id):
     db.session.query(AccessPoint).filter_by(nextid=id).update({"nextid": m.nextid})
     db.session.execute(db.delete(AccessPoint).where(AccessPoint.id == id))
     for image in images:
-        s3_bucket.remove_file(image.imghash)
-        db.session.execute(db.delete(Image).where(Image.id == image.id))
+        # check how many total references to this image exist
+        count = db.session.execute(
+            db.select(func.count()).where(
+                ImageAccessPointRelation.image_id == image.id
+            )
+        ).scalar()
+
+        #if theres only this one reference, remove all three images from S3 and remove it from the database
+        if count == 1:
+            s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.ORIGINAL, naming_version=image.naming_version))
+            s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version))
+            s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.THUMB, naming_version=image.naming_version))
+
+            db.session.execute(db.delete(Image).where(Image.id == image.id))
 
     db.session.commit()
 
