@@ -1,6 +1,7 @@
 import os
 import io
 import subprocess
+from enum import Enum
 from flask import Flask, render_template, request, redirect, abort, url_for
 import logging
 from werkzeug.utils import secure_filename
@@ -113,16 +114,23 @@ with app.app_context():
 #
 ########################
 
-def thumbnail_path_for_image(file_hash:str) -> str:
-    return f"{file_hash}_thumb.jpg"
+class ImageType(Enum):
+    THUMB = "thumb"
+    RESIZED = "resized"
+    ORIGINAL = "original"
 
+def get_latest_naming_version():
+    return 1
 
-def original_path_for_image(file_hash:str) -> str:
-    return f"{file_hash}_original.jpg"
+def path_for_image(file_hash:str, image_type: ImageType, naming_version=0) -> str:
+    if file_hash is None:
+        return None
 
-def resized_path_for_image(file_hash:str) -> str:
-    return f"{file_hash}_resized.jpg"
-    
+    if naming_version == 0:
+        return file_hash
+    elif naming_version == 1:
+        return f"{file_hash}_{image_type.value}.jpg"
+
 """
 Create a JSON object for a access_point
 """
@@ -134,12 +142,13 @@ def access_point_json(access_point: AccessPoint):
         db.select(Image)
         .join(ImageAccessPointRelation, Image.id == ImageAccessPointRelation.image_id)
         .where(ImageAccessPointRelation.access_point_id == access_point.id)
-        .order_by(Image.ordering)
+        .order_by(ImageAccessPointRelation.ordering)
     ).scalars()
     images = [image_json(i) for i in image_data]
     thumbnail = get_item_thumbnail(access_point)
+    naming_version = thumbnail.naming_version if thumbnail is not None else None
     thumbnail = thumbnail.fullsizehash if thumbnail is not None else None
-    thumbnail = s3_bucket.get_file_s3(thumbnail_path_for_image(thumbnail))
+    thumbnail = s3_bucket.get_file_s3(path_for_image(thumbnail, ImageType.THUMB, naming_version=naming_version))
     # TODO: use marshmallow to serialize
     base_data = {
         "id": access_point.id,
@@ -209,8 +218,7 @@ Create a JSON object for an image
 
 def image_json(image: Image):
     out = {
-        "imgurl": s3_bucket.get_file_s3(resized_path_for_image(image.fullsizehash)),
-        "ordering": image.ordering,
+        "imgurl": s3_bucket.get_file_s3(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version)),
         "caption": image.caption or "",
         "alttext": image.alttext or "",
         "attribution": image.attribution or "",
@@ -218,7 +226,7 @@ def image_json(image: Image):
         "id": image.id,
     }
     if image.fullsizehash != None:
-        out["fullsizeimage"] = s3_bucket.get_file_s3(original_path_for_image(image.fullsizehash))
+        out["fullsizeimage"] = s3_bucket.get_file_s3(path_for_image(image.fullsizehash, ImageType.ORIGINAL, naming_version=image.naming_version))
     return out
 
 
@@ -427,7 +435,10 @@ def export_database(dir, public):
         db.select(
             Image.id, Image.caption, Image.alttext, Image.attribution, Image.datecreated
         )
-        .where(Image.ordering != 0)
+        .join(
+            ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id
+        )
+        .where(ImageAccessPointRelation.ordering != 0)
         .order_by(Image.id.asc())
     )
 
@@ -451,13 +462,14 @@ def export_images(path):
     ).scalars()
 
     for m in access_points:
+        # TODO: migrate this to download the images
         images = db.session.execute(
             db.select(Image)
             .join(
                 ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id
             )
             .where(ImageAccessPointRelation.access_point_id == m.id)
-            .filter(Image.ordering != 0)
+            .filter(ImageAccessPointRelation.ordering != 0)
         ).scalars()
 
         basepath = path + "images/" + str(m.id) + "/"
@@ -572,7 +584,10 @@ def getRandomImages(count):
             image_json,
             db.session.execute(
                 db.select(Image)
-                .where(Image.ordering != 0)
+                .join(
+                    ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id
+                )
+                .where(ImageAccessPointRelation.ordering != 0)
                 .order_by(func.random())
                 .limit(count)
             ).scalars(),
@@ -581,6 +596,66 @@ def getRandomImages(count):
     shuffle(images)
     return images
 
+
+def detachAllImagesFromItem(item_id: int, keep_files=False):
+    """De-associates or deletes all images from the database given the id of the item to detach from
+    If images are used more than once, they are kept, and only the reference is removed. If image has no other references, its deletion is determined by `keep_files` 
+
+    Args:
+        item_id (int): the id of the item to remove the images from
+        keep_files (bool, optional): Whether to keep files when they would otherwise be deleted. Defaults to False.
+    """
+
+    image_refs = db.session.execute(
+        db.select(ImageAccessPointRelation).where(ImageAccessPointRelation.access_point_id == item_id)
+    ).scalars()
+    
+    for image_ref in image_refs:
+        detachImageByRef(image_ref)
+
+
+def detachImageByID(image_id: int, item_id: int, keep_files=False):
+    """De-associates or deletes images from the database given the id of an image and the item to detach it from
+    If images are used more than once, they are kept, and only the reference is removed. If image has no other references, its deletion is determined by `keep_files` 
+
+    Args:
+        image_id (int): the id of the image to remove
+        item_id (int): the id of the item to remove the images from
+        keep_files (bool, optional): Whether to keep files when they would otherwise be deleted. Defaults to False.
+    """
+
+    image = db.session.execute(
+        db.select(Image).where(Image.id == image_id)
+    ).scalars().first()
+
+    image_ref = db.session.execute(
+        db.select(ImageAccessPointRelation).where(ImageAccessPointRelation.image_id == image_id, ImageAccessPointRelation.access_point_id == item_id )
+    ).scalars().first()
+
+    detachImageByRef(image_ref)
+    
+
+def detachImageByRef(image_ref, keep_files=False):
+
+    image = image_ref.image
+
+    # check how many total references to this image exist
+    total_ref_count = db.session.execute(
+        db.select(func.count()).where(
+            ImageAccessPointRelation.image_id == image.id
+        )
+    ).scalar()
+
+    #if theres only this one reference, remove all three images from S3 and remove it from the database
+    if total_ref_count <= 1:
+        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.ORIGINAL, naming_version=image.naming_version))
+        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version))
+        s3_bucket.remove_file(path_for_image(image.fullsizehash, ImageType.THUMB, naming_version=image.naming_version))  
+
+        db.session.delete(image)
+
+    # remove the reference to this image
+    db.session.delete(image_ref)
 
 ########################
 #
@@ -766,7 +841,6 @@ def make_thumbnail(input_file, output_file, raise_if_already=True):
 def set_thumbnail(item, image):
 
     item.thumbnail_ref = image.id
-    db.session.update(item)
     # db.session.commit()
 
 def get_item_thumbnail(item):
@@ -782,11 +856,12 @@ def get_item_thumbnail(item):
 
     thumbnail = None
 
-    # query item by ID to validate its existence
-    # check thumbnail_ref for a ref
-    #  if not null return that ref
     if item.thumbnail_ref is not None:
-        thumbnail = item.thumbnail_ref
+        # theres probably a better, more "sqlalchemy" way to do this tbh
+        thumbnail = db.session.execute(
+            db.select(Image)
+            .where(Image.id == item.thumbnail_ref)
+        ).scalars().first()
     
     if thumbnail is None:
 
@@ -795,7 +870,7 @@ def get_item_thumbnail(item):
             db.select(Image)
             .join(ImageAccessPointRelation, Image.id == ImageAccessPointRelation.image_id)
             .where(ImageAccessPointRelation.access_point_id == item.id)
-            .order_by(Image.ordering)
+            .order_by(ImageAccessPointRelation.ordering)
         ).scalars().first()
 
     return thumbnail
@@ -809,7 +884,7 @@ def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
 
 
     img = Image(
-        imghash=file_hash,
+        fullsizehash=file_hash,
         ordering=0,
         datecreated=created
     )
@@ -851,6 +926,7 @@ def deleteAccessPointEntry(id):
         .where(ImageAccessPointRelation.access_point_id == id),
         per_page=150,
     ).items
+    # we are deleting the whole access point, so remove all image references
     db.session.execute(
         db.delete(ImageAccessPointRelation).where(
             ImageAccessPointRelation.access_point_id == id
@@ -867,11 +943,8 @@ def deleteAccessPointEntry(id):
     m = db.session.execute(
         db.select(ap_poly).where(AccessPoint.id == id)
     ).scalar_one()
+    detachAllImagesFromItem(m.id)
     db.session.delete(m)
-    for image in images:
-        s3_bucket.remove_file(image.imghash)
-        db.session.execute(db.delete(Image).where(Image.id == image.id))
-
     db.session.commit()
 
 
@@ -916,9 +989,12 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
     fullsizehash = generateImageHash(file_obj)
     file_obj.seek(0)
 
-    original_filename = original_path_for_image(fullsizehash)
-    resized_filename = resized_path_for_image(fullsizehash)
-    thumb_filename = thumbnail_path_for_image(fullsizehash)
+    name_ver = get_latest_naming_version()
+
+    original_filename = path_for_image(fullsizehash, ImageType.ORIGINAL, naming_version=name_ver)
+    resized_filename = path_for_image(fullsizehash, ImageType.RESIZED, naming_version=name_ver)
+    thumb_filename = path_for_image(fullsizehash, ImageType.THUMB, naming_version=name_ver)
+
 
     # Upload full size img to S3
     s3_bucket.upload_file(original_filename, file, filename=original_filename)
@@ -957,8 +1033,8 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
         img = Image(
             fullsizehash=fullsizehash,
             ordering=count,
-            imghash="",# TODO: remove me
             datecreated=imageTakenOn or datetime.now(),
+            naming_version=name_ver
         )
         db.session.add(img)
         db.session.flush()
@@ -968,11 +1044,13 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
         )
 
         if is_thumbnail:
-            access_point = db.select(AccessPoint).where(AccessPoint.id == access_point_id).scalar_one()
+            access_point = db.session.execute(
+                db.select(AccessPoint).where(AccessPoint.id == access_point_id)
+            ).scalar_one()
             if access_point is None:
                 print(f"access point not found with id {access_point_id}")
                 return render_template("404.html"), 404
-              set_thumbnail(access_point, img)
+            set_thumbnail(access_point, img)
     db.session.commit()
 
 
@@ -1223,19 +1301,12 @@ Route to delete image
 """
 
 
-@app.route("/deleteimage/<id>", methods=["POST"])
+@app.route("/detachimage/<image_id>/from/<item_id>", methods=["POST"])
 @debug_only
-def deleteImage(id):
-    images = db.session.execute(db.select(Image).where(Image.id == id)).scalars()
+def detachImageEndpoint(image_id, item_id):
 
-    for image in images:
-        s3_bucket.remove_file(image.imghash)
-        db.session.execute(
-            db.delete(ImageAccessPointRelation).where(
-                ImageAccessPointRelation.image_id == id
-            )
-        )
-        db.session.execute(db.delete(Image).where(Image.id == id))
+    detachImageByID(image_id, item_id)
+    
     db.session.commit()
 
     return ("", 204)
@@ -1375,7 +1446,7 @@ def upload():
 
         # Check if image is already used in DB
         count = db.session.execute(
-            db.select(func.count()).where(Image.imghash == fullsizehash)
+            db.select(func.count()).where(Image.fullsizehash == fullsizehash)
         ).scalar()
         if count > 0:
             # print(fullsizehash)

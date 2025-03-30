@@ -58,8 +58,8 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Edit Details</button>
                 </form>
-            <form action="/deleteimage/{{ accessPointDetails['images'][loop.index-1]['id'] }}" method="post">
-            <button type="submit" class="btn btn-danger">Delete Image</button>
+            <form action="/detachimage/{{ accessPointDetails['images'][loop.index-1]['id'] }}/from/{{ accessPointDetails['id']}}" method="post">
+            <button type="submit" class="btn btn-danger">Detach/Delete Image</button>
             </form>
             {% endfor %}
             <form action="/uploadimage/{{ accessPointDetails['id'] }}" method="post" enctype="multipart/form-data">
