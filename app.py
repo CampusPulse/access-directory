@@ -969,7 +969,9 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
         )
 
         if is_thumbnail:
-            access_point = db.select(AccessPoint).where(AccessPoint.id == access_point_id).scalar_one()
+            access_point = db.session.execute(
+                db.select(AccessPoint).where(AccessPoint.id == access_point_id)
+            ).scalar_one()
             if access_point is None:
                 print(f"access point not found with id {access_point_id}")
                 return render_template("404.html"), 404
