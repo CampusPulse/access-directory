@@ -1,6 +1,7 @@
 import os
 import io
 import subprocess
+from enum import Enum
 from flask import Flask, render_template, request, redirect, abort, url_for
 import logging
 from werkzeug.utils import secure_filename
@@ -111,16 +112,23 @@ with app.app_context():
 #
 ########################
 
-def thumbnail_path_for_image(file_hash:str) -> str:
-    return f"{file_hash}_thumb.jpg"
+class ImageType(Enum):
+    THUMB = "thumb"
+    RESIZED = "resized"
+    ORIGINAL = "original"
 
+def get_latest_naming_version():
+    return 1
 
-def original_path_for_image(file_hash:str) -> str:
-    return f"{file_hash}_original.jpg"
+def path_for_image(file_hash:str, image_type: ImageType, naming_version=0) -> str:
+    if file_hash is None:
+        return None
 
-def resized_path_for_image(file_hash:str) -> str:
-    return f"{file_hash}_resized.jpg"
-    
+    if naming_version == 0:
+        return file_hash
+    elif naming_version == 1:
+        return f"{file_hash}_{image_type.value}.jpg"
+
 """
 Create a JSON object for a access_point
 """
@@ -139,8 +147,9 @@ def access_point_json(access_point: AccessPoint):
     ).scalars()
     images = [image_json(i) for i in image_data]
     thumbnail = get_item_thumbnail(access_point)
+    naming_version = thumbnail.naming_version if thumbnail is not None else None
     thumbnail = thumbnail.fullsizehash if thumbnail is not None else None
-    thumbnail = s3_bucket.get_file_s3(thumbnail_path_for_image(thumbnail))
+    thumbnail = s3_bucket.get_file_s3(path_for_image(thumbnail, ImageType.THUMB, naming_version=naming_version))
     # TODO: use marshmallow to serialize
     base_data = {
         "id": access_point.id,
@@ -210,7 +219,7 @@ Create a JSON object for an image
 
 def image_json(image: Image):
     out = {
-        "imgurl": s3_bucket.get_file_s3(resized_path_for_image(image.fullsizehash)),
+        "imgurl": s3_bucket.get_file_s3(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version)),
         "ordering": image.ordering,
         "caption": image.caption or "",
         "alttext": image.alttext or "",
@@ -219,7 +228,7 @@ def image_json(image: Image):
         "id": image.id,
     }
     if image.fullsizehash != None:
-        out["fullsizeimage"] = s3_bucket.get_file_s3(original_path_for_image(image.fullsizehash))
+        out["fullsizeimage"] = s3_bucket.get_file_s3(path_for_image(image.fullsizehash, ImageType.ORIGINAL, naming_version=image.naming_version))
     return out
 
 
@@ -905,9 +914,12 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
     fullsizehash = hashlib.md5(file.read()).hexdigest()
     file.seek(0)
 
-    original_filename = original_path_for_image(fullsizehash)
-    resized_filename = resized_path_for_image(fullsizehash)
-    thumb_filename = thumbnail_path_for_image(fullsizehash)
+    name_ver = get_latest_naming_version()
+
+    original_filename = path_for_image(fullsizehash, ImageType.ORIGINAL, naming_version=name_ver)
+    resized_filename = path_for_image(fullsizehash, ImageType.RESIZED, naming_version=name_ver)
+    thumb_filename = path_for_image(fullsizehash, ImageType.THUMB, naming_version=name_ver)
+
 
     # Upload full size img to S3
     s3_bucket.upload_file(original_filename, file, filename=original_filename)
@@ -948,6 +960,7 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
             ordering=count,
             imghash="",# TODO: remove me
             datecreated=imageTakenOn or datetime.now(),
+            naming_version=name_ver
         )
         db.session.add(img)
         db.session.flush()
