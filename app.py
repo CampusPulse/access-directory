@@ -1067,12 +1067,16 @@ Route to edit access point page
 @app.route("/edit/<id>")
 @debug_only
 def edit(id):
-    return render_template(
-        "edit.html",
-        accessPointDetails=getAccessPoint(id),
-        accessPointFeedback=getAccessPointFeedback(id),
-        tags=getAllTags(),
-    )
+
+    if checkAccessPointExists(id):
+        return render_template(
+            "edit.html",
+            accessPointDetails=getAccessPoint(id),
+            accessPointFeedback=getAccessPointFeedback(id),
+            tags=getAllTags(),
+        )
+    else:
+        return render_template("404.html"), 404
 
 
 """
