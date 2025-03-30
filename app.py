@@ -895,6 +895,17 @@ def scrubGPSFromExif(exif):
     return exif
 
 
+
+def generateImageHash(file):
+    file.seek(0)
+    hashvalue = hashlib.md5(file.read()).hexdigest()
+
+    if hashvalue == hashlib.md5("").hexdigest():
+        raise ValueError("The data to be hashed was empty")
+
+    file.seek(0)
+    return hashvalue
+
 """
 Upload fullsize and resized image, add relation to access point given ID
 """
@@ -902,8 +913,8 @@ Upload fullsize and resized image, add relation to access point given ID
 
 def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
     file_obj = io.BytesIO(file.read())
-    fullsizehash = hashlib.md5(file.read()).hexdigest()
-    file.seek(0)
+    fullsizehash = generateImageHash(file_obj)
+    file_obj.seek(0)
 
     original_filename = original_path_for_image(fullsizehash)
     resized_filename = resized_path_for_image(fullsizehash)
@@ -1359,7 +1370,7 @@ def upload():
         filename = secure_filename(f[1].filename)
         # print(f[1].filename)
 
-        fullsizehash = hashlib.md5(f[1].read()).hexdigest()
+        fullsizehash = generateImageHash(f[1])
         f[1].seek(0)
 
         # Check if image is already used in DB
