@@ -768,6 +768,37 @@ def make_thumbnail(input_file, output_file, raise_if_already=True):
         im.save(output_file, "JPEG", exif=exif)
 
    
+def get_item_thumbnail(item):
+    """Fetch the thumbnail image for the provided item.
+    This first checks the item's `thumbnail_ref` column for a reference to the Image that should be used. If it cant find one, it grabs the first image associated with that item sorted by the image's `ordering` column.
+
+    Args:
+        item (AccessPoint): The item (in this case AccessPoint) to fetch an image for
+
+    Returns:
+        Image: The image representing the thumbnail (or None if no images could be found by either method)
+    """
+
+    thumbnail = None
+
+    # query item by ID to validate its existence
+    # check thumbnail_ref for a ref
+    #  if not null return that ref
+    if item.thumbnail_ref is not None:
+        thumbnail = item.thumbnail_ref
+    
+    if thumbnail is None:
+
+        # else lookup the related images and get the first one by order
+        thumbnail = db.session.execute(
+            db.select(Image)
+            .join(ImageAccessPointRelation, Image.id == ImageAccessPointRelation.image_id)
+            .where(ImageAccessPointRelation.access_point_id == item.id)
+            .order_by(Image.ordering)
+        ).scalars().first()
+
+    return thumbnail
+
 def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
     """
     associate a thumbnail from S3 with a particular item in the database
