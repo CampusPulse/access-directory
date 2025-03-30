@@ -764,6 +764,12 @@ def make_thumbnail(input_file, output_file, raise_if_already=True):
         im.save(output_file, "JPEG", exif=exif)
 
    
+def set_thumbnail(item, image):
+
+    item.thumbnail_ref = image.id
+    db.session.update(item)
+    # db.session.commit()
+
 def get_item_thumbnail(item):
     """Fetch the thumbnail image for the provided item.
     This first checks the item's `thumbnail_ref` column for a reference to the Image that should be used. If it cant find one, it grabs the first image associated with that item sorted by the image's `ordering` column.
@@ -950,8 +956,12 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
             ImageAccessPointRelation(image_id=img_id, access_point_id=access_point_id)
         )
 
-        # if is_thumbnail:
-        #   associate_thumbnail(file_hash, thumbnail_file, access_point_id)
+        if is_thumbnail:
+            access_point = db.select(AccessPoint).where(AccessPoint.id == access_point_id).scalar_one()
+            if access_point is None:
+                print(f"access point not found with id {access_point_id}")
+                return render_template("404.html"), 404
+              set_thumbnail(access_point, img)
     db.session.commit()
 
 
@@ -1183,44 +1193,16 @@ def makeThumbnail():
     access_point_id = request.args.get("accesspointid", None)
     image_id = request.args.get("imageid", None)
 
-    # Delete references to current thumbnail
-    curr_thumbnail = db.session.execute(
-        db.select(Image)
-        .join(ImageAccessPointRelation, ImageAccessPointRelation.image_id == Image.id)
-        .where(ImageAccessPointRelation.access_point_id == access_point_id)
-        .filter(Image.ordering == 0)
-    ).scalar_one()
+    # verify both exist
+    image = db.select(Image).where(Image.id == image_id).scalar_one()
 
-    db.session.execute(
-        db.delete(ImageAccessPointRelation).where(
-            ImageAccessPointRelation.image_id == curr_thumbnail.id
-        )
-    )
-    db.session.execute(db.delete(Image).where(Image.id == curr_thumbnail.id))
+    access_point = db.select(AccessPoint).where(AccessPoint.id == access_point_id).scalar_one()
 
-    # Remove file from S3
-    s3_bucket.remove_file(curr_thumbnail.imghash)
+    if image is None or access_point is None:
+        return render_template("404.html"), 404
 
-    # Download base photo, turn it into thumbnail
-    image = db.session.execute(
-        db.select(Image).where(Image.id == image_id)
-    ).scalar_one()
-    newfilename = f"/tmp/{image.id}.thumb"
+    set_thumbnail(access_point, image)
 
-    s3_bucket.get_file(image.imghash, newfilename)
-    thumbnail_file = io.BytesIO()
-    try:
-        make_thumbnail(newfilename, thumbnail_file)
-    except ValueError as e:
-        logger.error(f"Exception encountered generating thumbnail: {e}")
-
-    file_hash = hashlib.md5(thumbnail_file.read()).hexdigest()
-    thumbnail_file.seek(0)
-
-    # Upload thumnail version
-    s3_bucket.upload_file(file_hash, thumbnail_file, (newfilename + ".thumbnail.jpg"))
-
-    associate_thumbnail(file_hash, thumbnail_file, access_point_id)
 
     return redirect(f"/edit/{access_point_id}")
 
@@ -1387,30 +1369,6 @@ def upload():
         if count > 0:
             # print(fullsizehash)
             return render_template("404.html"), 404
-
-        # Begin creating thumbnail version
-        if count == 0:
-            with open(fullsizehash, "wb") as file:
-                f[1].seek(0)
-                f[1].save(file)
-            
-            thumbnail_file = io.BytesIO()
-            try:
-                make_thumbnail(fullsizehash, thumbnail_file)
-            except ValueError as e:
-                logger.error(f"Exception encountered generating thumbnail: {e}")
-                # dont crash, process the next image
-                continue
-
-            file_hash = hashlib.md5(thumbnail_file.read()).hexdigest()
-            thumbnail_file.seek(0)
-
-            # Upload thumnail version
-            s3_bucket.upload_file(file_hash, thumbnail_file, (fullsizehash + ".thumbnail"))
-            
-            associate_thumbnail(file_hash, thumbnail_file, elevator.id)
-            
-            count += 1
 
         # Begin adding full size to database
         f[1].seek(0)
