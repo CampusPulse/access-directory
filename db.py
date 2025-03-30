@@ -129,7 +129,6 @@ class Image(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     caption: Mapped[Optional[str]]
     alttext: Mapped[Optional[str]]
-    ordering: Mapped[int]
     attribution: Mapped[Optional[str]]
     datecreated: Mapped[datetime]
     fullsizehash: Mapped[str]
@@ -152,6 +151,7 @@ class ImageAccessPointRelation(Base):
     __tablename__ = "access_point_image_relation"
     image_id: Mapped[int] = mapped_column(ForeignKey("images.id"), primary_key=True)
     image: Mapped[Image] = relationship()
+    ordering: Mapped[int]
     access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
     access_point: Mapped[AccessPoint] = relationship()
 
