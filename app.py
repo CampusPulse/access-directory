@@ -463,6 +463,7 @@ def export_images(path):
     ).scalars()
 
     for m in access_points:
+        # TODO: migrate this to download the images
         images = db.session.execute(
             db.select(Image)
             .join(
