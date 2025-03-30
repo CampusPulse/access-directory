@@ -819,7 +819,7 @@ def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
 
 
     img = Image(
-        imghash=file_hash,
+        fullsizehash=file_hash,
         ordering=0,
         datecreated=created
     )
@@ -958,7 +958,6 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
         img = Image(
             fullsizehash=fullsizehash,
             ordering=count,
-            imghash="",# TODO: remove me
             datecreated=imageTakenOn or datetime.now(),
             naming_version=name_ver
         )
@@ -1377,7 +1376,7 @@ def upload():
 
         # Check if image is already used in DB
         count = db.session.execute(
-            db.select(func.count()).where(Image.imghash == fullsizehash)
+            db.select(func.count()).where(Image.fullsizehash == fullsizehash)
         ).scalar()
         if count > 0:
             # print(fullsizehash)
