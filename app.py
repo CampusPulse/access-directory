@@ -1435,9 +1435,6 @@ def upload():
     )
     db.session.add(elevator)
 
-    # Commit the transaction
-    db.session.commit()
-
     # Count is the order in which the images are shown
     count = 1
     for f in request.files.items(multi=True):
