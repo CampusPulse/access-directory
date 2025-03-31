@@ -152,6 +152,7 @@ def access_point_json(access_point: AccessPoint):
     # TODO: use marshmallow to serialize
     base_data = {
         "id": access_point.id,
+        "thumbnail_ref": access_point.thumbnail_ref or "",
         "building_name": access_point.location.building.name,
         "room": access_point.location.room_number,
         "floor": access_point.location.floor_number,
@@ -1288,14 +1289,19 @@ def makeThumbnail():
     image_id = request.args.get("imageid", None)
 
     # verify both exist
-    image = db.select(Image).where(Image.id == image_id).scalar_one()
+    image = db.session.execute(
+        db.select(Image).where(Image.id == image_id)
+        ).scalar_one()
 
-    access_point = db.select(AccessPoint).where(AccessPoint.id == access_point_id).scalar_one()
+    access_point = db.session.execute(
+        db.select(AccessPoint).where(AccessPoint.id == access_point_id)
+        ).scalar_one()
 
     if image is None or access_point is None:
         return render_template("404.html"), 404
 
     set_thumbnail(access_point, image)
+    db.session.commit()
 
 
     return redirect(f"/edit/{access_point_id}")
