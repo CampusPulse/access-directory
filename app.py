@@ -1441,7 +1441,6 @@ def upload():
     # Count is the order in which the images are shown
     count = 1
     for f in request.files.items(multi=True):
-        filename = secure_filename(f[1].filename)
         # print(f[1].filename)
 
         fullsizehash = generateImageHash(f[1])
