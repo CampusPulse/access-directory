@@ -1439,9 +1439,7 @@ def upload():
     db.session.commit()
 
     # Count is the order in which the images are shown
-    #   0 is the thumbnail (only shown on access point card)
-    #   All other values denote the order shown in the image carousel
-    count = 0
+    count = 1
     for f in request.files.items(multi=True):
         filename = secure_filename(f[1].filename)
         # print(f[1].filename)
