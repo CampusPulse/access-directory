@@ -1452,7 +1452,19 @@ def upload():
         ).scalar()
         if usecount > 0:
             # print(fullsizehash)
-            return render_template("404.html"), 404
+            # associate image
+            existing_image = db.session.execute(
+                db.select(Image).where(Image.fullsizehash == fullsizehash)
+            ).scalar()
+
+            db.session.add(
+                ImageAccessPointRelation(image_id=existing_image.id, 
+                ordering=count,
+                access_point_id=elevator.id)
+            )
+            count += 1
+            continue
+            # return render_template("404.html"), 404
 
         # Begin adding full size to database
         f[1].seek(0)
