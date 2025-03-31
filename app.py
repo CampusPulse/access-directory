@@ -1450,10 +1450,10 @@ def upload():
         f[1].seek(0)
 
         # Check if image is already used in DB
-        count = db.session.execute(
+        usecount = db.session.execute(
             db.select(func.count()).where(Image.fullsizehash == fullsizehash)
         ).scalar()
-        if count > 0:
+        if usecount > 0:
             # print(fullsizehash)
             return render_template("404.html"), 404
 
