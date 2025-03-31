@@ -1050,8 +1050,8 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
             ).scalar_one()
             if access_point is None:
                 print(f"access point not found with id {access_point_id}")
-                return render_template("404.html"), 404
-            set_thumbnail(access_point, img)
+            else:
+                set_thumbnail(access_point, img)
     db.session.commit()
 
 
