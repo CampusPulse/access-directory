@@ -870,7 +870,7 @@ def get_item_thumbnail(item):
             db.select(Image)
             .join(ImageAccessPointRelation, Image.id == ImageAccessPointRelation.image_id)
             .where(ImageAccessPointRelation.access_point_id == item.id)
-            .order_by(ImageAccessPointRelation.ordering)
+            .order_by(ImageAccessPointRelation.ordering.asc())
         ).scalars().first()
 
     return thumbnail
