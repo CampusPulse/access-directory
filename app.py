@@ -858,12 +858,21 @@ def not_found(e):
 
 @app.route("/email_webhook", methods=["POST"])
 def email_webhook():
+    webhook_credential = app.config["WEBHOOK_CREDENTIAL"]
+
+    # check to make sure that the POST came from an authorized source (NFSN) and not some random person POSTing stuff to this endpoint
+    if request.args.get("token") != webhook_credential:
+        return ("Unauthorized", 401)
 
     # check to make sure the email is addressed to our internal address and FROM RIT's system
 
     # Log POST fields (headers and body)
     for key, value in request.form.items():
-        logging.info(f"POST: {key} => {value}")
+        app.logger.info(f"POST: {key} => {value}")
+
+    for f in request.files.items(multi=True):
+        app.logger.info(f"FILE: {f.filename} => {f.read()}")
+
 
     return ("", 200)
 
