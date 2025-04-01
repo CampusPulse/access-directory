@@ -94,6 +94,13 @@ View Full Size Image</a>{% endif %}</pre>
                 </div>
             </div>
             <div class="col-lg-4 col-md-12">
+                <!-- Status -->
+                
+                <span class="chip" style="background-color: {{ accessPointDetails["status"]["background_color"] }}; color:{{ accessPointDetails["status"]["text_color"] }}">
+                    {{ accessPointDetails["status"]["message"] }}
+                </span>
+
+
                 {% if accessPointDetails["notes"] != '' %}
                 <h3>Description:</h3>
                 <pre style="font-family:inherit;font-size:inherit; text-wrap:wrap">{{ accessPointDetails["notes"] }} </pre>

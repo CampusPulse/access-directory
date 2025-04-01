@@ -35,6 +35,7 @@ from db import (
     AccessPointTag,
     ImageAccessPointRelation,
     Feedback,
+    StatusType
 )
 from flask_migrate import Migrate, stamp, upgrade
 from s3 import S3Bucket
@@ -149,6 +150,14 @@ def access_point_json(access_point: AccessPoint):
     naming_version = thumbnail.naming_version if thumbnail is not None else None
     thumbnail = thumbnail.fullsizehash if thumbnail is not None else None
     thumbnail = s3_bucket.get_file_s3(path_for_image(thumbnail, ImageType.THUMB, naming_version=naming_version))
+
+    status = get_item_status(access_point)
+    status_style = None
+    if status is None:
+        status_style = statusDataToStyle(StatusType.UNKNOWN, "No Data")
+    else:
+        status_style = statusDataToStyle(status.status_type, status.status, f"Ticket Number: {status.ref}")
+
     # TODO: use marshmallow to serialize
     base_data = {
         "id": access_point.id,
@@ -158,6 +167,7 @@ def access_point_json(access_point: AccessPoint):
         "floor": access_point.location.floor_number,
         "notes": access_point.remarks,
         "active": "checked" if access_point.active else "unchecked",
+        "status": status_style,
         "images": images,
         "tags": getTags(access_point.id),
     }
@@ -658,6 +668,61 @@ def detachImageByRef(image_ref, keep_files=False):
     # remove the reference to this image
     db.session.delete(image_ref)
 
+
+def statusDataToStyle(statustype: StatusType, message:str, context:str=None):
+    """return a JSON block of style information for a given status configuration
+
+    Args:
+        type (StatusType): The type of status
+        message (str): the message to display in the status
+        hovertext (str, optional): Text to display on hover. Defaults to None.
+
+    Returns:
+        dict: a dict of style info to pass to a template 
+    """
+
+    bgcolor = "#b3b3b3" # default gray
+    textcolor = "#000"
+    border = True
+    bordercolor = "#000"
+
+    if statustype == StatusType.BROKEN:
+        bgcolor = "#ff4d4d" #65% red
+        # textcolor = ""
+        border = False
+    elif statustype == StatusType.IN_PROGRESS:
+        bgcolor = "yellow"
+        # textcolor = ""
+        border = False
+    elif statustype == StatusType.FIXED:
+        bgcolor = "green"
+        textcolor = "#fff"
+        border = False
+    elif statustype == StatusType.VERIFIED:
+        bgcolor = "#6666ff" #70% blue
+        textcolor = "#fff"
+        border = False
+
+    data = {
+        "text_color": textcolor,
+        "background_color": bgcolor,
+        "border": border,
+        "message": message
+    }
+
+    if border:
+        data.update({
+            "border_color": bordercolor
+        })
+    if context is not None:
+        data.update({
+            "title": context
+        })
+
+    return data
+    
+
+
 ########################
 #
 # region Pages
@@ -900,6 +965,24 @@ def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
 
     db.session.commit()
 
+
+def get_item_status(item):
+    """Fetch the status for the provided item.
+
+    Args:
+        item (AccessPoint): The item (in this case AccessPoint) to fetch status for
+
+    Returns:
+        AccessPointStatus: the status of the access point, or None if none were found
+    """
+
+    status = db.session.execute(
+        db.select(AccessPointStatus)
+        .where(AccessPointStatus.access_point_id == item.id)
+        .order_by(AccessPointStatus.access_point_id.desc())
+    ).scalars().first()
+    
+    return status
 
 
 """
