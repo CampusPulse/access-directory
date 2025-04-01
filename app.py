@@ -868,7 +868,11 @@ def email_webhook():
 
     # Log POST fields (headers and body)
     for key, value in request.form.items():
-        logging.info(f"POST: {key} => {value}")
+        app.logger.info(f"POST: {key} => {value}")
+
+    for f in request.files.items(multi=True):
+        app.logger.info(f"FILE: {f.filename} => {f.read()}")
+
 
     return ("", 200)
 
