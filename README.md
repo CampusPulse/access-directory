@@ -1,5 +1,5 @@
 # CampusPulse Access
-An interactive catalog of accessiblity devices on RIT's campus by maintenance status
+An interactive catalog of accessibility devices on RIT's campus by maintenance status
 
 This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 
