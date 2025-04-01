@@ -12,6 +12,10 @@
                 <p style="margin-bottom: 2px" class="chip small">{{ tag }}</p>
                 {% endfor %}
                 {% endif %}
+
+                <span class="chip small" style="background-color: {{ mural["status"]["background_color"] }}; color:{{ mural["status"]["text_color"] }}">
+                    {{ mural["status"]["message"] }}
+                </span>
             </div>
     </div>
     </a>
