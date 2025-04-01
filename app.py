@@ -845,7 +845,7 @@ Generic error handler
 
 @app.errorhandler(HTTPException)
 def not_found(e):
-    logger.error(e)
+    app.logger.error(e)
     return render_template("404.html"), 404
 
 
@@ -1108,7 +1108,7 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
         try:
             make_thumbnail(resized_file, thumbnail_file)
         except ValueError as e:
-            logger.error(f"Exception encountered generating thumbnail: {e}")
+            app.logger.error(f"Exception encountered generating thumbnail: {e}")
         
         thumbnail_file.seek(0)
 
