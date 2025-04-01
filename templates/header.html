@@ -5,17 +5,12 @@
             <img class="card-img-top" src="{{ mural['thumbnail'] }}" />
 
             <div class="card-body">
-                {% if mural['tags']|length > 0 %}
                 <p style="margin-bottom: 2px;">{{ mural['title'] }}</p>
-                <p style="margin-bottom: 2px;">{{ mural['floor'] }}{{ mural["room"]}}</p>
-                <!-- <p style="margin-bottom: 4px">({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p> -->
+                <!-- <p style="margin-bottom: 2px;">{{ mural['floor'] }}{{ mural["room"]}}</p> -->
+                {% if mural['tags']|length > 0 %}
                 {% for tag in mural['tags'] %}
                 <p style="margin-bottom: 2px" class="chip small">{{ tag }}</p>
                 {% endfor %}
-                {% else %}
-                <p style="margin-bottom: 4px">{{ mural['title'] }}</p>
-                <!-- <p style="margin-bottom: 4px">{{ mural['title'] }}</p>
-            <p>({% if mural["year"] != 0 %}{{ mural["year"] }}{% else %}Unknown{% endif %})</p> -->
                 {% endif %}
             </div>
     </div>
