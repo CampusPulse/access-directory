@@ -50,7 +50,7 @@ class RoomNumber():
     def to_string(self):
         if self.floor >= 10:
             raise ValueError(f"Floor value {self.floor} is greater than one digit")
-        return integer_to_floor(self.floor) + str(self.room)
+        return integer_to_floor(self.floor) + str(self.room).zfill(3)
 
 class MapLocation():
 

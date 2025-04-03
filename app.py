@@ -1506,7 +1506,7 @@ def upload():
 
     stmt = db.select(Location).where(
         Location.building_id == building.id,
-        Location.floor_number == 0,
+        Location.floor_number == floor or 0,
         Location.room_number == room,
         Location.is_outside is False,  # elevators should not be outside
     )
@@ -1515,7 +1515,7 @@ def upload():
     if not location:
         location = Location(
             building_id=building.id,
-            floor_number=0,
+            floor_number=floor or 0,
             room_number=room,
             nickname=request.form["location-nick"],
             additional_info=request.form["location"],
