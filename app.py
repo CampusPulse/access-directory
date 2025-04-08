@@ -151,6 +151,8 @@ def access_point_json(access_point: AccessPoint):
     thumbnail = thumbnail.fullsizehash if thumbnail is not None else None
     thumbnail = s3_bucket.get_file_s3(path_for_image(thumbnail, ImageType.THUMB, naming_version=naming_version))
 
+    rn = RoomNumber(access_point.location.floor_number, access_point.location.room_number)
+
     status = get_item_status(access_point)
     status_style = None
     if status is None:
@@ -185,7 +187,7 @@ def access_point_json(access_point: AccessPoint):
             {
                 "title": title,
                 "floor": f"{integer_to_floor(access_point.floor_min)} to {integer_to_floor(access_point.floor_max)}",
-                "room": f"_{access_point.location.room_number}",
+                "room": rn.to_string(),
             }
         )
     return base_data
