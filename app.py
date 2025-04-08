@@ -186,10 +186,14 @@ def access_point_json(access_point: AccessPoint):
         base_data.update(
             {
                 "title": title,
-                "floor": f"{integer_to_floor(access_point.floor_min)} to {integer_to_floor(access_point.floor_max)}",
                 "room": rn.to_string(),
             }
         )
+
+        if access_point.floor_min != access_point.floor_max:
+            base_data.update({ 
+                "floor": f"{integer_to_floor(access_point.floor_min)} to {integer_to_floor(access_point.floor_max)}",
+            })
     return base_data
 
 
