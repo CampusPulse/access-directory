@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, ForeignKey, text, Enum as EnumType, inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, with_polymorphic
 from datetime import datetime
-
+from helpers import RoomNumber
 
 
 class ShelterType(enum.Enum):
@@ -49,6 +49,12 @@ class Building(Base):
     additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
     locations = relationship("Location", backref="building")
 
+    def human_name(self):
+        if self.short_name is not None and self.short_name != "":
+            return self.short_name
+        else:
+            return self.acronym
+
 
 class Location(Base):
     __tablename__ = "location"
@@ -62,6 +68,12 @@ class Location(Base):
     is_outside: Mapped[bool] = mapped_column(server_default='FALSE')
     additional_info: Mapped[Optional[str]]  # Example: "The accessible entrance between X and Y"
     access_points = relationship("AccessPoint", backref="location")
+
+    def human_name(self):
+        if self.nickname is not None and self.nickname != "":
+            return self.nickname
+        else:
+            return RoomNumber(self.floor_number, self.room_number).to_string()
 
 
 class AccessPoint(Base):

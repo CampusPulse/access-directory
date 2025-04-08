@@ -180,9 +180,10 @@ def access_point_json(access_point: AccessPoint):
         base_data.update({"location_nick": access_point.location.nickname})
 
     if isinstance(access_point, Elevator):
-        title = f"{access_point.location.building.short_name}"
-        if access_point.location.nickname is not None:
-            title += f" - {access_point.location.nickname}"
+        title = access_point.location.building.human_name()
+        title += f" - "
+        title += access_point.location.human_name()
+
         base_data.update(
             {
                 "title": title,
