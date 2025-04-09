@@ -1513,7 +1513,7 @@ def upload():
 
     stmt = db.select(Location).where(
         Location.building_id == building.id,
-        Location.floor_number == floor or 0,
+        Location.floor_number == floor,
         Location.room_number == room,
         Location.is_outside is False,  # elevators should not be outside
     )
