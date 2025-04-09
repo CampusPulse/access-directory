@@ -54,6 +54,13 @@ class Building(Base):
             return self.short_name
         else:
             return self.acronym
+    
+    def toJSON(self):
+        return {
+            "id":self.number,
+            "name": self.name,
+            "acronym": self.acronym
+        }
 
 
 class Location(Base):

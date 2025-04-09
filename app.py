@@ -2,7 +2,7 @@ import os
 import io
 import subprocess
 from enum import Enum
-from flask import Flask, render_template, request, redirect, abort, url_for
+from flask import Flask, render_template, request, redirect, abort, url_for, make_response
 import logging
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import HTTPException
@@ -39,6 +39,7 @@ from db import (
     StatusType
 )
 from flask_migrate import Migrate, stamp, upgrade
+from flask_cors import CORS, cross_origin
 from s3 import S3Bucket
 from typing import Optional
 import shutil
@@ -50,6 +51,8 @@ from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation
 
 
 app = Flask(__name__)
+CORS(app,origins=["*" if app.config["DEBUG"] else "https://*.campuspulse.app"], allow_headers=[
+    "Accept", "Authorization", "Content-Type"])
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -1229,6 +1232,18 @@ def mapdata():
         ],
         "type": "FeatureCollection",
     }
+
+@app.route("/buildings.json")
+@cross_origin()
+def buildingdata():
+    bldgs = db.session.execute(
+        db.select(Building)
+    ).scalars()
+    resp = make_response({
+        "buildings": [b.toJSON() for b in bldgs]
+    })
+    resp.headers['Cache-Control'] = f'public,max-age={int(60 * 10080)}'
+    return resp
 
 
 ########################
