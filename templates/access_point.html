@@ -125,15 +125,6 @@ View Full Size Image</a>{% endif %}</pre>
                 {% endfor %}
                 {% endif %}
 
-                {% if accessPointDetails["artists"]|length > 0: %}
-                <h3>Painters:</h3>
-                <ul>
-                    {% for artist in accessPointDetails["artists"]: %}
-                    <li><a href="/artist/{{ artist['id'] }}">{{artist["name"]}}</a></li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-
                 {% if accessPointDetails["remarks"] %}
                 <div class="accordion" id="remarkdropdown">
                     <div class="accordion-item">
