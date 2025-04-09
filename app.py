@@ -11,6 +11,7 @@ import re
 from functools import wraps
 from random import shuffle
 from PIL import Image as PilImage
+from relative_datetime import DateTimeUtils
 from PIL.ExifTags import TAGS as EXIF_TAGS, Base as ExifBase
 from datetime import datetime, timezone
 from db import (
@@ -155,10 +156,13 @@ def access_point_json(access_point: AccessPoint):
 
     status = get_item_status(access_point)
     status_style = None
+    statusUpdated = "No Data"
     if status is None:
         status_style = statusDataToStyle(StatusType.UNKNOWN, "No Data")
     else:
         status_style = statusDataToStyle(status.status_type, status.status, f"Ticket Number: {status.ref}")
+        relative_time, direction = DateTimeUtils.relative_datetime(status.timestamp)
+        statusUpdated = relative_time + " ago" if direction == "past" else ""
 
     # TODO: use marshmallow to serialize
     base_data = {
@@ -170,6 +174,7 @@ def access_point_json(access_point: AccessPoint):
         "notes": access_point.remarks,
         "active": "checked" if access_point.active else "unchecked",
         "status": status_style,
+        "status_updated": statusUpdated,
         "images": images,
         "tags": getTags(access_point.id),
     }
