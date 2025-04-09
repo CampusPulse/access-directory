@@ -45,7 +45,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation
 
 
 app = Flask(__name__)
@@ -178,6 +178,9 @@ def access_point_json(access_point: AccessPoint):
         base_data.update({"thumbnail": thumbnail})
     if access_point.location.nickname is not None:
         base_data.update({"location_nick": access_point.location.nickname})
+
+    if access_point.location.latitude is not None and access_point.location.longitude:
+        base_data.update({"coordinates": MapLocation.to_string(access_point.location.latitude, access_point.location.longitude)})
 
     if isinstance(access_point, Elevator):
         title = access_point.location.building.human_name()
@@ -1314,6 +1317,14 @@ def editAccessPoint(id):
         m.remarks = request.form["remarks"]
     if request.form["location-nick"] not in ("None", ""):
         m.location.nickname = request.form["location-nick"]
+    if request.form["coords"] not in ("None", ""):
+        gpsLocation = MapLocation.from_string(request.form["coords"])
+
+        if gpsLocation is not None:
+            lat, long = gpsLocation
+            m.location.latitude = lat
+            m.location.longitude = long
+    
     if request.form["location"] not in ("None", ""):
         m.location = request.form["location"]
     # if request.form["private_notes"]  not in ("None", ""):
@@ -1520,12 +1531,25 @@ def upload():
     location = db.session.execute(stmt).scalar_one_or_none()
 
     if not location:
+
+        locationData = {
+            "building_id": building.id,
+            "floor_number": floor or 0,
+            "room_number": room,
+            "nickname": request.form["location-nick"],
+            "additional_info": request.form["location"],
+        }
+        gpsLocation = MapLocation.from_string(request.form["coords"])
+
+        if gpsLocation is not None:
+            lat, long = gpsLocation
+            locationData.update({
+                "latitude": lat,
+                "longitude": long
+            })
+
         location = Location(
-            building_id=building.id,
-            floor_number=floor or 0,
-            room_number=room,
-            nickname=request.form["location-nick"],
-            additional_info=request.form["location"],
+            **locationData
         )
         db.session.add(location)
         db.session.flush()  # Get the location ID

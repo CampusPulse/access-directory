@@ -57,6 +57,23 @@ class MapLocation():
     PRECISION = 5
 
     @staticmethod
+    def from_string(lat_long: str, delimiter=","):
+        if lat_long is None or lat_long == "":
+            return None
+        ll = lat_long.split(delimiter)
+        try:
+            lat = float(ll[0].strip())
+            long = float(ll[1].strip())
+            return MapLocation.from_lat_long(lat, long)
+        except Exception as e:
+            raise ValueError("invalid value for lat long from string") from e
+
+    @staticmethod
+    def to_string(lat:int, long:int, delimiter=", "):
+        lat, long = MapLocation.to_lat_long(lat, long)
+        return f"{lat}{delimiter}{long}"
+
+    @staticmethod
     def from_lat_long(lat:float, long:float):
         
 
