@@ -54,14 +54,15 @@ class RoomNumber():
 
 class MapLocation():
 
+    PRECISION = 5
+
     @staticmethod
     def from_lat_long(lat:float, long:float):
-        PRECISION = 5
+        
 
-        return int(lat * (10 ** PRECISION)), int(long * (10 ** PRECISION))
+        return int(lat * (10 ** MapLocation.PRECISION)), int(long * (10 ** MapLocation.PRECISION))
     
     @staticmethod
     def to_lat_long(lat:int, long: int):
-        PRECISION = 5
 
-        return lat/(10 ** PRECISION), long/(10 ** PRECISION)
+        return lat/(10 ** MapLocation.PRECISION), long/(10 ** MapLocation.PRECISION)
