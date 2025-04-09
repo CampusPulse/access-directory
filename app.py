@@ -180,6 +180,7 @@ def access_point_json(access_point: AccessPoint):
         "status_updated": statusUpdated,
         "images": images,
         "tags": getTags(access_point.id),
+        "report_url": f"https://report.campuspulse.app/elevator?room={rn.to_string()}&building={access_point.location.building.number}:{access_point.location.building.acronym}"
     }
 
     if thumbnail is not None:
