@@ -46,6 +46,7 @@ python-dotenv = "*"
 gunicorn = "*"
 python-magic = "*"
 relative-datetime = "*"
+flask-cors = "*"
 
 [dev-packages]
 
