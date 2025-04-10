@@ -251,7 +251,7 @@ def image_json(image: Image):
         "imgurl": s3_bucket.get_file_s3(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version)),
         "caption": image.caption or "",
         "alttext": image.alttext or "",
-        "attribution": image.attribution or "",
+        "attribution": image.attribution or "Anonymous",
         "datecreated": image.datecreated,
         "id": image.id,
     }
