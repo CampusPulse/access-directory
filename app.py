@@ -1007,7 +1007,7 @@ def get_item_status(item):
     status = db.session.execute(
         db.select(AccessPointStatus)
         .where(AccessPointStatus.access_point_id == item.id)
-        .order_by(AccessPointStatus.access_point_id.desc())
+        .order_by(AccessPointStatus.timestamp.desc())
     ).scalars().first()
     
     return status
