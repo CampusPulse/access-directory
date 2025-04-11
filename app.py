@@ -47,7 +47,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType
 
 
 app = Flask(__name__)
@@ -883,7 +883,14 @@ def email_webhook():
     if request.args.get("token") != webhook_credential:
         return ("Unauthorized", 401)
 
-    # check to make sure the email is addressed to our internal address and FROM RIT's system
+   
+
+    from_addr = request.form.get("From")
+    app.logger.info(from_addr)
+    # check to make sure the email is FROM RIT's system
+
+    subject = request.form.get("Subject")
+    app.logger.info(subject)
 
     # Log POST fields (headers and body)
     for key, value in request.form.items():
