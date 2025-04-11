@@ -897,9 +897,9 @@ def email_webhook():
         app.logger.info(f"POST: {key} => {value}")
 
     for key, file in request.files.items(multi=True):
-        app.logger.info(f"FILE: {key} => {value}")
+        app.logger.info(f"FILE: {key} => {file}")
         try:
-            app.logger.info(f"mime: {value.mimetype}")
+            app.logger.info(f"mime: {file.mimetype}")
         except:
             pass
         # file.save(buffer)
