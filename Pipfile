@@ -47,6 +47,7 @@ gunicorn = "*"
 python-magic = "*"
 relative-datetime = "*"
 flask-cors = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 
