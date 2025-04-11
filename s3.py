@@ -40,7 +40,7 @@ class S3Bucket:
         # for the streaming to continue, uninterrupted.
         if file_hash is None:
             print(f"Failed to fetch {file_hash}")
-            url = "../static/images/csh_tilted.png"
+            url = "../static/images/logo_tilted.png"
         else:
             url = self._client.generate_presigned_url(
                 "get_object",
