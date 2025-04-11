@@ -165,11 +165,6 @@ class ServiceNowStatus:
 			str: the ref/ticket number this email refers to
 			str: the comment (if any). Defaults to none.
 		"""
-		
-		if not sender.endswith("<help@rit.edu>"):
-			print("invalid email")
-			return
-
 		timestamp = datetime.now(timezone.utc).astimezone()
 		comment = None
 		status_type, ref, new_comment = cls.statusFromSubject(subject)

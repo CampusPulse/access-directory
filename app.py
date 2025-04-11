@@ -889,6 +889,10 @@ def email_webhook():
     app.logger.info(from_addr)
     # check to make sure the email is FROM RIT's system
 
+    if not from_addr.endswith("<help@rit.edu>"):
+        print("invalid email")
+        return
+
     subject = request.form.get("Subject")
     app.logger.info(subject)
 
