@@ -764,15 +764,16 @@ def map_page():
     return render_template("map.html")
 
 
-@app.route("/catalog?q=<query>")
 @app.route("/catalog")
 def catalog():
     query = request.args.get("q")
+    page = int(request.args.get("p"))
     if query == None:
         return render_template(
             "catalog.html",
             q=query,
-            accessPoints=getAccessPointsPaginated(0),
+            page=(page or 0) + 1,
+            accessPoints=getAccessPointsPaginated(page or 0),
             tags=getAllTags(),
         )
     else:
@@ -797,26 +798,6 @@ def tags():
             pageTitle=f"Tag - {tag}",
             subHeading=getTagDetails(tag)["description"],
             accessPoints=getAccessPointsTagged(tag),
-        )
-
-
-"""
-Get next page of access points
-"""
-
-
-@app.route("/page?p=<page>")
-@app.route("/page")
-def paginated():
-    page = int(request.args.get("p"))
-    if page == None:
-        # print("No page")
-        return render_template("404.html"), 404
-    else:
-        return render_template(
-            "paginated.html",
-            page=(page + 1),
-            accessPoints=getAccessPointsPaginated(page),
         )
 
 

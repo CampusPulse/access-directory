@@ -36,7 +36,7 @@ Catalog - CampusPulse Access
         <div class="row">
             {% for mural in accessPoints %}
                 {% if loop.index is divisibleby 18 %}
-                    {{ muralcard(mural, True, 1) }}
+                    {{ muralcard(mural, True, page) }}
                 {% else %}
                     {{ muralcard(mural) }}
                 {% endif %}
