@@ -188,6 +188,9 @@ def access_point_json(access_point: AccessPoint):
     if access_point.location.nickname is not None:
         base_data.update({"location_nick": access_point.location.nickname})
 
+    if access_point.location.additional_info is not None:
+        base_data.update({"location_info": access_point.location.additional_info})
+
     if access_point.location.latitude is not None and access_point.location.longitude:
         base_data.update({"coordinates": MapLocation.to_string(access_point.location.latitude, access_point.location.longitude)})
 
