@@ -1101,7 +1101,7 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
 
 
     # Upload full size img to S3
-    s3_bucket.upload_file(original_filename, file, filename=original_filename)
+    s3_bucket.upload_file(original_filename, file_obj, filename=original_filename)
 
     file_obj.seek(0)
     imageTakenOn = creationTimeFromFileExif(file_obj)
