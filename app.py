@@ -770,7 +770,7 @@ def map_page():
 @app.route("/catalog")
 def catalog():
     query = request.args.get("q")
-    page = int(request.args.get("p"))
+    page = int(request.args.get("p", "0"))
     if query == None:
         return render_template(
             "catalog.html",
