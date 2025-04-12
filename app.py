@@ -543,8 +543,9 @@ def openCanvas():
 @app.route("/catalog")
 def catalog():
     query = request.args.get("q")
+    page = int(request.args.get("p"))
     if query == None:
-        return render_template("catalog.html", q=query, murals=getMuralsPaginated(0), tags=getAllTags())
+        return render_template("catalog.html", q=query, page=(page or 0) + 1, murals=getMuralsPaginated(page or 0), tags=getAllTags())
     else:
         return render_template("filtered.html", pageTitle="Query - {0}".format(query), subHeading="Search Query", q=query, murals=searchMurals(query))
 
