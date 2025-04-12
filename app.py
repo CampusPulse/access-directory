@@ -818,29 +818,6 @@ def access_point(id):
     else:
         return render_template("404.html"), 404
 
-
-"""
-Page for specific year
-"""
-
-
-@app.route("/year/<year>")
-def year(year):
-    if checkYearExists(year):
-        if year == "0":
-            readableYear = "Unknown Date"
-        else:
-            readableYear = year
-        return render_template(
-            "filtered.html",
-            pageTitle=f"AccessPoints from {readableYear}",
-            subHeading=None,
-            accessPoints=getAllAccessPointsFromYear(year),
-        )
-    else:
-        return render_template("404.html"), 404
-
-
 """
 Generic error handler
 """
