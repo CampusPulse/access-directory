@@ -1,6 +1,7 @@
 import os
 import io
 import subprocess
+from dateutil import parser
 from enum import Enum
 from flask import Flask, render_template, request, redirect, abort, url_for, make_response
 import logging
@@ -221,17 +222,16 @@ Create a JSON object for Feedback
 
 def feedback_json(feedback: Feedback):
     feedback = feedback[0]
-    dt = datetime.now(timezone.utc)
-    dt = dt.replace(tzinfo=None)
-    fb_dt = feedback.time
-    diff = dt - fb_dt
+    fb_dt = parser.parse(feedback.time)
+
+    relative_time, direction = DateTimeUtils.relative_datetime(fb_dt)
 
     return {
         "id": feedback.feedback_id,
         "access_point_id": feedback.access_point_id,
         "notes": feedback.notes,
         "contact": feedback.contact,
-        "approxtime": f"{diff.days} days ago",  # approx_time,
+        "approxtime": relative_time + " ago" if direction == "past" else "",
         "exacttime": fb_dt,
     }
 
