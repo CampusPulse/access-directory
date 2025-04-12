@@ -123,25 +123,41 @@ class Elevator(AccessPoint):
         "polymorphic_identity": "elevator",
     }
 
-
-
-class AccessPointStatus(Base):
+class Report(Base):
     """
-    Enables the storage of status history for each access point.
-    Current status can be retrieved by getting the latest item in the table by timestamp
-    Notes can be added by updating the status to the same value with a new note 
+    A central place for information about reported (confirmed) issues.
     """
-    __tablename__ = "access_point_status"
+    __tablename__ = "report"
     id: Mapped[int] = mapped_column(primary_key=True)
-    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"))
+    ref: Mapped[Optional[str]] # ticket number/reference
+
+
+class Status(Base):
+    """
+    Enables the storage of status history for each report.
+    Current status can be retrieved by getting the latest item in the table by timestamp
+    Notes can be added by updating the status to the same value with a new note
+    """
+    __tablename__ = "report_status"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    report_id: Mapped[int] = mapped_column(ForeignKey("report.id"))
     status: Mapped[str]  # Example: "Operational", "Out of Service", "Maintenance"
     status_type: Mapped[EnumType(StatusType)] = mapped_column(EnumType(StatusType))
     timestamp: Mapped[datetime]  # When the status was recorded
     notes: Mapped[Optional[str]]  # Additional context if needed
-    ref: Mapped[str] # ticket number/reference
 
-    # Relationship to AccessPoint
-    access_point = relationship("AccessPoint", back_populates="status_history")
+    report = relationship("Report")
+
+
+class AccessPointReports(Base):
+    """
+    Mapping between Access Points and Reports
+    """
+    __tablename__ = "access_point_reports"
+    report_id: Mapped[int] = mapped_column(ForeignKey("report.id"), primary_key=True)
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
+
+
 
 class Image(Base):
     __tablename__ = "images"

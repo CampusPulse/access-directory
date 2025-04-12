@@ -31,7 +31,9 @@ from db import (
     AccessPoint,
     DoorButton,
     Elevator,
-    AccessPointStatus,
+    AccessPointReports,
+    Report,
+    Status,
     Image,
     Tag,
     AccessPointTag,
@@ -164,7 +166,7 @@ def access_point_json(access_point: AccessPoint):
     if status is None:
         status_style = statusDataToStyle(StatusType.UNKNOWN, "No Data")
     else:
-        status_style = statusDataToStyle(status.status_type, status.status, f"Ticket Number: {status.ref}")
+        status_style = statusDataToStyle(status.status_type, status.status, f"Ticket Number: {status.report.ref}")
         relative_time, direction = DateTimeUtils.relative_datetime(status.timestamp)
         statusUpdated = relative_time + " ago" if direction == "past" else ""
 
@@ -994,9 +996,10 @@ def get_item_status(item):
     """
 
     status = db.session.execute(
-        db.select(AccessPointStatus)
-        .where(AccessPointStatus.access_point_id == item.id)
-        .order_by(AccessPointStatus.timestamp.desc())
+        db.select(Status)
+        .join(AccessPointReports, AccessPointReports.report_id == Status.report_id)
+        .where(AccessPointReports.access_point_id == item.id)
+        .order_by(Status.timestamp.desc())
     ).scalars().first()
     
     return status
