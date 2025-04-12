@@ -543,7 +543,7 @@ def openCanvas():
 @app.route("/catalog")
 def catalog():
     query = request.args.get("q")
-    page = int(request.args.get("p"))
+    page = int(request.args.get("p", "0"))
     if query == None:
         return render_template("catalog.html", q=query, page=(page or 0) + 1, murals=getMuralsPaginated(page or 0), tags=getAllTags())
     else:
