@@ -559,19 +559,6 @@ def tags():
         return render_template("filtered.html", pageTitle="Tag - {0}".format(tag), subHeading=getTagDetails(tag)['description'], murals=getMuralsTagged(tag))
 
 """
-Get next page of murals
-"""
-@app.route("/page?p=<page>")
-@app.route("/page")
-def paginated():
-    page = int(request.args.get("p"))
-    if page == None:
-        #print("No page")
-        return render_template("404.html"), 404
-    else:
-        return render_template("paginated.html", page=(page+1), murals=getMuralsPaginated(page))
-
-"""
 Page for specific mural details
 """
 @app.route("/murals/<id>")
