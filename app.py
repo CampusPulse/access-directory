@@ -770,13 +770,13 @@ def map_page():
 @app.route("/catalog")
 def catalog():
     query = request.args.get("q")
-    page = int(request.args.get("p", "0"))
+    page = int(request.args.get("p", "1"))
     if query == None:
         return render_template(
             "catalog.html",
             q=query,
-            page=(page or 0) + 1,
-            accessPoints=getAccessPointsPaginated(page or 0),
+            page=page,
+            accessPoints=getAccessPointsPaginated(page - 1),
             tags=getAllTags(),
         )
     else:
