@@ -877,17 +877,28 @@ def email_webhook():
     subject = request.form.get("Subject")
     app.logger.info(subject)
 
+    # ensure this is not a ticket about a door button (we dont have those in the DB yet)
+    if "Automated Accessible Door Operator" in subject:
+        return
+
     # Log POST fields (headers and body)
+    # POST fields: From, To, Subject, Date, and Message-ID
+    # The main message body as "Body" (also POST)
     for key, value in request.form.items():
-        app.logger.info(f"POST: {key} => {value}")
+        app.logger.debug(f"POST: {key} => {value}")
+    
+    html_body = None
 
     for key, file in request.files.items(multi=True):
-        app.logger.info(f"FILE: {key} => {file}")
-        try:
-            app.logger.info(f"mime: {file.mimetype}")
-        except:
-            pass
-        # file.save(buffer)
+        if file.mimetype == 'text/html':
+            html_body = file.read()
+
+    if html_body is None:
+        logger.error("Email sent via webhook did not have an HTML component to the multipart body")
+
+    statusUpdate = ServiceNowStatus.from_email(from_addr, subject, html_body)
+
+    
 
 
     return ("", 200)
