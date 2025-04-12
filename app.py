@@ -1338,8 +1338,8 @@ def editAccessPoint(id):
             m.location.latitude = lat
             m.location.longitude = long
     
-    if request.form["location"] not in ("None", ""):
-        m.location = request.form["location"]
+    if request.form["location-info"] not in ("None", ""):
+        m.location.additional_info = request.form["location-info"]
     # if request.form["private_notes"]  not in ("None", ""):
     #     m.private_notes = request.form["private_notes"]
     db.session.commit()
