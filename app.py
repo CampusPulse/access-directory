@@ -881,8 +881,39 @@ def email_webhook():
 
     statusUpdate = ServiceNowStatus.from_email(from_addr, subject, html_body)
 
-    
+    report = db.session.execute(
+        db.select(Report).where(Report.ref == statusUpdate.ref)
+    ).scalar()
 
+    if report is None:
+        # create new report and status
+        report = Report(
+            ref=statusUpdate.ref
+        )
+
+        db.session.add(report)
+    
+    statusMap = {
+        ServiceNowUpdateType.NEW: (StatusType.BROKEN, "Filed"),
+        ServiceNowUpdateType.RESOLVED:  (StatusType.FIXED , "Fixed"),
+        ServiceNowUpdateType.IN_PROGRESS:  (StatusType.IN_PROGRESS, "In Progress"),
+        ServiceNowUpdateType.UNKNOWN:  (StatusType.UNKNOWN, "Unknown")
+    }
+
+    status, status_type = statusMap[statusUpdate.status_type]
+
+    # create new status
+    status = Status(
+        report_id=report.id,
+        status=status,
+        status_type=status_type,
+        timestamp=statusUpdate.timestamp,
+        notes=statusUpdate.comment
+    )
+    db.session.add(status)
+
+    
+    db.session.commit()
 
     return ("", 200)
 
