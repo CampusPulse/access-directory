@@ -678,7 +678,7 @@ def detachImageByRef(image_ref, keep_files=False):
     # check how many total references to this image exist
     total_ref_count = db.session.execute(
         db.select(func.count()).where(
-            ImageAccessPointRelation.image_id == image.id
+            Image.fullsizehash == image.fullsizehash
         )
     ).scalar()
 
