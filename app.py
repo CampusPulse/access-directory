@@ -992,7 +992,7 @@ def get_item_status(item):
         item (AccessPoint): The item (in this case AccessPoint) to fetch status for
 
     Returns:
-        AccessPointStatus: the status of the access point, or None if none were found
+        Status: the status of the access point, or None if none were found
     """
 
     status = db.session.execute(
