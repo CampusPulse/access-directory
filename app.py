@@ -854,15 +854,16 @@ def email_webhook():
     # check to make sure the email is FROM RIT's system
 
     if not from_addr.endswith("<help@rit.edu>"):
-        print("invalid email")
-        return
+        app.logger.warning("invalid email address - skipping")
+        return ("", 200)
 
     subject = request.form.get("Subject")
     app.logger.info(subject)
 
     # ensure this is not a ticket about a door button (we dont have those in the DB yet)
     if "Automated Accessible Door Operator" in subject:
-        return
+        app.logger.warning("Subject indicates this is not an elevator issue - skipping")
+        return ("", 200)
 
     # Log POST fields (headers and body)
     # POST fields: From, To, Subject, Date, and Message-ID
@@ -877,7 +878,8 @@ def email_webhook():
             html_body = file.read()
 
     if html_body is None:
-        logger.error("Email sent via webhook did not have an HTML component to the multipart body")
+        app.logger.error("Email sent via webhook did not have an HTML component to the multipart body")
+        return ("", 200)
 
     statusUpdate = ServiceNowStatus.from_email(from_addr, subject, html_body)
 
