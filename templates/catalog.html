@@ -14,31 +14,15 @@ Catalog - CampusPulse Access
 
 <div class="container text-center">
     <div class="row mb-3">
-        <div class="col-2">
-            {% if page != 1 %}
-            <a href="?p={{ page - 1}}">
-                <button type="button" class="btn btn-primary">Last</button>
-            </a>
-            {% endif %}
-        </div>
-        <div class="col-8">
-            <form action="/catalog">
-                <div class="input-group">
-                    <label class="visually-hidden" for="q">Search:</label>
-                    <input name="q" id="q" type="text" class="form-control" {% if not q %} placeholder="Search..." {% else %} value="{{ q }}" {% endif %}>
-                    <button class="btn btn-dark" type="submit" aria-expanded="false">
-                        <img src="{{ url_for('static', filename='images/search.png') }}" alt="Search Icon" style="width: 20px; height: 20px; margin-bottom: 2px; filter: invert(1);">
-                    </button>
-                </div>
-            </form>
-        </div>
-        <div class="col-2">
-            {% if accessPoints | length == 18 %}
-            <a href="?p={{ page + 1}}">
-                <button type="button" class="btn btn-primary">Next</button>
-            </a>
-            {% endif %}
-        </div>
+        <form action="/catalog">
+            <div class="input-group">
+                <label class="visually-hidden" for="q">Search:</label>
+                <input name="q" id="q" type="text" class="form-control" {% if not q %} placeholder="Search..." {% else %} value="{{ q }}" {% endif %}>
+                <button class="btn btn-dark" type="submit" aria-expanded="false">
+                    <img src="{{ url_for('static', filename='images/search.png') }}" alt="Search Icon" style="width: 20px; height: 20px; margin-bottom: 2px; filter: invert(1);">
+                </button>
+            </div>
+        </form>
     </div>
 
     {% if tags | length > 0 %}

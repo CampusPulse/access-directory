@@ -1,0 +1,9 @@
+{% from "includes/muralcard.html" import muralcard with context %}
+
+{% for mural in murals %}
+{% if loop.index is divisibleby 18 %}
+    {{ muralcard(mural, True, page) }}
+{% else %}
+    {{ muralcard(mural) }}
+{% endif %}
+{% endfor %}
