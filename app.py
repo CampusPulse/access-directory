@@ -902,7 +902,7 @@ def email_webhook():
         ServiceNowUpdateType.UNKNOWN:  (StatusType.UNKNOWN, "Unknown")
     }
 
-    status, status_type = statusMap[statusUpdate.status_type]
+    status_type, status = statusMap[statusUpdate.status_type]
 
     # create new status
     status = Status(
