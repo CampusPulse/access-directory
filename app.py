@@ -785,7 +785,11 @@ def catalog():
         )
         else:
             page = int(page)
-            return render_template("paginated.html", page=(page+1),murals=getMuralsPaginated(page))
+            return render_template(
+                "paginated.html", 
+                page=(page+1),
+                murals=getAccessPointsPaginated(page)
+            )
     else:
         return render_template(
             "filtered.html",
