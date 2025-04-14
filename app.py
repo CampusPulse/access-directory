@@ -840,6 +840,24 @@ def not_found(e):
     return render_template("404.html"), 404
 
 
+
+########################
+#
+# region Decorators
+#
+########################
+
+def debug_only(f):
+    @wraps(f)
+    def wrapped(**kwargs):
+        if app.config["DEBUG"]:
+            return f(**kwargs)
+        return abort(404)
+
+    return wrapped
+
+
+
 ########################
 #
 # region Ingest
@@ -936,22 +954,45 @@ def email_webhook():
     return ("", 200)
 
 
+@app.route("/add_ticket/<item_id>", methods=["POST"])
+@debug_only
+def add_ticket(item_id):
+    if not checkAccessPointExists(item_id):
+        return "Not found", 404
+
+    ticket_ref = request.form.get("ticket_ref")
+    if ticket_ref is None or ticket_ref == "" or not ticket_ref.startswith("WOT"):
+        return "invalid ticket number", 400
+
+    report = db.session.execute(
+        db.select(Report).where(Report.ref == ticket_ref)
+    ).scalar()
+
+    if report is None:
+        # create new report and status
+        report = Report(
+            ref=ticket_ref
+        )
+
+        db.session.add(report)
+        db.session.flush()
+    
+    # create new association
+    association = AccessPointReports(
+        report_id=report.id,
+        access_point_id=item_id
+    )
+    db.session.add(association)
+    
+    db.session.commit()
+
+    return ("", 200)
+
 ########################
 #
 # region Management Helpers
 #
 ########################
-
-
-def debug_only(f):
-    @wraps(f)
-    def wrapped(**kwargs):
-        if app.config["DEBUG"]:
-            return f(**kwargs)
-        return abort(404)
-
-    return wrapped
-
 
 def make_thumbnail(input_file, output_file, raise_if_already=True):
     """
