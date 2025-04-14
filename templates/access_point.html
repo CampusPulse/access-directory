@@ -152,6 +152,12 @@ View Full Size Image</a>{% endif %}</pre>
                     <button type="button" class="btn btn-primary">Report issue</button>
                 </a>
 
+                {% if config['DEBUG'] %}
+                    <a href="/edit/{{ accessPointDetails['id'] }}">
+                        <button type="button" class="btn btn-primary">Edit</button>
+                    </a>
+                {% endif %}
+
                 <div class="accordion" id="accordionExample">
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingOne">
