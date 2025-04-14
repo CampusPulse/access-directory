@@ -167,7 +167,7 @@ def access_point_json(access_point: AccessPoint):
         status_style = statusDataToStyle(StatusType.UNKNOWN, "No Data")
     else:
         status_style = statusDataToStyle(status.status_type, status.status, f"Ticket Number: {status.report.ref}")
-        relative_time, direction = DateTimeUtils.relative_datetime(status.timestamp)
+        relative_time, direction = DateTimeUtils.relative_datetime(status.timestamp.astimezone())
         statusUpdated = relative_time + " ago" if direction == "past" else ""
 
     # TODO: use marshmallow to serialize
