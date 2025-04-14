@@ -757,7 +757,7 @@ def statusDataToStyle(statustype: StatusType, message:str, context:str=None):
 
 @app.route("/")
 def home():
-    return redirect("/map", code=302)
+    return redirect("/catalog", code=302)
 
 
 @app.route("/about")
