@@ -868,11 +868,6 @@ def email_webhook():
     subject = request.form.get("Subject")
     app.logger.info(subject)
 
-    # ensure this is not a ticket about a door button (we dont have those in the DB yet)
-    if "Automated Accessible Door Operator" in subject:
-        app.logger.warning("Subject indicates this is not an elevator issue - skipping")
-        return ("", 200)
-
     # Log POST fields (headers and body)
     # POST fields: From, To, Subject, Date, and Message-ID
     # The main message body as "Body" (also POST)
@@ -912,13 +907,20 @@ def email_webhook():
 
     status_type, status = statusMap[statusUpdate.status_type]
 
+
+    statusNotes = ""
+    if statusUpdate.comment is not None and statusUpdate.comment != "":
+        statusNotes = statusUpdate.comment
+    else:
+        statusNotes = subject
+
     # create new status
     status = Status(
         report_id=report.id,
         status=status,
         status_type=status_type,
         timestamp=statusUpdate.timestamp,
-        notes=statusUpdate.comment
+        notes=statusNotes
     )
     db.session.add(status)
 
