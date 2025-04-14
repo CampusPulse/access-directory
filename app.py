@@ -868,6 +868,11 @@ def email_webhook():
     subject = request.form.get("Subject")
     app.logger.info(subject)
 
+    # ensure this is not a ticket about a door button (we dont have those in the DB yet)
+    if "WOT" not in subject:
+        app.logger.warning("Subject indicates this is not an FMS work order update email - skipping")
+        return ("", 200)
+
     # Log POST fields (headers and body)
     # POST fields: From, To, Subject, Date, and Message-ID
     # The main message body as "Body" (also POST)
