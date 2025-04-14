@@ -146,7 +146,7 @@ class ServiceNowStatus:
 		for e in soup.findAll('br'):
 			e.decompose()
 		comment = "".join(comment.contents)
-		dtstamp = parser.parse(timestamp)
+		dtstamp = parser.parse(timestamp, tzinfos={"EDT": -4*3600})
 
 		return (f"{author}: {comment}", dtstamp)
 
