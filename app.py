@@ -1389,6 +1389,9 @@ def editAccessPoint(id):
     
     if request.form["location-info"] not in ("None", ""):
         m.location.additional_info = request.form["location-info"]
+
+    if request.form["door_count"] not in ("None", ""):
+        m.door_count = int(request.form["door_count"])
     # if request.form["private_notes"]  not in ("None", ""):
     #     m.private_notes = request.form["private_notes"]
     db.session.commit()

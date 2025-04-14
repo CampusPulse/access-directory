@@ -148,6 +148,12 @@
                   <p class="thin">What would people commonly know this location as? Ideally something different from other locations that may be in the catalog (i.e. "South elevator", "Right" etc )</p>
                   <input value="{{ accessPointDetails['location_nick'] }}" type="text" class="form-control" id="location-nick" name="location-nick">
                 </div>
+
+                <div class="mb-3">
+                  <label for="door_count" class="form-label">Number of Doors</label>
+                  <p class="thin">How many doors does the car in this elevator have?</p>
+                  <input type="number" value="{{ accessPointDetails['door_count'] }}" class="form-control" id="door_count" name="door_count">
+                </div>
                 <!-- <h1>Private Information</h1>
                 <div class="mb-3">
                     <label for="location" class="form-label">Private Notes</label>
