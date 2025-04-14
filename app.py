@@ -897,6 +897,7 @@ def email_webhook():
         )
 
         db.session.add(report)
+        db.session.flush()
     
     statusMap = {
         ServiceNowUpdateType.NEW: (StatusType.BROKEN, "Filed"),
