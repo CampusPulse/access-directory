@@ -1615,6 +1615,17 @@ def upload():
         )
         db.session.add(location)
         db.session.flush()  # Get the location ID
+    
+    
+    extra_data = {}
+    door_count = request.form.get('door_count')
+    if door_count is not None:
+        try:
+            door_count = int(door_count)
+            extra_data["door_count"] = door_count
+        
+        except Exception as e:
+            app.logger.error(f"cound not parse door count: {e}")
 
     # Step 3: Insert the elevator access point
     elevator = Elevator(
@@ -1623,6 +1634,7 @@ def upload():
         location_id=location.id,
         remarks=request.form["notes"],
         active=request.form["active"] == "true",
+        **extra_data
     )
     db.session.add(elevator)
 
