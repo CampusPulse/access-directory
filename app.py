@@ -240,7 +240,7 @@ def map_features_geojson(access_point: AccessPoint):
             "status": status[0].value,
         },
         "geometry":{
-            "coordinates": [access_point.location.latitude, access_point.location.longitude],
+            "coordinates": MapLocation.to_lat_long(access_point.location.latitude, access_point.location.longitude),
             "type": "Point"
         }
     }
