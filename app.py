@@ -399,9 +399,6 @@ def getAllBuildings():
     return b
 
 
-def getMapFeatures():
-    return mapdata()
-
 """
 Get all tags
 """
@@ -803,10 +800,7 @@ def about():
 
 @app.route("/map")
 def map_page():
-    return render_template(
-        "map.html",
-        mapFeatures = getMapFeatures(),
-        )
+    return render_template("map.html")
 
 
 @app.route("/catalog")
