@@ -15,6 +15,7 @@ from PIL import Image as PilImage
 from relative_datetime import DateTimeUtils
 from PIL.ExifTags import TAGS as EXIF_TAGS, Base as ExifBase
 from datetime import datetime, timezone
+from sqlalchemy import and_
 from db import (
     db,
     func,
@@ -222,8 +223,6 @@ Creates a geojson for map feature
 """
 
 def map_features_geojson(access_point: AccessPoint):
-    if access_point.location.latitude is None or access_point.location.longitude is None:
-        return
     
     status = get_item_status(access_point)
 
@@ -1336,7 +1335,7 @@ def mapdata():
                 db.select(AccessPoint)
                 .join(Location)
                 .where(AccessPoint.location_id == Location.id)
-                .where(Location.latitude is not None, Location.longitude is not None )
+                .filter(and_(Location.latitude != None, Location.longitude != None))
             ).scalars(),
         )
     )
