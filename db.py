@@ -147,6 +147,9 @@ class Status(Base):
 
     report = relationship("Report")
 
+    def statusInfo(self):
+        return (self.status_type, self.status)
+
 
 class AccessPointReports(Base):
     """

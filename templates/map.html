@@ -12,8 +12,8 @@ Map - CampusPulse Access
 <div id="map" style="height: 100%;"></div>
 <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoiZGxsMzE4MiIsImEiOiJjbTd5MGl0Z2EwMmY4Mmtva3RwZGhsZzN2In0.IJf35DbJhKNps9DCMdpt0A';
-    
-    v1 = new mapboxgl.LngLatBounds([-77.7203, 43.0668], [-77.6306, 43.1053]);
+
+    v1 = new mapboxgl.LngLatBounds([-77.70100,43.04672], [-77.65506, 43.09033]);
     const map = new mapboxgl.Map({
         container: 'map', // container ID
         style: 'mapbox://styles/dll3182/cm83naqcq003701qvbsvm95v6', // Custom Mapbox style
@@ -23,45 +23,66 @@ Map - CampusPulse Access
     });
 
     map.on('load', () => {
-        // Add an image to use as a custom marker
-        map.loadImage(
-            'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png',
-            (error, image) => {
-                if (error) throw error;
-                map.addImage('custom-marker', image);
 
-                // Load the GeoJSON file using fetch
-                fetch('/map.geojson')
-                    .then(response => response.json())
-                    .then(data => {
-                        // Add the GeoJSON source
-                        map.addSource('points', {
-                            'type': 'geojson',
-                            'data': data
-                        });
+         // Load the GeoJSON file using fetch
+        fetch('/map.geojson')
+            .then(response => response.json())
+            .then(data => {
+                // Add the GeoJSON source
+                map.addSource("accesspoints", {
+                    type: "geojson",
+                    data: data,
+                    cluster: true,
+                });
 
-                        // Add a symbol layer
-                        map.addLayer({
-                            'id': 'points',
-                            'type': 'symbol',
-                            'source': 'points',
-                            'layout': {
-                                'icon-allow-overlap': true,
-                                'icon-image': 'custom-marker',
-                                // get the title name from the source's "title" property
-                                //'text-field': ['get', 'title'],
-                                'text-font': [
-                                    'Open Sans Semibold',
-                                    'Arial Unicode MS Bold'
-                                ],
-                                'text-offset': [0, 1.25],
-                                'text-anchor': 'top'
-                            }
-                        });
-                    })
-                    .catch(error => console.error('Error loading GeoJSON:', error));
-            }
-        );
+                // Add a symbol layer
+                map.addLayer({
+                    id: "unclustered-point",
+                    type: 'circle',
+                    source: 'accesspoints',
+                    paint: {
+                        "circle-color": [
+                            "match",
+                            ["get", 'status'],
+                            "UNKNOWN",
+                            "#66ff00",
+                            "BROKEN",
+                            "#ff000d",
+                            "IN_PROGRESS",
+                            "#FFFF00",
+                            "FIXED",
+                            "#66ff00",
+                            "VERIFIED",
+                            "#66ff00",
+                            /*default */
+                            "#66ff00"
+                        ]
+                    }
+                });
+
+                map.on('click', 'unclustered-point', (e) => {
+                    const coordinates = e.features[0].geometry.coordinates.slice();
+                    const id = e.features[0].properties.id;
+                    const building = e.features[0].properties.building;
+                    const room = e.features[0].properties.room;
+                    const status = e.features[0].properties.status;
+
+                    new mapboxgl.Popup()
+                        .setLngLat(coordinates)
+                        .setHTML(
+                            `Building: ${building}<br>
+                    Room: ${room}<br>
+                    Status: ${status}<br>
+                    <a href="https://access.campuspulse.app/access_points/${id}">Report Link</a>`
+                        )
+                        .addTo(map);
+                });
+               
+            })
+            .catch(error => console.error('Error loading GeoJSON:', error));
+        
+
+        
     });
 </script>
 {% endblock %}

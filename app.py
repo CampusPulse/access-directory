@@ -218,6 +218,39 @@ def access_point_json(access_point: AccessPoint):
 
 
 """
+Creates a geojson for map feature
+"""
+
+def map_features_geojson(access_point: AccessPoint):
+    if access_point.location.latitude is None or access_point.location.longitude is None:
+        return
+    
+    status = get_item_status(access_point)
+
+    if status is None:
+        status = (StatusType.UNKNOWN, "No Data")
+    else: 
+        status = status.statusInfo()
+    # TODO: use marshmallow to serialize
+    base_data = {
+        "type": "Feature",
+        "properties":{
+            "id": access_point.id,
+            "building_name": access_point.location.building.name,
+            "room": access_point.location.room_number,
+            "status": status[0].value,
+        },
+        "geometry":{
+            "coordinates": [access_point.location.latitude, access_point.location.longitude],
+            "type": "Point"
+        }
+    }
+
+    return base_data
+
+
+
+"""
 Create a JSON object for Feedback
 """
 
@@ -1296,25 +1329,17 @@ def admin():
 
 @app.route("/map.geojson")
 def mapdata():
-    return {
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {
-                    "id": 99999999,
-                    "name": "Nothing to see here",
-                    "geometry_id": "99999999",
-                    "images": [],
-                },
-                "geometry": {
-                    "coordinates": [-77.6653, 43.08101],  # long/x  # lat/y
-                    "type": "Point",
-                },
-                "id": "02eaa87d832995f670c9ee7c846e6925",
-            }
-        ],
-        "type": "FeatureCollection",
-    }
+    return list(
+        map(
+            map_features_geojson,
+            db.session.execute(
+                db.select(AccessPoint)
+                .join(Location)
+                .where(AccessPoint.location_id == Location.id)
+                .where(Location.latitude is not None, Location.longitude is not None )
+            ).scalars(),
+        )
+    )
 
 @app.route("/buildings.json")
 @cross_origin()
