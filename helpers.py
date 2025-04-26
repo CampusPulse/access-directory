@@ -89,6 +89,13 @@ class MapLocation():
 
         return lat/(10 ** MapLocation.PRECISION), long/(10 ** MapLocation.PRECISION)
 
+    @staticmethod
+    def to_long_lat(lat:int, long: int):
+
+        lat, long = MapLocation.to_lat_long(lat, long)
+
+        return long, lat
+
 class ServiceNowUpdateType(enum.Enum):
     UNKNOWN = 0
     NEW = 1
