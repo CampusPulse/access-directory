@@ -226,8 +226,11 @@ def map_features_geojson(access_point: AccessPoint):
         return
     
     status = get_item_status(access_point)
+
     if status is None:
-        status = StatusType.UNKNOWN
+        status = (StatusType.UNKNOWN, "No Data")
+    else: 
+        status = status.statusInfo()
     # TODO: use marshmallow to serialize
     base_data = {
         "type": "Feature",
@@ -235,7 +238,7 @@ def map_features_geojson(access_point: AccessPoint):
             "id": access_point.id,
             "building_name": access_point.location.building.name,
             "room": access_point.location.room_number,
-            "status": status,
+            "status": status[0].value,
         },
         "geometry":{
             "coordinates": [access_point.location.latitude, access_point.location.longitude],
