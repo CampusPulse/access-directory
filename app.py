@@ -400,15 +400,7 @@ def getAllBuildings():
 
 
 def getMapFeatures():
-    return list(
-        map(
-            map_features_geojson,
-            db.session.execute(
-                db.select(AccessPoint)
-                .where(AccessPoint.active)
-            ).scalars(),
-        )
-    )
+    return mapdata()
 
 """
 Get all tags
@@ -1343,25 +1335,17 @@ def admin():
 
 @app.route("/map.geojson")
 def mapdata():
-    return {
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {
-                    "id": 99999999,
-                    "name": "Nothing to see here",
-                    "geometry_id": "99999999",
-                    "images": [],
-                },
-                "geometry": {
-                    "coordinates": [-77.6653, 43.08101],  # long/x  # lat/y
-                    "type": "Point",
-                },
-                "id": "02eaa87d832995f670c9ee7c846e6925",
-            }
-        ],
-        "type": "FeatureCollection",
-    }
+    return list(
+        map(
+            map_features_geojson,
+            db.session.execute(
+                db.select(AccessPoint)
+                .join(Location)
+                .where(AccessPoint.location_id == Location.id)
+                .where(Location.latitude is not None, Location.longitude is not None )
+            ).scalars(),
+        )
+    )
 
 @app.route("/buildings.json")
 @cross_origin()
