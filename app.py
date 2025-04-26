@@ -237,7 +237,7 @@ def map_features_geojson(access_point: AccessPoint):
             "id": access_point.id,
             "building_name": access_point.location.building.name,
             "room": access_point.location.room_number,
-            "status": status[0].value,
+            "status": status[0].name,
         },
         "geometry":{
             "coordinates": MapLocation.to_long_lat(access_point.location.latitude, access_point.location.longitude),
