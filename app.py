@@ -218,6 +218,36 @@ def access_point_json(access_point: AccessPoint):
 
 
 """
+Creates a geojson for map feature
+"""
+
+def map_features_geojson(access_point: AccessPoint):
+    if access_point.location.latitude is None or access_point.location.longitude is None:
+        return
+    
+    status = get_item_status(access_point)
+
+    # TODO: use marshmallow to serialize
+    base_data = {
+        "type": "Feature",
+        "properties":{
+            "id": access_point.id,
+            "building_name": access_point.location.building.name,
+            "room": access_point.location.room_number,
+            "active": "checked" if access_point.active else "unchecked",
+            "status": status,
+        },
+        "geometry":{
+            "coordinates": [access_point.location.latitude, access_point.location.longitude],
+            "type": "Point"
+        }
+    }
+
+    return base_data
+
+
+
+"""
 Create a JSON object for Feedback
 """
 
@@ -365,6 +395,17 @@ def getAllBuildings():
     b = db.session.execute(db.select(Building).order_by(Building.id.asc())).scalars()
     return b
 
+
+def getMapFeatures():
+    return list(
+        map(
+            map_features_geojson,
+            db.session.execute(
+                db.select(AccessPoint)
+                .where(AccessPoint.active)
+            ).scalars(),
+        )
+    )
 
 """
 Get all tags
@@ -767,7 +808,10 @@ def about():
 
 @app.route("/map")
 def map_page():
-    return render_template("map.html")
+    return render_template(
+        "map.html",
+        mapFeatures = getMapFeatures(),
+        )
 
 
 @app.route("/catalog")
