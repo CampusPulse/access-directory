@@ -59,7 +59,7 @@ Map - CampusPulse Access
         map.on('click', 'unclustered-point', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             const id = e.features[0].properties.id;
-            const building = e.features[0].properties.building;
+            const building = e.features[0].properties.building_name;
             const room = e.features[0].properties.room;
             const status = e.features[0].properties.status;
 
