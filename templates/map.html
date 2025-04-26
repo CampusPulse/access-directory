@@ -24,64 +24,58 @@ Map - CampusPulse Access
 
     map.on('load', () => {
 
-         // Load the GeoJSON file using fetch
-        fetch('/map.geojson')
-            .then(response => response.json())
-            .then(data => {
-                // Add the GeoJSON source
-                map.addSource("accesspoints", {
-                    type: "geojson",
-                    data: data,
-                    cluster: true,
-                });
+        // Add the GeoJSON source
+        map.addSource("accesspoints", {
+            type: "geojson",
+            data: '/map.geojson',
+            cluster: true,
+        });
 
-                // Add a symbol layer
-                map.addLayer({
-                    id: "unclustered-point",
-                    type: 'circle',
-                    source: 'accesspoints',
-                    paint: {
-                        "circle-color": [
-                            "match",
-                            ["get", 'status'],
-                            "UNKNOWN",
-                            "#66ff00",
-                            "BROKEN",
-                            "#ff000d",
-                            "IN_PROGRESS",
-                            "#FFFF00",
-                            "FIXED",
-                            "#66ff00",
-                            "VERIFIED",
-                            "#66ff00",
-                            /*default */
-                            "#66ff00"
-                        ]
-                    }
-                });
+        // Add a symbol layer
+        map.addLayer({
+            id: "unclustered-point",
+            type: 'circle',
+            source: 'accesspoints',
+            paint: {
+                "circle-color": [
+                    "match",
+                    ["get", 'status'],
+                    "UNKNOWN",
+                    "#66ff00",
+                    "BROKEN",
+                    "#ff000d",
+                    "IN_PROGRESS",
+                    "#FFFF00",
+                    "FIXED",
+                    "#66ff00",
+                    "VERIFIED",
+                    "#66ff00",
+                    /*default */
+                    "#66ff00"
+                ]
+            }
+        });
 
-                map.on('click', 'unclustered-point', (e) => {
-                    const coordinates = e.features[0].geometry.coordinates.slice();
-                    const id = e.features[0].properties.id;
-                    const building = e.features[0].properties.building;
-                    const room = e.features[0].properties.room;
-                    const status = e.features[0].properties.status;
+        map.on('click', 'unclustered-point', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const id = e.features[0].properties.id;
+            const building = e.features[0].properties.building;
+            const room = e.features[0].properties.room;
+            const status = e.features[0].properties.status;
 
-                    new mapboxgl.Popup()
-                        .setLngLat(coordinates)
-                        .setHTML(
-                            `Building: ${building}<br>
-                    Room: ${room}<br>
-                    Status: ${status}<br>
-                    <a href="https://access.campuspulse.app/access_points/${id}">Report Link</a>`
-                        )
-                        .addTo(map);
-                });
-               
-            })
-            .catch(error => console.error('Error loading GeoJSON:', error));
-        
-
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    `Building: ${building}<br>
+            Room: ${room}<br>
+            Status: ${status}<br>
+            <a href="https://access.campuspulse.app/access_points/${id}">Report Link</a>`
+                )
+                .addTo(map);
+        });
+            
+        // })
+        // .catch(error => console.error('Error loading GeoJSON:', error));
         
     });
 </script>
