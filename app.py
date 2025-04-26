@@ -1328,17 +1328,20 @@ def admin():
 
 @app.route("/map.geojson")
 def mapdata():
-    return list(
-        map(
-            map_features_geojson,
-            db.session.execute(
-                db.select(AccessPoint)
-                .join(Location)
-                .where(AccessPoint.location_id == Location.id)
-                .filter(and_(Location.latitude != None, Location.longitude != None))
-            ).scalars(),
-        )
-    )
+    return {
+        "features": list(
+            map(
+                map_features_geojson,
+                db.session.execute(
+                    db.select(AccessPoint)
+                    .join(Location)
+                    .where(AccessPoint.location_id == Location.id)
+                    .filter(and_(Location.latitude != None, Location.longitude != None))
+                ).scalars(),
+            )
+        ),
+        "type": "FeatureCollection",
+    }
 
 @app.route("/buildings.json")
 @cross_origin()
