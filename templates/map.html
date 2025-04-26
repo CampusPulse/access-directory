@@ -24,45 +24,53 @@ Map - CampusPulse Access
     });
 
     map.on('load', () => {
-        // Add an image to use as a custom marker
-        map.loadImage(
-            'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png',
-            (error, image) => {
-                if (error) throw error;
-                map.addImage('custom-marker', image);
+        map.addSource("accesspoints", {
+            type:"geojson",
+            data:mapPoints,
+            cluster:true,
+        });
 
-                // Load the GeoJSON file using fetch
-                fetch('/map.geojson')
-                    .then(response => response.json())
-                    .then(data => {
-                        // Add the GeoJSON source
-                        map.addSource('points', {
-                            'type': 'geojson',
-                            'data': data
-                        });
-
-                        // Add a symbol layer
-                        map.addLayer({
-                            'id': 'points',
-                            'type': 'symbol',
-                            'source': 'points',
-                            'layout': {
-                                'icon-allow-overlap': true,
-                                'icon-image': 'custom-marker',
-                                // get the title name from the source's "title" property
-                                //'text-field': ['get', 'title'],
-                                'text-font': [
-                                    'Open Sans Semibold',
-                                    'Arial Unicode MS Bold'
-                                ],
-                                'text-offset': [0, 1.25],
-                                'text-anchor': 'top'
-                            }
-                        });
-                    })
-                    .catch(error => console.error('Error loading GeoJSON:', error));
+        map.addLayer({
+            id:"unclustered-point",
+            type: 'circle',
+            source: 'accesspoints',
+            paint: {
+                "circle-color":[
+                    "match",
+                    ["get", 'status'],
+                    "UNKNOWN",
+                    "#66ff00",
+                    "BROKEN",
+                    "#ff000d",
+                    "IN_PROGRESS",
+                    "#FFFF00",
+                    "FIXED",
+                    "#66ff00",
+                    "VERIFIED",
+                    "#66ff00",
+                    /*default */
+                    "#66ff00"
+                ]
             }
-        );
+        });
+
+        map.on('click', 'unclustered-point', (e) => {
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const id = e.features[0].properties.id;
+            const building = e.features[0].properties.building;
+            const room = e.features[0].properties.room;
+            const status = e.features[0].properties.status;
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    `Building: ${building}<br>
+                    Room: ${room}<br>
+                    Status: ${status}<br>
+                    <a href="https://access.campuspulse.app/access_points/${id}">Report Link</a>`
+                )
+                .addTo(map);
+        });
     });
 </script>
 {% endblock %}
