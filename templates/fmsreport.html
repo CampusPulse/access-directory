@@ -1,0 +1,67 @@
+{% extends "header.html" %} 
+{% block title %}
+About - CampusPulse Access
+{% endblock %}
+{% block dynamic_content %}
+
+<div class="container text-center">
+    <h1>{{ pageTitle }}</h1>
+
+    <!-- Edited from a boiler plate that was "thrown together" -->
+    <div class="container my-5">
+        <div class="row align-items-start">
+            <!--
+                <div class="col-md-6">
+                    <img class="img-fluid" alt="Temporary Image" src="{{ url_for('static', filename='images/TEMP.png') }}">
+                </div>
+            -->
+                <div class="col-md-6 pt-4 h-100">
+                    <h2>About</h2>
+                    <div class="text-start">
+                    <p>CampusPulse Access is an interactive map and catalog of accessibility infrastructure on RIT's campus organized by crowdsourced maintenance status. This project aims to make it easier for campus community members to find and report broken ‘access points’ (elevators, wheelchair lifts, and automatic door openers) in a way that allows others to find out which devices are out of service before the breakage impacts them too. Our primary goals include:
+                            <ul>
+                                <li>Increasing visibility of broken accessibility infrastructure, helping students navigate campus efficiently and reducing duplicate FMS reports</li>
+                                <li>Simplifying the reporting process for access points, enabling students to report issues they encounter</li>
+                                <!-- <li>These could use some edits.</li> -->
+                                <li>Analyzing maintenance data to identify patterns</li>
+                            </ul>
+                            </p>
+                        </div>
+                    </div>
+                <!--
+                <div class="col-md-6 pt-4">
+                    <img class="img-fluid" alt="Temporary Image" src="{{ url_for('static', filename='images/TEMP.png') }}">
+                </div>
+                -->
+                <div class="col-md-6 pt-4 h-100">
+                    <h2>Credits</h2>
+                    <div class="text-start">
+                        <p>
+                            CampusPulse Access was dreamt by <a href="https://www.linkedin.com/in/mariafweir/">Maria Weir</a> as a Sociology/Anthropology capstone under the Humanities, Computing, & Design program. This site was developed by <a href="https://www.adriancedwards.com/">Adrian Edwards</a> as part of his larger CampusPulse project with the help of <a href="https://www.linkedin.com/in/daniel-laferriere-1ab1b3230/">Daniel Laferriere</a> and based on work by the <a href="https://tunnelvision.csh.rit.edu/about">TunnelVision team.</a></p>
+                        <u><strong>Special Thanks:</strong></u>
+                        <div class="text-start">
+                        <p>
+                            <strong>Faculty Advisors:</strong> Jessica Lieberman, Michael Frank, Jessica Hardin, Kristen McNicholas</p>
+                        <p><strong>Student Contributors:</strong> River Beauchamp, Nathaniel Leslie, Suprina Kabadkar, Shashank Beligere, Ben Stafford, Michael Shortell, Giovanni Melchionne</p>
+                        <p><strong>RIT Organizations:</strong> <a href="https://www.rit.edu/facilitiesmanagement/">RIT Facilities Management Services</a>, <a href="https://www.rit.edu/disabilityservices/">RIT Disability Services Office</a>, <a href="https://www.rit.edu/studentgovernment/">RIT Student Government</a></p>
+                        <p><strong>Student Groups:</strong> <a href="https://campusgroups.rit.edu/dcc/template1/">RIT Disability Culture Club</a>, <a href="https://fossrit.github.io/">RIT Free Open Source Software</a>, <a href="https://www.instagram.com/tunnelvisionaries_rit/">Tunnel Visionaries</a></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 pt-4 h-100">
+                    <h2>Future Plans</h2>
+                    <div class="text-start">
+                        <p>As an open source project and a capstone project, we are hopeful that CampusPulse Access will continue improving long after its founders are gone. There are opportunities for students across multiple majors to contribute to this site whether for capstones, portfolios, or fun. If you would like to hear about future development opportunities, please <a href="https://discord.gg/2d75fdPZE3">join our Discord</a> or contact us via email. </p>
+                    </div>
+                </div>
+                <div class="col-md-6 pt-4 h-100">
+                    <h2>Contact us</h2>
+                    <p>Maria Weir - <a href="mailto:mfw9283@rit.edu">mfw9283@rit.edu</a></p>
+                    <p>Adrian Edwards  - <a href="mailto:ace4971@rit.edu">ace4971@rit.edu</a></p>
+                </div>
+        </div>
+    </div>
+
+
+</div>
+{% endblock %}
