@@ -1,0 +1,58 @@
+{% extends "header.html" %} 
+{% block title %}
+Reporting to the RIT Service Center
+{% endblock %}
+{% block dynamic_content %}
+
+<div class="container text-center">
+    <h1>{{ pageTitle }}</h1>
+
+
+    <!-- Edited from a boiler plate that was "thrown together" -->
+    <div class="container my-5">
+        <div class="row align-items-start">
+            <div class="col-md-12">
+                <img class="img-fluid" alt="RIT Service Center Homepage" src="{{ url_for('static', filename='images/service_center_homepage.png') }}">
+            </div>         
+            
+            <div class="col-md-12 pt-4 h-100">
+                <div class="text-start">
+                    <p>There are two options: “Open a Ticket” and “Submit a Maintenance Request”
+                    <ul>
+                        <li>“Open a Ticket” is for questions, concerns, or if you are generally unsure where to go. The Service Center will receive these tickets and delegate them to the relevant department. This type of request is not relevant for the types of accessibility reports from CampusPulse.</li>
+                        <li>“Maintenance Request” is for specific repairs to the facilities, such as elevators, handicap doors, etc.</li>
+                    </ul>
+                </div>
+                </div>    
+        </div>
+    </div>   
+
+    <h2 class="col-md-12 pt-4 h-100">To Submit a Maintenance Request</h2>   
+
+    <ol class="row align-items-start">
+        <li class="col-md-6 pt-4">
+            <p class="text-start">There is a wide range of options that can be selected. Please select the most applicable category. For example, a broken handicap door button would fall under “FMS Facilities Request”
+        </li>
+        <img class="img-fluid col-md-6 pt-4" alt="The various categories of maintenance requests" src="{{ url_for('static', filename='images/fms_step1.png') }}"> 
+                            
+        <li class="col-md-6 pt-4">
+            <p class="text-start">Add a phone number and choose a contact method for updates about the request. Note that it is unlikely they will use this number unless they need to get into your room.
+        </li>   
+        <img class="img-fluid col-md-6 pt-4" alt="Contact details related to the service request" src="{{ url_for('static', filename='images/fms_step2.png') }}">
+                            
+        <li class="col-md-6 pt-4">
+            <p class="text-start">Record the location of the issue by identifying the building, floor, room, and any additional details. If you are unsure of the exact room number, please refer to the building floorplans at https://www.rit.edu/facilitiesmanagement/buildings-maps. Use whichever room number you think will help FMS most easily find the location. For example, chair lifts and door buttons should use the room number of the entryway or hallway they are connected to. Feel free to include additional directions in the “Location Details” box (e.g. “Outside of the main entrance of Eastman Hall, facing the sentinel”).
+        </li>
+        <img class="img-fluid col-md-6 pt-4" alt="Location details related to the service request" src="{{ url_for('static', filename='images/fms_step3.png') }}">
+                            
+        <li class="col-md-6 pt-4">
+            <p class="text-start">Write out a description of the issue, and attach any photos or any documentation. Photos can also help FMS locate the issue. Make sure to include any relevant information that would help FMS diagnose the problem, such as which particular button is broken.
+        </li>
+        <img class="img-fluid col-md-6 pt-4" alt="Written description of the service request" src="{{ url_for('static', filename='images/fms_step4.png') }}">
+                            
+        <li class="col-md-6 pt-4">
+            <p class="text-start">Once you have completed all fields, press submit on the right side of the screen.
+        </li>
+    </ol> 
+</div>
+{% endblock %}

@@ -794,7 +794,12 @@ def home():
 
 @app.route("/about")
 def about():
-    return render_template("about.html")
+    return render_template("about.html", pageTitle="About CampusPulse Access")
+
+
+@app.route("/fmsreport")
+def fmsreport():
+    return render_template("fmsreport.html", pageTitle="Reporting to the RIT Service Center")
 
 
 @app.route("/map")
