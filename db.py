@@ -51,7 +51,7 @@ class Building(Base):
 
     def human_name(self):
         if self.short_name is not None and self.short_name != "":
-            return self.short_name
+            return self.short_name + " (" + self.acronym + ")"
         else:
             return self.acronym
     
