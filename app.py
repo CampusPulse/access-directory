@@ -797,6 +797,11 @@ def about():
     return render_template("about.html")
 
 
+@app.route("/fmsreport")
+def fmsreport():
+    return render_template("fmsreport.html")
+
+
 @app.route("/map")
 def map_page():
     return render_template("map.html")
