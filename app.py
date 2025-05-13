@@ -362,8 +362,10 @@ def getAccessPointsPaginated(page_num):
             access_point_json,
             db.session.execute(
                 db.select(AccessPoint)
+                .join(Location, AccessPoint.location_id == Location.id)
+                .join(Building, Location.building_id == Building.id)
                 .where(AccessPoint.active)
-                .order_by(AccessPoint.id.asc())
+                .order_by(Building.name.asc(), Location.nickname.asc())
                 .offset(page_num * app.config["ITEMSPERPAGE"])
                 .limit(app.config["ITEMSPERPAGE"])
             ).scalars(),
