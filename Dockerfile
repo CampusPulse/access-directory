@@ -2,7 +2,11 @@ FROM python:3.10-slim
 
 # git is needed for getting the repo commit
 RUN apt-get update && apt-get install -y git libmagic1
-RUN pip install pipenv
+
+COPY --from=ghcr.io/astral-sh/uv:0.4.9 /uv /bin/uv
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+
+ENV UV_PROJECT_ENVIRONMENT=/app/venv
 
 
 # Set the working directory in the container
@@ -14,12 +18,14 @@ WORKDIR /app
 # needed because we changed users
 RUN git config --global --add safe.directory /app
 
-# ADD Pipfile.lock Pipfile .
-COPY Pipfile.lock Pipfile.lock
-COPY Pipfile Pipfile
+COPY pyproject.toml pyproject.toml
+COPY uv.lock uv.lock
+RUN uv sync --locked --no-install-project --no-dev --no-cache
 
-# Copy requirements file and install dependencies
-RUN pipenv install --system --deploy
+# remove uv binary copied in earlier to hopefully save some space
+USER root
+RUN rm /bin/uv
+USER campuspulse
 
 # Copy the app's source code to the container
 COPY . .
@@ -27,6 +33,5 @@ COPY . .
 # Expose the port the Flask app runs on
 EXPOSE 5000
 
-
 # Run the Flask application
-CMD python3 -m gunicorn --workers 1 --bind 0.0.0.0:5000 app:app
+CMD gunicorn --workers 1 --bind 0.0.0.0:5000 app:app
