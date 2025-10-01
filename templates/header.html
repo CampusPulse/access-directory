@@ -148,6 +148,11 @@
                 <a class="nav-link" href="https://github.com/CampusPulse/access-directory" target="_blank">
                     <img alt="github logo" title="Git: {{ config['GIT_REVISION'] }}" src="/static/images/github.svg" style="width: 30px;">
                 </a>
+                {% if authsession %}
+                <a class="nav-link" href="/logout">
+                    Logout {{authsession.userinfo.name}}
+                </a>
+                {% endif %}
             </div>
         </div>
     </nav>
