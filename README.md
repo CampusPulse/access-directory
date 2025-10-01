@@ -22,6 +22,9 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 3. ensure the domain, client ID, and client secret are in the environment variables (see `sample.env` for the names to store these in)
 4. generate a random secret value and store it in the `CPACCESS_SECRET_KEY` variable
 5. Set up your callback and logout urls in the application settings of auth0 (default endpoints are `<your domain>/callback` and `<your domain>/logout`)
+
+
+
 ## Database Schema
 This project uses SQLAlchemy to access a PostgresQL database. The DB schema is defined in `db.py`
 

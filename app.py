@@ -3,7 +3,7 @@ import io
 import subprocess
 from dateutil import parser
 from enum import Enum
-from flask import Flask, render_template, request, redirect, abort, url_for, make_response
+from flask import Flask, render_template, request, redirect, abort, url_for, make_response, session
 import logging
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import HTTPException
@@ -52,6 +52,8 @@ import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
 from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType
+from urllib.parse import quote_plus, urlencode
+from authlib.integrations.flask_client import OAuth
 
 
 app = Flask(__name__)
@@ -84,6 +86,36 @@ logging.info("Starting up...")
 
 git_cmd = ["git", "rev-parse", "--short", "HEAD"]
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode("utf-8").rstrip()
+
+auth_configured = not None in [
+    os.environ.get("AUTH0_DOMAIN"),
+    os.environ.get("CPACCESS_SECRET_KEY"),
+    os.environ.get("AUTH0_CLIENT_ID"),
+    os.environ.get("AUTH0_CLIENT_SECRET")
+]
+
+if auth_configured:
+    # Auth Setup
+    app.secret_key = os.environ.get("CPACCESS_SECRET_KEY")
+
+    oauth = OAuth(app)
+
+    oauth.register(
+        "auth0",
+        client_id=os.environ.get("AUTH0_CLIENT_ID"),
+        client_secret=os.environ.get("AUTH0_CLIENT_SECRET"),
+        client_kwargs={
+            "scope": "openid profile email",
+        },
+        server_metadata_url=f'https://{os.environ.get("AUTH0_DOMAIN")}/.well-known/openid-configuration',
+    )
+
+    logging.info("Auth Initialized")
+
+else:
+    logging.info("Auth configuration not available due to missing variables. Ensure all of AUTH0_DOMAIN, CPACCESS_SECRET_KEY, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET are present")
+
+
 
 logging.info(f"Connecting to S3 Bucket {app.config['BUCKET_NAME']}")
 
@@ -867,6 +899,45 @@ def access_point(id):
         )
     else:
         return render_template("404.html"), 404
+
+
+########################
+#
+# region Auth
+#
+########################
+
+if auth_configured:
+    @app.route("/callback", methods=["GET", "POST"])
+    def callback():
+        token = oauth.auth0.authorize_access_token()
+        session["user"] = token
+        return redirect("/")
+
+
+    @app.route("/login")
+    def login():
+        return oauth.auth0.authorize_redirect(
+            redirect_uri=url_for("callback", _external=True)
+        )
+
+
+    @app.route("/logout")
+    def logout():
+        session.clear()
+        return redirect(
+            "https://"
+            + os.environ.get("AUTH0_DOMAIN")
+            + "/v2/logout?"
+            + urlencode(
+                {
+                    "returnTo": url_for("home", _external=True),
+                    "client_id": os.environ.get("AUTH0_CLIENT_ID"),
+                },
+                quote_via=quote_plus,
+            )
+        )
+
 
 """
 Generic error handler
