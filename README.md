@@ -10,11 +10,10 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 
 
 * Fork the repo and run the following commands in that directory:
-* `pip install pipenv --user` (if you dont already have it installed)
-* `pipenv install`
-<!-- * `cp sample.env .env` -->
-* `podman compose up` (this starts up the database and minio for S3, docker should also work well too)
-* `pipenv run python3 app.py` (this runs the app in development mode)
+* [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) (if you dont already have it installed)
+* `cp sample.env compose.env`
+* `[podman or docker] compose up` (this starts up the database and minio for S3)
+* `uv run python3 app.py` (this runs the app in development mode)
 
 ## Database Schema
 This project uses SQLAlchemy to access a PostgresQL database. The DB schema is defined in `db.py`
@@ -22,10 +21,10 @@ This project uses SQLAlchemy to access a PostgresQL database. The DB schema is d
 This project also uses flask-migrate to allow for database schema revisions
 
 to create a new revision:
-`pipenv run flask db revision --autogenerate -m "[message]"`
+`uv run flask db revision --autogenerate -m "[message]"`
 
 to upgrade your schema:
-`pipenv run flask db upgrade`
+`uv run flask db upgrade`
 
 ## Docker Infrastructure:
 The docker compose config in this repository is intended to provide a small/simple suite of services for TunnelVision to rely on. This is for development and testing purposes.
