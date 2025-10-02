@@ -51,7 +51,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 
@@ -914,7 +914,7 @@ if auth_configured:
     @app.route("/callback", methods=["GET", "POST"])
     def callback():
         token = oauth.auth0.authorize_access_token()
-        session["user"] = token
+        save_user_details(token)
         return redirect("/")
 
 

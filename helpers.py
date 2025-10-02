@@ -178,3 +178,9 @@ class ServiceNowStatus:
 		if new_comment:
 			comment, timestamp = cls.commentFromBody(body)
 		return cls(timestamp, status_type, ref, comment)
+
+def save_user_details(token):
+    # verify_token(token["id_token"], auth0_domain, api_identifier)
+    session["user"] = token
+
+
