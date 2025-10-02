@@ -970,6 +970,24 @@ def debug_only(f):
     return wrapped
 
 
+def requires_admin(f):
+    """Determines if the user has the correct admin permissions for an action 
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_logged_in_user_id()
+        is_admin = check_for_admin_role(user)
+
+        if user is None:
+            raise Exception("There must be a user signed in to perform this action",
+                       400)
+        elif not is_admin:
+            raise Exception("Authorizing user does not have the correct role to perform this action",
+                       401)
+        else:
+            return f(*args, **kwargs)
+    return decorated
+
 
 ########################
 #
@@ -1392,7 +1410,7 @@ Route to the admin panel
 
 
 @app.route("/admin")
-@debug_only
+@requires_admin
 def admin():
     return render_template(
         "admin.html",
