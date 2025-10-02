@@ -221,6 +221,9 @@ def get_auth0_user_roles(user_id):
 
 
 def check_for_admin_role(user_id):
+    if user_id is None:
+        return False
+    
     roles_json = get_auth0_user_roles(user_id)
     # current_app.logger.info(roles_json)
     for r in roles_json:
@@ -230,10 +233,15 @@ def check_for_admin_role(user_id):
     return False
 
 def get_logged_in_user():
-    return session["user"]
+    return session.get("user")
 
 def get_logged_in_user_id():
-    return get_logged_in_user().get("userinfo").get("sub")
+    user = get_logged_in_user()
+    userinfo = None
+    if user is not None:
+        userinfo = user.get("userinfo")
+    if userinfo is not None:
+        return userinfo.get("sub")
 
 def save_user_details(token):
     # verify_token(token["id_token"], auth0_domain, api_identifier)
