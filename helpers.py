@@ -4,6 +4,7 @@ from dateutil import parser
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 
+from flask import session
 
 ANY_FLOOR_CHAR = "_"
 
@@ -178,6 +179,13 @@ class ServiceNowStatus:
 		if new_comment:
 			comment, timestamp = cls.commentFromBody(body)
 		return cls(timestamp, status_type, ref, comment)
+
+
+def get_logged_in_user():
+    return session["user"]
+
+def get_logged_in_user_id():
+    return get_logged_in_user().get("userinfo").get("sub")
 
 def save_user_details(token):
     # verify_token(token["id_token"], auth0_domain, api_identifier)
