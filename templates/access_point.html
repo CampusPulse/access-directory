@@ -185,7 +185,7 @@ View Full Size Image</a>{% endif %}</pre>
                         </div>
                     </div>
                 </div>
-                {% if config['DEBUG'] %}
+                {% if authsession and is_admin %}
 
                 <form action="/add_ticket/{{accessPointDetails['id']}}" method="post">
                     <label for="ticket_ref" class="form-label"><b>Ticket Number</b></label>
