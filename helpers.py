@@ -235,11 +235,15 @@ def check_for_admin_role(user_id):
 def get_logged_in_user():
     return session.get("user")
 
-def get_logged_in_user_id():
+def get_logged_in_user_info():
     user = get_logged_in_user()
     userinfo = None
     if user is not None:
         userinfo = user.get("userinfo")
+    return userinfo
+
+def get_logged_in_user_id():
+    userinfo = get_logged_in_user_info()
     if userinfo is not None:
         return userinfo.get("sub")
 
