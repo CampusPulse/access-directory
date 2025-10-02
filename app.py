@@ -1089,7 +1089,7 @@ def email_webhook():
 
 
 @app.route("/add_ticket/<item_id>", methods=["POST"])
-@debug_only
+@requires_admin
 def add_ticket(item_id):
     if not checkAccessPointExists(item_id):
         return "Not found", 404
@@ -1393,7 +1393,7 @@ Route to edit access point page
 
 
 @app.route("/edit/<id>")
-@debug_only
+@requires_admin
 def edit(id):
 
     if checkAccessPointExists(id):
@@ -1491,7 +1491,7 @@ Route to delete Tag
 
 
 @app.route("/deleteTag/<name>", methods=["POST"])
-@debug_only
+@requires_admin
 def deleteTag(name):
     deleteTagGivenName(name)
     return redirect("/admin")
@@ -1503,7 +1503,7 @@ Route to delete access point entry
 
 
 @app.route("/delete/<id>", methods=["POST"])
-@debug_only
+@requires_admin
 def delete(id):
     if checkAccessPointExists(id):
         deleteAccessPointEntry(id)
@@ -1519,7 +1519,7 @@ Sets all fields based on http form
 
 
 @app.route("/editaccesspoint/<id>", methods=["POST"])
-@debug_only
+@requires_admin
 def editAccessPoint(id):
     m = db.session.execute(
         db.select(AccessPoint).where(AccessPoint.id == id)
@@ -1574,7 +1574,7 @@ Route to edit tag description
 
 
 @app.route("/editTag/<name>", methods=["POST"])
-@debug_only
+@requires_admin
 def edit_tag(name):
     t = db.session.execute(db.select(Tag).where(Tag.name == name)).scalar_one()
     t.description = request.form["description"]
@@ -1589,7 +1589,7 @@ Sets access point title based on http form
 
 
 @app.route("/edittitle/<id>", methods=["POST"])
-@debug_only
+@requires_admin
 def editTitle(id):
     m = db.session.execute(
         db.select(AccessPoint).where(AccessPoint.id == id)
@@ -1606,7 +1606,7 @@ Set caption and alttext based on http form
 
 
 @app.route("/editimage/<id>", methods=["POST"])
-@debug_only
+@requires_admin
 def editImage(id):
     image = db.session.execute(db.select(Image).where(Image.id == id)).scalar_one()
 
@@ -1628,7 +1628,7 @@ Route:
 
 
 @app.route("/makethumbnail", methods=["POST"])
-@debug_only
+@requires_admin
 def makeThumbnail():
     access_point_id = request.args.get("accesspointid", None)
     image_id = request.args.get("imageid", None)
@@ -1658,7 +1658,7 @@ Route to delete image
 
 
 @app.route("/detachimage/<image_id>/from/<item_id>", methods=["POST"])
-@debug_only
+@requires_admin
 def detachImageEndpoint(image_id, item_id):
 
     detachImageByID(image_id, item_id)
@@ -1674,7 +1674,7 @@ Route to perform public export
 
 
 @app.route("/export", methods=["POST"])
-@debug_only
+@requires_admin
 def export_data():
     public = bool(int(request.args.get("p")))
     now = datetime.now()
@@ -1695,7 +1695,7 @@ Route to perform data import
 
 
 @app.route("/import", methods=["POST"])
-@debug_only
+@requires_admin
 def import_data():
     return ("", 501)
 
@@ -1706,7 +1706,7 @@ Add tag with blank description
 
 
 @app.route("/addTag", methods=["POST"])
-@debug_only
+@requires_admin
 def add_tag():
     tag = Tag(name=request.form["name"], description="")
 
@@ -1722,7 +1722,7 @@ Route to upload new image
 
 
 @app.route("/uploadimage/<id>", methods=["POST"])
-@debug_only
+@requires_admin
 def uploadNewImage(id):
     count = db.session.execute(
         db.select(func.count()).where(ImageAccessPointRelation.access_point_id == id)
@@ -1741,7 +1741,7 @@ Route to add new entry
 
 
 @app.route("/upload/elevator", methods=["POST"])
-@debug_only
+@requires_admin
 def upload():
 
     # Step 1: Find the building by its number
