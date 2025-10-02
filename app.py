@@ -51,7 +51,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 
@@ -898,7 +898,9 @@ Page for specific access point details
 def access_point(id):
     if checkAccessPointExists(id):
         return render_template(
-            "access_point.html", accessPointDetails=getAccessPoint(id)
+            "access_point.html", 
+            authsession=get_logged_in_user(),
+            accessPointDetails=getAccessPoint(id)
         )
     else:
         return render_template("404.html"), 404

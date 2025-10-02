@@ -152,7 +152,7 @@ View Full Size Image</a>{% endif %}</pre>
                     <button type="button" class="btn btn-primary">Report issue</button>
                 </a>
 
-                {% if config['DEBUG'] %}
+                {% if authsession %}
                     <a href="/edit/{{ accessPointDetails['id'] }}">
                         <button type="button" class="btn btn-primary">Edit</button>
                     </a>
