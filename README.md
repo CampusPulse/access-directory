@@ -22,6 +22,10 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 3. ensure the domain, client ID, and client secret are in the environment variables (see `sample.env` for the names to store these in)
 4. generate a random secret value and store it in the `CPACCESS_SECRET_KEY` variable
 5. Set up your callback and logout urls in the application settings of auth0 (default endpoints are `<your domain>/callback` and `<your domain>/logout`)
+6. on the "API's" tab enable the auth0 management API
+7. drop down the management API and ensure at least `read:users` and `read:roles` are selected
+8. Run the app
+9. visit the `/login` page. When prompted, sign up with whatever method you choose
 
 
 
