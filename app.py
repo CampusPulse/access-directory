@@ -849,7 +849,7 @@ def catalog():
         if page is None:
             return render_template(
             "catalog.html",
-            authsession=session.get("user"),
+            authsession=get_logged_in_user(),
             q=query,
             page=1,
             accessPoints=getAccessPointsPaginated(0),
@@ -859,14 +859,14 @@ def catalog():
             page = int(page)
             return render_template(
                 "paginated.html",
-                authsession=session.get("user"),
+                authsession=get_logged_in_user(),
                 page=(page+1),
                 murals=getAccessPointsPaginated(page)
             )
     else:
         return render_template(
             "filtered.html",
-            authsession=session.get("user"),
+            authsession=get_logged_in_user(),
             pageTitle=f"Query - {query}",
             subHeading="Search Query",
             q=query,
