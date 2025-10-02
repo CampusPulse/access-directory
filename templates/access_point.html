@@ -151,8 +151,8 @@ View Full Size Image</a>{% endif %}</pre>
                 <a href="{{ accessPointDetails['report_url'] }}" target="_blank">
                     <button type="button" class="btn btn-primary">Report issue</button>
                 </a>
-
-                {% if authsession %}
+                
+                {% if authsession and is_admin %}
                     <a href="/edit/{{ accessPointDetails['id'] }}">
                         <button type="button" class="btn btn-primary">Edit</button>
                     </a>
