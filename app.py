@@ -900,6 +900,7 @@ def access_point(id):
         return render_template(
             "access_point.html", 
             authsession=get_logged_in_user(),
+            is_admin=check_for_admin_role(get_logged_in_user_id()),
             accessPointDetails=getAccessPoint(id)
         )
     else:
