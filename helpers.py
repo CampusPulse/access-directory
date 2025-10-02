@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 
 from flask import session
+import requests
+import os
 
 ANY_FLOOR_CHAR = "_"
 
@@ -180,6 +182,52 @@ class ServiceNowStatus:
 			comment, timestamp = cls.commentFromBody(body)
 		return cls(timestamp, status_type, ref, comment)
 
+
+
+def get_auth0_user_roles(user_id):
+
+    auth0_domain = os.environ.get("AUTH0_DOMAIN")
+    client_id = os.environ.get("AUTH0_CLIENT_ID")
+    client_secret = os.environ.get("AUTH0_CLIENT_SECRET")
+        
+    # Step 1: Get Management API token
+    token_url = f"https://{auth0_domain}/oauth/token"
+    token_payload = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "audience": f"https://{auth0_domain}/api/v2/",
+        "grant_type": "client_credentials"
+    }
+    
+    token_response = requests.post(token_url, json=token_payload)
+    if token_response.status_code != 200:
+        raise Exception(f"Error fetching token: {token_response.text}")
+    
+    access_token = token_response.json()["access_token"]
+
+    # Step 2: Query user roles
+    roles_url = f"https://{auth0_domain}/api/v2/users/{user_id}/roles"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+    
+    roles_response = requests.get(roles_url, headers=headers)
+    if roles_response.status_code != 200:
+        raise Exception(f"Error fetching user roles: {roles_response.text}")
+
+    roles = roles_response.json()
+    return roles  # List of role objects
+
+
+def check_for_admin_role(user_id):
+    roles_json = get_auth0_user_roles(user_id)
+    # current_app.logger.info(roles_json)
+    for r in roles_json:
+        rolename = r["name"].lower()
+        if 'admin' in rolename:
+            return True
+    return False
 
 def get_logged_in_user():
     return session["user"]
