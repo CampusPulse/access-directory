@@ -151,8 +151,8 @@ View Full Size Image</a>{% endif %}</pre>
                 <a href="{{ accessPointDetails['report_url'] }}" target="_blank">
                     <button type="button" class="btn btn-primary">Report issue</button>
                 </a>
-
-                {% if config['DEBUG'] %}
+                
+                {% if authsession and is_admin %}
                     <a href="/edit/{{ accessPointDetails['id'] }}">
                         <button type="button" class="btn btn-primary">Edit</button>
                     </a>
@@ -185,7 +185,7 @@ View Full Size Image</a>{% endif %}</pre>
                         </div>
                     </div>
                 </div>
-                {% if config['DEBUG'] %}
+                {% if authsession and is_admin %}
 
                 <form action="/add_ticket/{{accessPointDetails['id']}}" method="post">
                     <label for="ticket_ref" class="form-label"><b>Ticket Number</b></label>

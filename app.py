@@ -3,7 +3,7 @@ import io
 import subprocess
 from dateutil import parser
 from enum import Enum
-from flask import Flask, render_template, request, redirect, abort, url_for, make_response
+from flask import Flask, render_template, request, redirect, abort, url_for, make_response, session
 import logging
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import HTTPException
@@ -51,7 +51,9 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user
+from urllib.parse import quote_plus, urlencode
+from authlib.integrations.flask_client import OAuth
 
 
 app = Flask(__name__)
@@ -84,6 +86,36 @@ logging.info("Starting up...")
 
 git_cmd = ["git", "rev-parse", "--short", "HEAD"]
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode("utf-8").rstrip()
+
+auth_configured = not None in [
+    os.environ.get("AUTH0_DOMAIN"),
+    os.environ.get("CPACCESS_SECRET_KEY"),
+    os.environ.get("AUTH0_CLIENT_ID"),
+    os.environ.get("AUTH0_CLIENT_SECRET")
+]
+
+if auth_configured:
+    # Auth Setup
+    app.secret_key = os.environ.get("CPACCESS_SECRET_KEY")
+
+    oauth = OAuth(app)
+
+    oauth.register(
+        "auth0",
+        client_id=os.environ.get("AUTH0_CLIENT_ID"),
+        client_secret=os.environ.get("AUTH0_CLIENT_SECRET"),
+        client_kwargs={
+            "scope": "openid profile email",
+        },
+        server_metadata_url=f'https://{os.environ.get("AUTH0_DOMAIN")}/.well-known/openid-configuration',
+    )
+
+    logging.info("Auth Initialized")
+
+else:
+    logging.info("Auth configuration not available due to missing variables. Ensure all of AUTH0_DOMAIN, CPACCESS_SECRET_KEY, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET are present")
+
+
 
 logging.info(f"Connecting to S3 Bucket {app.config['BUCKET_NAME']}")
 
@@ -817,6 +849,7 @@ def catalog():
         if page is None:
             return render_template(
             "catalog.html",
+            authsession=get_logged_in_user(),
             q=query,
             page=1,
             accessPoints=getAccessPointsPaginated(0),
@@ -825,13 +858,15 @@ def catalog():
         else:
             page = int(page)
             return render_template(
-                "paginated.html", 
+                "paginated.html",
+                authsession=get_logged_in_user(),
                 page=(page+1),
                 murals=getAccessPointsPaginated(page)
             )
     else:
         return render_template(
             "filtered.html",
+            authsession=get_logged_in_user(),
             pageTitle=f"Query - {query}",
             subHeading="Search Query",
             q=query,
@@ -863,10 +898,52 @@ Page for specific access point details
 def access_point(id):
     if checkAccessPointExists(id):
         return render_template(
-            "access_point.html", accessPointDetails=getAccessPoint(id)
+            "access_point.html", 
+            authsession=get_logged_in_user(),
+            is_admin=check_for_admin_role(get_logged_in_user_id()),
+            accessPointDetails=getAccessPoint(id)
         )
     else:
         return render_template("404.html"), 404
+
+
+########################
+#
+# region Auth
+#
+########################
+
+if auth_configured:
+    @app.route("/callback", methods=["GET", "POST"])
+    def callback():
+        token = oauth.auth0.authorize_access_token()
+        save_user_details(token)
+        return redirect("/")
+
+
+    @app.route("/login")
+    def login():
+        return oauth.auth0.authorize_redirect(
+            redirect_uri=url_for("callback", _external=True)
+        )
+
+
+    @app.route("/logout")
+    def logout():
+        session.clear()
+        return redirect(
+            "https://"
+            + os.environ.get("AUTH0_DOMAIN")
+            + "/v2/logout?"
+            + urlencode(
+                {
+                    "returnTo": url_for("home", _external=True),
+                    "client_id": os.environ.get("AUTH0_CLIENT_ID"),
+                },
+                quote_via=quote_plus,
+            )
+        )
+
 
 """
 Generic error handler
@@ -895,6 +972,24 @@ def debug_only(f):
 
     return wrapped
 
+
+def requires_admin(f):
+    """Determines if the user has the correct admin permissions for an action 
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_logged_in_user_id()
+        is_admin = check_for_admin_role(user)
+
+        if user is None:
+            raise Exception("There must be a user signed in to perform this action",
+                       400)
+        elif not is_admin:
+            raise Exception("Authorizing user does not have the correct role to perform this action",
+                       401)
+        else:
+            return f(*args, **kwargs)
+    return decorated
 
 
 ########################
@@ -994,7 +1089,7 @@ def email_webhook():
 
 
 @app.route("/add_ticket/<item_id>", methods=["POST"])
-@debug_only
+@requires_admin
 def add_ticket(item_id):
     if not checkAccessPointExists(item_id):
         return "Not found", 404
@@ -1298,7 +1393,7 @@ Route to edit access point page
 
 
 @app.route("/edit/<id>")
-@debug_only
+@requires_admin
 def edit(id):
 
     if checkAccessPointExists(id):
@@ -1318,7 +1413,7 @@ Route to the admin panel
 
 
 @app.route("/admin")
-@debug_only
+@requires_admin
 def admin():
     return render_template(
         "admin.html",
@@ -1396,7 +1491,7 @@ Route to delete Tag
 
 
 @app.route("/deleteTag/<name>", methods=["POST"])
-@debug_only
+@requires_admin
 def deleteTag(name):
     deleteTagGivenName(name)
     return redirect("/admin")
@@ -1408,7 +1503,7 @@ Route to delete access point entry
 
 
 @app.route("/delete/<id>", methods=["POST"])
-@debug_only
+@requires_admin
 def delete(id):
     if checkAccessPointExists(id):
         deleteAccessPointEntry(id)
@@ -1424,7 +1519,7 @@ Sets all fields based on http form
 
 
 @app.route("/editaccesspoint/<id>", methods=["POST"])
-@debug_only
+@requires_admin
 def editAccessPoint(id):
     m = db.session.execute(
         db.select(AccessPoint).where(AccessPoint.id == id)
@@ -1479,7 +1574,7 @@ Route to edit tag description
 
 
 @app.route("/editTag/<name>", methods=["POST"])
-@debug_only
+@requires_admin
 def edit_tag(name):
     t = db.session.execute(db.select(Tag).where(Tag.name == name)).scalar_one()
     t.description = request.form["description"]
@@ -1494,7 +1589,7 @@ Sets access point title based on http form
 
 
 @app.route("/edittitle/<id>", methods=["POST"])
-@debug_only
+@requires_admin
 def editTitle(id):
     m = db.session.execute(
         db.select(AccessPoint).where(AccessPoint.id == id)
@@ -1511,7 +1606,7 @@ Set caption and alttext based on http form
 
 
 @app.route("/editimage/<id>", methods=["POST"])
-@debug_only
+@requires_admin
 def editImage(id):
     image = db.session.execute(db.select(Image).where(Image.id == id)).scalar_one()
 
@@ -1533,7 +1628,7 @@ Route:
 
 
 @app.route("/makethumbnail", methods=["POST"])
-@debug_only
+@requires_admin
 def makeThumbnail():
     access_point_id = request.args.get("accesspointid", None)
     image_id = request.args.get("imageid", None)
@@ -1563,7 +1658,7 @@ Route to delete image
 
 
 @app.route("/detachimage/<image_id>/from/<item_id>", methods=["POST"])
-@debug_only
+@requires_admin
 def detachImageEndpoint(image_id, item_id):
 
     detachImageByID(image_id, item_id)
@@ -1579,7 +1674,7 @@ Route to perform public export
 
 
 @app.route("/export", methods=["POST"])
-@debug_only
+@requires_admin
 def export_data():
     public = bool(int(request.args.get("p")))
     now = datetime.now()
@@ -1600,7 +1695,7 @@ Route to perform data import
 
 
 @app.route("/import", methods=["POST"])
-@debug_only
+@requires_admin
 def import_data():
     return ("", 501)
 
@@ -1611,7 +1706,7 @@ Add tag with blank description
 
 
 @app.route("/addTag", methods=["POST"])
-@debug_only
+@requires_admin
 def add_tag():
     tag = Tag(name=request.form["name"], description="")
 
@@ -1627,7 +1722,7 @@ Route to upload new image
 
 
 @app.route("/uploadimage/<id>", methods=["POST"])
-@debug_only
+@requires_admin
 def uploadNewImage(id):
     count = db.session.execute(
         db.select(func.count()).where(ImageAccessPointRelation.access_point_id == id)
@@ -1646,7 +1741,7 @@ Route to add new entry
 
 
 @app.route("/upload/elevator", methods=["POST"])
-@debug_only
+@requires_admin
 def upload():
 
     # Step 1: Find the building by its number
