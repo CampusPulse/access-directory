@@ -64,3 +64,9 @@ POSTGRES_PASSWORD=
    - database host: `localhost`
    - DB user and password: whatever you set in `compose.env` for postgres
    - DB name: should match the db user by default
+
+
+
+## Running in prod
+
+The app will assume you are using a proxy or some other tool to ensure the application is accessible via HTTPS (https urls are provided as callback and logout urls to auth0)
