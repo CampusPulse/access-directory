@@ -924,7 +924,7 @@ if auth_configured:
     @app.route("/login")
     def login():
         return oauth.auth0.authorize_redirect(
-            redirect_uri=url_for("callback", _external=True)
+            redirect_uri=url_for("callback", _external=True, _scheme='http' if os.environ.get("DEBUG") is not None else 'https')
         )
 
 
