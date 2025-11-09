@@ -33,5 +33,7 @@ COPY . .
 # Expose the port the Flask app runs on
 EXPOSE 5000
 
+ENV PATH="/app/venv/bin:$PATH"
+
 # Run the Flask application
 CMD gunicorn --workers 1 --bind 0.0.0.0:5000 app:app
