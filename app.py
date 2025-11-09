@@ -924,7 +924,8 @@ if auth_configured:
     @app.route("/login")
     def login():
         return oauth.auth0.authorize_redirect(
-            redirect_uri=url_for("callback", _external=True, _scheme='http' if os.environ.get("DEBUG") is not None else 'https')
+            redirect_uri=url_for(
+                "callback", _external=True, _scheme='http' if os.environ.get("DEBUG") is not None else 'https')
         )
 
 
@@ -937,7 +938,8 @@ if auth_configured:
             + "/v2/logout?"
             + urlencode(
                 {
-                    "returnTo": url_for("home", _external=True),
+                    "returnTo": url_for(
+                        "home", _external=True, _scheme='http' if os.environ.get("DEBUG") is not None else 'https'),
                     "client_id": os.environ.get("AUTH0_CLIENT_ID"),
                 },
                 quote_via=quote_plus,
