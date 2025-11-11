@@ -828,17 +828,25 @@ def home():
 
 @app.route("/about")
 def about():
-    return render_template("about.html", pageTitle="About CampusPulse Access")
+    return render_template("about.html",
+        pageTitle="About CampusPulse Access",
+        authsession=get_logged_in_user(),
+    )
 
 
 @app.route("/fmsreport")
 def fmsreport():
-    return render_template("fmsreport.html", pageTitle="Reporting to the RIT Service Center")
+    return render_template("fmsreport.html",
+        pageTitle="Reporting to the RIT Service Center",
+        authsession=get_logged_in_user(),
+    )
 
 
 @app.route("/map")
 def map_page():
-    return render_template("map.html")
+    return render_template("map.html",
+        authsession=get_logged_in_user(),
+        )
 
 
 @app.route("/catalog")
