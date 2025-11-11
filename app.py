@@ -45,7 +45,7 @@ from db import (
 from flask_migrate import Migrate, stamp, upgrade
 from flask_cors import CORS, cross_origin
 from s3 import S3Bucket
-from typing import Optional
+from typing import Optional, Union
 import shutil
 import pandas as pd
 import json_log_formatter
@@ -1230,26 +1230,26 @@ def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
     db.session.commit()
 
 
-def get_item_status(item):
-    """Fetch the status for the provided item.
+def get_item_status(item: Union[AccessPoint, int]):
+    """Fetch the most recent status for the provided item.
 
     Args:
-        item (AccessPoint): The item (in this case AccessPoint) to fetch status for
+        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch status for (or its integer ID)
 
     Returns:
         Status: the status of the access point, or None if none were found
     """
-
+    item_id = item.id if isinstance(item, AccessPoint) else item
     status = db.session.execute(
         db.select(Status)
         .join(AccessPointReports, AccessPointReports.report_id == Status.report_id)
-        .where(AccessPointReports.access_point_id == item.id)
+        .where(AccessPointReports.access_point_id == item_id)
         .order_by(Status.timestamp.desc())
     ).scalars().first()
     
     return status
 
-def get_item_report(item):
+def get_item_report(item:Union[AccessPoint, int]):
     """Fetch the latest report for the provided item.
 
     While you can get this using get_item_status and accessing it through the associated report,
@@ -1257,16 +1257,16 @@ def get_item_report(item):
     This can happen when associating a ticket before any email has come in yet.
 
     Args:
-        item (AccessPoint): The item (in this case AccessPoint) to fetch the report for
+        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch the report for (or its integer ID)
 
     Returns:
         Report: the report of the access point, or None if none were found
     """
-
+    item_id = item.id if isinstance(item, AccessPoint) else item
     report = db.session.execute(
         db.select(Report)
         .join(AccessPointReports, AccessPointReports.report_id == Report.id)
-        .where(AccessPointReports.access_point_id == item.id)
+        .where(AccessPointReports.access_point_id == item_id)
         .order_by(Report.id.desc())
     ).scalars().first()
     
