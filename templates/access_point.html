@@ -194,7 +194,7 @@ View Full Size Image</a>{% endif %}</pre>
                     <details>
                         <summary><label for="ticket_ref" class="form-label"><b>Assign Ticket Number</b></label></summary>
                     <p class="thin">Filed a ticket for this item? Ensure the system email is on the watch list and add the ticket number here!</p>
-                    <input type="text" class="form-control"  id="ticket_ref" name="ticket_ref" placeholder="WOT1234567" required >
+                    <input type="text" class="form-control"  id="ticket_ref" name="ticket_ref" placeholder="WOT1234567" required pattern="WOT[0-9]+" title="Work order ticket number like WOT1234567">
                     <button type="submit" class="btn btn-primary">Submit</button>
                     </details>
                 </form>
