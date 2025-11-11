@@ -150,7 +150,12 @@
                 </a>
                 {% if authsession %}
                 <a class="nav-link" href="/logout">
+                    {% if is_admin %}
+                    Logout <span style="text-decoration: underline;">{{authsession.userinfo.name}}</span>
+                    {% else %}
                     Logout {{authsession.userinfo.name}}
+                    {% endif %}
+
                 </a>
                 {% endif %}
             </div>

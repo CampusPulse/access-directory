@@ -831,6 +831,7 @@ def about():
     return render_template("about.html",
         pageTitle="About CampusPulse Access",
         authsession=get_logged_in_user(),
+        is_admin = check_for_admin_role(get_logged_in_user_id())
     )
 
 
@@ -839,6 +840,7 @@ def fmsreport():
     return render_template("fmsreport.html",
         pageTitle="Reporting to the RIT Service Center",
         authsession=get_logged_in_user(),
+        is_admin = check_for_admin_role(get_logged_in_user_id())
     )
 
 
@@ -846,6 +848,7 @@ def fmsreport():
 def map_page():
     return render_template("map.html",
         authsession=get_logged_in_user(),
+        is_admin = check_for_admin_role(get_logged_in_user_id())
         )
 
 
@@ -858,6 +861,7 @@ def catalog():
             return render_template(
             "catalog.html",
             authsession=get_logged_in_user(),
+            is_admin = check_for_admin_role(get_logged_in_user_id()),
             q=query,
             page=1,
             accessPoints=getAccessPointsPaginated(0),
@@ -868,6 +872,7 @@ def catalog():
             return render_template(
                 "paginated.html",
                 authsession=get_logged_in_user(),
+                is_admin = check_for_admin_role(get_logged_in_user_id()),
                 page=(page+1),
                 murals=getAccessPointsPaginated(page)
             )
@@ -875,6 +880,7 @@ def catalog():
         return render_template(
             "filtered.html",
             authsession=get_logged_in_user(),
+            is_admin = check_for_admin_role(get_logged_in_user_id()),
             pageTitle=f"Query - {query}",
             subHeading="Search Query",
             q=query,
