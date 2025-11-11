@@ -252,10 +252,13 @@ def access_point_json(access_point: AccessPoint):
 def access_point_admin_json(access_point: AccessPoint):
 
     status = get_item_status(access_point)
+    report = get_item_report(access_point)
 
     # TODO: use marshmallow to serialize
     admin_data = {
         "status_ticket_number": (status.report.ref or "No Ticket") if status else "No Status",
+        "status_report_id": status.report.id,
+        "report_id": report.id
     }
 
     return admin_data

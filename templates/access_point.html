@@ -119,6 +119,8 @@ View Full Size Image</a>{% endif %}</pre>
                     <strong>Status Last Updated</strong>: {{ accessPointDetails["status_updated"] }}<br>
                     {% if authsession and is_admin %}
                     <strong>Last Report Ticket #</strong>: {{ accessPointDetails["status_ticket_number"] }}<br>
+                    <strong>Last Report ID #</strong>: {{ accessPointDetails["report_id"] }}<br>
+                    <strong>Last Report ID #</strong>: {{ accessPointDetails["status_report_id"] }} (By Status)<br>
                     {% endif %}
                 </p>
 
