@@ -249,6 +249,17 @@ def access_point_json(access_point: AccessPoint):
             })
     return base_data
 
+def access_point_admin_json(access_point: AccessPoint):
+
+    status = get_item_status(access_point)
+
+    # TODO: use marshmallow to serialize
+    admin_data = {
+        "status_ticket_number": status.report.ref if status else "No Data",
+    }
+
+    return admin_data
+
 
 """
 Creates a geojson for map feature
@@ -597,7 +608,7 @@ Get access point details
 """
 
 
-def getAccessPoint(id):
+def getAccessPoint(id, is_admin=False):
     access_point = db.session.execute(
         db.select(AccessPoint).where(AccessPoint.id == id)
     ).scalar()
@@ -608,6 +619,8 @@ def getAccessPoint(id):
         return None
 
     accessPointInfo = access_point_json(access_point)
+    if is_admin:
+        accessPointInfo.update(access_point_admin_json(access_point))
     logging.debug(accessPointInfo)
     return accessPointInfo
 
@@ -898,12 +911,14 @@ Page for specific access point details
 def access_point(id):
     if not checkAccessPointExists(id):
         return render_template("404.html"), 404
-        
+    
+    is_admin = check_for_admin_role(get_logged_in_user_id())
     return render_template(
         "access_point.html", 
         authsession=get_logged_in_user(),
-        is_admin=check_for_admin_role(get_logged_in_user_id()),
-        accessPointDetails=getAccessPoint(id)
+        is_admin=is_admin,
+        accessPointDetails=getAccessPoint(id, is_admin=is_admin)
+        
     )
         
 

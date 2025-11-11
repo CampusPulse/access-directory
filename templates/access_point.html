@@ -117,6 +117,9 @@ View Full Size Image</a>{% endif %}</pre>
                     <br>{% endif %}
                     <strong>Room</strong>: {{ accessPointDetails["room"] }}<br>
                     <strong>Status Last Updated</strong>: {{ accessPointDetails["status_updated"] }}<br>
+                    {% if authsession and is_admin %}
+                    <strong>Associated Ticket</strong>: {{ accessPointDetails["status_ticket_number"] }}<br>
+                    {% endif %}
                 </p>
 
 
