@@ -1246,6 +1246,29 @@ def get_item_status(item):
     
     return status
 
+def get_item_report(item):
+    """Fetch the latest report for the provided item.
+
+    While you can get this using get_item_status and accessing it through the associated report,
+    that method can miss scenarios where a report has been created but there is no status yet
+    This can happen when associating a ticket before any email has come in yet.
+
+    Args:
+        item (AccessPoint): The item (in this case AccessPoint) to fetch the report for
+
+    Returns:
+        Report: the report of the access point, or None if none were found
+    """
+
+    report = db.session.execute(
+        db.select(Report)
+        .join(AccessPointReports, AccessPointReports.report_id == Report.id)
+        .where(AccessPointReports.access_point_id == item.id)
+        .order_by(Report.id.desc())
+    ).scalars().first()
+    
+    return report
+
 
 """
 Delete tag and all relations from DB
