@@ -51,7 +51,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 
@@ -254,11 +254,15 @@ def access_point_admin_json(access_point: AccessPoint):
     status = get_item_status(access_point)
     report = get_item_report(access_point)
 
+    status_categories = {i.name: i.value for i in StatusType}
+    
+
     # TODO: use marshmallow to serialize
     admin_data = {
         "status_ticket_number": (status.report.ref or "No Ticket") if status else "No Status",
         "status_report_id": status.report.id,
-        "report_id": report.id
+        "report_id": report.id,
+        "status_categories": status_categories
     }
 
     return admin_data
@@ -1142,6 +1146,53 @@ def add_ticket(item_id):
     db.session.commit()
 
     return ("", 200)
+
+
+@app.route("/add_status/<item_id>", methods=["POST"])
+@requires_admin
+def add_status(item_id):
+    if not checkAccessPointExists(item_id):
+        return "Not found", 404
+
+    status_text = request.form.get("status")
+    note_text = request.form.get("note")
+    category = StatusType(int(request.form.get("category")))
+    author = get_logged_in_user_info()
+    author_identifier = f" - manually added by {author['name']} ({author['sub']}) via web UI"
+
+    note_text += author_identifier
+
+    prior_report = get_item_report(item_id)
+    current_report = None
+
+    previous_report_has_ticket = prior_report.ref is not None
+
+    if previous_report_has_ticket or category == StatusType.BROKEN:
+        current_report = Report()
+        db.session.add(current_report)
+        db.session.flush()
+
+        # associate new report with this access point
+        association = AccessPointReports(
+            report_id=current_report.id,
+            access_point_id=item_id
+        )
+        db.session.add(association)
+    
+    else:
+        current_report = prior_report
+
+    status_update = Status(
+        report = current_report,
+        status = status_text,
+        status_type = category,
+        timestamp = datetime.utcnow(),
+        notes = note_text
+    )
+    db.session.add(status_update)
+    db.session.commit()
+
+    return redirect(f"/access_points/{item_id}")
 
 ########################
 #

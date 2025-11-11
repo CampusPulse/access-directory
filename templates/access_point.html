@@ -200,6 +200,31 @@ View Full Size Image</a>{% endif %}</pre>
                     <button type="submit" class="btn btn-primary">Submit</button>
                     </details>
                 </form>
+
+                <form action="/add_status/{{accessPointDetails['id']}}" method="post">
+                    <details>
+                        <summary><b>Assign Manual Status</b></summary>
+                        <p class="thin">Sign on the elevator? Heard from another channel that its broken? Update it here! Don't forget to come back and update it again if it is fixed!</p>
+                        <label>
+                            Status Bubble Text: 
+                            <input type="text" class="form-control" id="status" name="status" title="The name for the status bubble (1-30 char)" required pattern=".{1,30}" placeholder="Reported">
+                        </label>
+                        <label>
+                            Note
+                            <input type="text" class="form-control" id="note" name="note" title="Brief note about why this status changed" required placeholder="Theres a sign on the door">
+                        </label>
+                        <label>
+                            Category
+                            <select name="category">
+                                {% for name, val in accessPointDetails['status_categories'].items() %}
+                                <option value="{{val}}">{{name}}</option>
+                                {% endfor %}
+                            </select>
+                        </label><br>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </details>
+                </form>
+
                 {% endif %}
             </div>
         </div>
