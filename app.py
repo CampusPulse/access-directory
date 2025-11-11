@@ -896,15 +896,16 @@ Page for specific access point details
 
 @app.route("/access_points/<id>")
 def access_point(id):
-    if checkAccessPointExists(id):
-        return render_template(
-            "access_point.html", 
-            authsession=get_logged_in_user(),
-            is_admin=check_for_admin_role(get_logged_in_user_id()),
-            accessPointDetails=getAccessPoint(id)
-        )
-    else:
+    if not checkAccessPointExists(id):
         return render_template("404.html"), 404
+        
+    return render_template(
+        "access_point.html", 
+        authsession=get_logged_in_user(),
+        is_admin=check_for_admin_role(get_logged_in_user_id()),
+        accessPointDetails=getAccessPoint(id)
+    )
+        
 
 
 ########################
