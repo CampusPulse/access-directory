@@ -1872,6 +1872,8 @@ def build_location(building: Building, room_form_data: str, location_nick:str, c
     )
     location = db.session.execute(stmt).scalar_one_or_none()
 
+    gpsLocation = MapLocation.from_string(coords)
+
     if not location:
 
         locationData = {
@@ -1881,7 +1883,6 @@ def build_location(building: Building, room_form_data: str, location_nick:str, c
             "nickname": location_nick,
             "additional_info": notes,
         }
-        gpsLocation = MapLocation.from_string(coords)
 
         if gpsLocation is not None:
             lat, long = gpsLocation
@@ -1893,6 +1894,18 @@ def build_location(building: Building, room_form_data: str, location_nick:str, c
         return Location(
             **locationData
         ), True
+    else:
+        # update location with new values if it doesnt already have them
+        if not location.has_coordinates and gpsLocation is not None:
+            lat, long = gpsLocation
+            location.latitude = lat
+            location.longitude = long
+
+        if location.additional_info is None:
+            location.additional_info = notes
+
+        if location.nickname is None:
+            location.nickname = location_nick
 
     return location, False
 

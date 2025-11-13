@@ -81,6 +81,10 @@ class Location(Base):
         else:
             return RoomNumber(self.floor_number, self.room_number).to_string()
 
+    @property
+    def has_coordinates(self):
+        return self.latitude is None or self.longitude is None
+
 
 class AccessPoint(Base):
     __tablename__ = "access_point"
