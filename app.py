@@ -1897,6 +1897,49 @@ def build_location(building: Building, room_form_data: str, location_nick:str, c
     return location, False
 
 
+def processAndUploadImages(images, access_point: AccessPoint):
+    """Helper function to deduplicate handling of image uploads across multiple access point types
+
+    Args:
+        images (_type_): the images/file handles to process
+        access_point (AccessPoint): the access point the images should be associated with
+    """
+
+    # Count is the order in which the images are shown
+    count = 1
+    for f in images:
+        # print(f[1].filename)
+
+        fullsizehash = generateImageHash(f[1])
+        f[1].seek(0)
+
+        # Check if image is already used in DB
+        usecount = db.session.execute(
+            db.select(func.count()).where(Image.fullsizehash == fullsizehash)
+        ).scalar()
+        if usecount > 0:
+            # print(fullsizehash)
+            # associate image
+            existing_image = db.session.execute(
+                db.select(Image).where(Image.fullsizehash == fullsizehash)
+            ).scalar()
+
+            db.session.add(
+                ImageAccessPointRelation(image_id=existing_image.id, 
+                ordering=count,
+                access_point_id=access_point.id)
+            )
+            count += 1
+            continue
+            # return render_template("404.html"), 404
+
+        # Begin adding full size to database
+        f[1].seek(0)
+
+        uploadImageResize(f[1], access_point.id, count, is_thumbnail=(count == 0))
+
+        count += 1
+
 
 @app.route("/upload/elevator", methods=["POST"])
 @requires_admin
@@ -1942,40 +1985,8 @@ def upload_elevator():
     )
     db.session.add(elevator)
 
-    # Count is the order in which the images are shown
-    count = 1
-    for f in request.files.items(multi=True):
-        # print(f[1].filename)
-
-        fullsizehash = generateImageHash(f[1])
-        f[1].seek(0)
-
-        # Check if image is already used in DB
-        usecount = db.session.execute(
-            db.select(func.count()).where(Image.fullsizehash == fullsizehash)
-        ).scalar()
-        if usecount > 0:
-            # print(fullsizehash)
-            # associate image
-            existing_image = db.session.execute(
-                db.select(Image).where(Image.fullsizehash == fullsizehash)
-            ).scalar()
-
-            db.session.add(
-                ImageAccessPointRelation(image_id=existing_image.id, 
-                ordering=count,
-                access_point_id=elevator.id)
-            )
-            count += 1
-            continue
-            # return render_template("404.html"), 404
-
-        # Begin adding full size to database
-        f[1].seek(0)
-
-        uploadImageResize(f[1], elevator.id, count, is_thumbnail=(count == 0))
-
-        count += 1
+    
+    processAndUploadImages(request.files.items(multi=True), elevator)
 
     db.session.commit()
 
