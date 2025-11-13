@@ -117,6 +117,11 @@ View Full Size Image</a>{% endif %}</pre>
                     <br>{% endif %}
                     <strong>Room</strong>: {{ accessPointDetails["room"] }}<br>
                     <strong>Status Last Updated</strong>: {{ accessPointDetails["status_updated"] }}<br>
+                    {% if authsession and is_admin %}
+                    <strong>Last Report Ticket #</strong>: {{ accessPointDetails["status_ticket_number"] }}<br>
+                    <strong>Last Report ID #</strong>: {{ accessPointDetails["report_id"] }}<br>
+                    <strong>Last Report ID #</strong>: {{ accessPointDetails["status_report_id"] }} (By Status)<br>
+                    {% endif %}
                 </p>
 
 
@@ -188,11 +193,38 @@ View Full Size Image</a>{% endif %}</pre>
                 {% if authsession and is_admin %}
 
                 <form action="/add_ticket/{{accessPointDetails['id']}}" method="post">
-                    <label for="ticket_ref" class="form-label"><b>Ticket Number</b></label>
+                    <details>
+                        <summary><label for="ticket_ref" class="form-label"><b>Assign Ticket Number</b></label></summary>
                     <p class="thin">Filed a ticket for this item? Ensure the system email is on the watch list and add the ticket number here!</p>
-                    <input type="text" class="form-control"  id="ticket_ref" name="ticket_ref" placeholder="WOT1234567" required >
+                    <input type="text" class="form-control"  id="ticket_ref" name="ticket_ref" placeholder="WOT1234567" required pattern="WOT[0-9]+" title="Work order ticket number like WOT1234567">
                     <button type="submit" class="btn btn-primary">Submit</button>
+                    </details>
                 </form>
+
+                <form action="/add_status/{{accessPointDetails['id']}}" method="post">
+                    <details>
+                        <summary><b>Assign Manual Status</b></summary>
+                        <p class="thin">Sign on the elevator? Heard from another channel that its broken? Update it here! Don't forget to come back and update it again if it is fixed!</p>
+                        <label>
+                            Status Bubble Text: 
+                            <input type="text" class="form-control" id="status" name="status" title="The name for the status bubble (1-30 char)" required pattern=".{1,30}" placeholder="Reported">
+                        </label>
+                        <label>
+                            Note
+                            <input type="text" class="form-control" id="note" name="note" title="Brief note about why this status changed" required placeholder="Theres a sign on the door">
+                        </label>
+                        <label>
+                            Category
+                            <select name="category">
+                                {% for name, val in accessPointDetails['status_categories'].items() %}
+                                <option value="{{val}}">{{name}}</option>
+                                {% endfor %}
+                            </select>
+                        </label><br>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </details>
+                </form>
+
                 {% endif %}
             </div>
         </div>
