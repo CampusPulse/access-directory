@@ -1848,7 +1848,7 @@ def uploadNewImage(id):
 Route to add new entry
 """
 
-def build_location(building: Building, room_form_data: str, location_nick:str, coords: str, notes:str) -> Location, bool:
+def build_location(building: Building, room_form_data: str, location_nick:str, coords: str, notes:str) -> tuple[Location, bool]:
     """Builds or returns a location object
 
     Args:
