@@ -1872,7 +1872,6 @@ def upload():
         Location.building_id == building.id,
         Location.floor_number == floor,
         Location.room_number == room,
-        Location.is_outside is False,  # elevators should not be outside
     )
     location = db.session.execute(stmt).scalar_one_or_none()
 
