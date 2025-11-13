@@ -1853,7 +1853,7 @@ Route to add new entry
 
 @app.route("/upload/elevator", methods=["POST"])
 @requires_admin
-def upload():
+def upload_elevator():
 
     # Step 1: Find the building by its number
     stmt = db.select(Building).where(Building.acronym == request.form["building"])
