@@ -262,7 +262,9 @@ def access_point_admin_json(access_point: AccessPoint):
         "status_ticket_number": (status.report.ref or "No Ticket") if status else "No Status",
         "status_report_id": status.report.id,
         "report_id": report.id,
-        "status_categories": status_categories
+        "categories": {
+            "status": status_categories
+        }
     }
 
     return admin_data
