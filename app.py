@@ -1850,6 +1850,53 @@ def uploadNewImage(id):
 Route to add new entry
 """
 
+def build_location(building: Building, room_form_data: str, location_nick:str, coords: str, notes:str) -> Location, bool:
+    """Builds or returns a location object
+
+    Args:
+        building (Building): the building this location is in
+        room_form_data (str): the room number of this location
+        location_nick (str): the nickname for this location
+        coords (str): the coordinates of this location
+        notes (str): any notes for this location
+
+    Returns:
+        Location, bool: The location and a boolean indicating if the location was created new.
+    """
+    floor, room = RoomNumber.from_string(room_form_data).integers()
+
+    stmt = db.select(Location).where(
+        Location.building_id == building.id,
+        Location.floor_number == floor,
+        Location.room_number == room,
+    )
+    location = db.session.execute(stmt).scalar_one_or_none()
+
+    if not location:
+
+        locationData = {
+            "building_id": building.id,
+            "floor_number": floor or 0,
+            "room_number": room,
+            "nickname": location_nick,
+            "additional_info": notes,
+        }
+        gpsLocation = MapLocation.from_string(coords)
+
+        if gpsLocation is not None:
+            lat, long = gpsLocation
+            locationData.update({
+                "latitude": lat,
+                "longitude": long
+            })
+
+        return Location(
+            **locationData
+        ), True
+
+    return location, False
+
+
 
 @app.route("/upload/elevator", methods=["POST"])
 @requires_admin
@@ -1866,36 +1913,10 @@ def upload_elevator():
 
     # Step 2: Find or create the location
     # for now we consider elevators as being "located" on "all" floors using the special floor number "0" (we are following the american standard where 1 is ground)
-    floor, room = RoomNumber.from_string(request.form["room"]).integers()
 
-    stmt = db.select(Location).where(
-        Location.building_id == building.id,
-        Location.floor_number == floor,
-        Location.room_number == room,
-    )
-    location = db.session.execute(stmt).scalar_one_or_none()
+    location, is_new = build_location(building, request.form["room"], request.form["location-nick"], request.form["coords"], request.form["location"])
 
-    if not location:
-
-        locationData = {
-            "building_id": building.id,
-            "floor_number": floor or 0,
-            "room_number": room,
-            "nickname": request.form["location-nick"],
-            "additional_info": request.form["location"],
-        }
-        gpsLocation = MapLocation.from_string(request.form["coords"])
-
-        if gpsLocation is not None:
-            lat, long = gpsLocation
-            locationData.update({
-                "latitude": lat,
-                "longitude": long
-            })
-
-        location = Location(
-            **locationData
-        )
+    if is_new:
         db.session.add(location)
         db.session.flush()  # Get the location ID
     
