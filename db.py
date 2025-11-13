@@ -109,7 +109,6 @@ class DoorButton(AccessPoint):
     mount_surface: Mapped[EnumType(MountSurface)] = mapped_column(EnumType(MountSurface), nullable=True )
     mount_style: Mapped[EnumType(MountStyle)] = mapped_column(EnumType(MountStyle), nullable=True )
     powered_by: Mapped[EnumType(PowerSource)] = mapped_column(EnumType(PowerSource), nullable=True )
-    additional_location_notes: Mapped[Optional[str]]  # Example: "The button on the outside of the building closest to the infinity quad"
 
     __mapper_args__ = {
         "polymorphic_identity": "door_button",
