@@ -255,6 +255,11 @@ def access_point_admin_json(access_point: AccessPoint):
     report = get_item_report(access_point)
 
     status_categories = {i.name: i.value for i in StatusType}
+    shelter_categories = {i.name: i.value for i in ShelterType}
+    activation_categories = {i.name: i.value for i in ButtonActivation}
+    surface_categories = {i.name: i.value for i in MountSurface}
+    mount_categories = {i.name: i.value for i in MountStyle}
+    power_categories = {i.name: i.value for i in PowerSource}
     
 
     # TODO: use marshmallow to serialize
@@ -263,7 +268,12 @@ def access_point_admin_json(access_point: AccessPoint):
         "status_report_id": status.report.id,
         "report_id": report.id,
         "categories": {
-            "status": status_categories
+            "status": status_categories,
+            "shelter": shelter_categories,
+            "activation": activation_categories,
+            "surface": surface_categories,
+            "mount": mount_categories,
+            "power": power_categories,
         }
     }
 
