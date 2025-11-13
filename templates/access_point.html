@@ -216,7 +216,7 @@ View Full Size Image</a>{% endif %}</pre>
                         <label>
                             Category
                             <select name="category">
-                                {% for name, val in accessPointDetails['status_categories'].items() %}
+                                {% for name, val in accessPointDetails['status']['categories'].items() %}
                                 <option value="{{val}}">{{name}}</option>
                                 {% endfor %}
                             </select>
