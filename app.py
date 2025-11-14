@@ -1544,6 +1544,7 @@ def admin():
     return render_template(
         "admin.html",
         tags=getAllTags(),
+        formData=formFieldData(),
         accessPoints=getAllAccessPoints(),
         buildings=getAllBuildings(),
     )
