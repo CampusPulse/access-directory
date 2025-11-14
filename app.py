@@ -1546,6 +1546,7 @@ def admin():
         authsession=get_logged_in_user(),
         is_admin = check_for_admin_role(get_logged_in_user_id()),
         tags=getAllTags(),
+        formData=formFieldData(),
         accessPoints=getAllAccessPoints(),
         buildings=getAllBuildings(),
     )
