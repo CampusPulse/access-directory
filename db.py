@@ -8,23 +8,28 @@ from helpers import RoomNumber
 
 
 class ShelterType(enum.Enum):
+    UNKNOWN = 0
     INTERIOR = 1
     EXTERIOR = 2
     VESTIBULE = 3
 
 class ButtonActivation(enum.Enum):
+    UNKNOWN = 0
     PUSH = 1
     WAVE = 2
 
 class MountSurface(enum.Enum):
+    UNKNOWN = 0
     WALL = 1
     POLE = 2
 
 class MountStyle(enum.Enum):
+    UNKNOWN = 0
     PROTRUDING = 1
     RECESSED = 2
 
 class PowerSource(enum.Enum):
+    UNKNOWN = 0
     HARDWIRED = 1
     BATTERY = 2
 
