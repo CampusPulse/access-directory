@@ -1433,6 +1433,8 @@ Route to the admin panel
 def admin():
     return render_template(
         "admin.html",
+        authsession=get_logged_in_user(),
+        is_admin = check_for_admin_role(get_logged_in_user_id()),
         tags=getAllTags(),
         accessPoints=getAllAccessPoints(),
         buildings=getAllBuildings(),
