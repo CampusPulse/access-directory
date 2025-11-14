@@ -253,6 +253,20 @@ def access_point_admin_json(access_point: AccessPoint):
 
     status = get_item_status(access_point)
     report = get_item_report(access_point)
+    
+    formfielddata = formFieldData()
+
+    # TODO: use marshmallow to serialize
+    admin_data = {
+        "status_ticket_number": (status.report.ref or "No Ticket") if status else "No Status",
+        "status_report_id": status.report.id,
+        "report_id": report.id,
+        **formfielddata
+    }
+
+    return admin_data
+
+def formFieldData():
 
     status_categories = {i.name: i.value for i in StatusType}
     shelter_categories = {i.name: i.value for i in ShelterType}
@@ -260,13 +274,7 @@ def access_point_admin_json(access_point: AccessPoint):
     surface_categories = {i.name: i.value for i in MountSurface}
     mount_categories = {i.name: i.value for i in MountStyle}
     power_categories = {i.name: i.value for i in PowerSource}
-    
-
-    # TODO: use marshmallow to serialize
-    admin_data = {
-        "status_ticket_number": (status.report.ref or "No Ticket") if status else "No Status",
-        "status_report_id": status.report.id,
-        "report_id": report.id,
+    return {
         "categories": {
             "status": status_categories,
             "shelter": shelter_categories,
@@ -276,9 +284,6 @@ def access_point_admin_json(access_point: AccessPoint):
             "power": power_categories,
         }
     }
-
-    return admin_data
-
 
 """
 Creates a geojson for map feature
