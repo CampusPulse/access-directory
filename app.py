@@ -828,17 +828,28 @@ def home():
 
 @app.route("/about")
 def about():
-    return render_template("about.html", pageTitle="About CampusPulse Access")
+    return render_template("about.html",
+        pageTitle="About CampusPulse Access",
+        authsession=get_logged_in_user(),
+        is_admin = check_for_admin_role(get_logged_in_user_id())
+    )
 
 
 @app.route("/fmsreport")
 def fmsreport():
-    return render_template("fmsreport.html", pageTitle="Reporting to the RIT Service Center")
+    return render_template("fmsreport.html",
+        pageTitle="Reporting to the RIT Service Center",
+        authsession=get_logged_in_user(),
+        is_admin = check_for_admin_role(get_logged_in_user_id())
+    )
 
 
 @app.route("/map")
 def map_page():
-    return render_template("map.html")
+    return render_template("map.html",
+        authsession=get_logged_in_user(),
+        is_admin = check_for_admin_role(get_logged_in_user_id())
+        )
 
 
 @app.route("/catalog")
@@ -850,6 +861,7 @@ def catalog():
             return render_template(
             "catalog.html",
             authsession=get_logged_in_user(),
+            is_admin = check_for_admin_role(get_logged_in_user_id()),
             q=query,
             page=1,
             accessPoints=getAccessPointsPaginated(0),
@@ -860,6 +872,7 @@ def catalog():
             return render_template(
                 "paginated.html",
                 authsession=get_logged_in_user(),
+                is_admin = check_for_admin_role(get_logged_in_user_id()),
                 page=(page+1),
                 murals=getAccessPointsPaginated(page)
             )
@@ -867,6 +880,7 @@ def catalog():
         return render_template(
             "filtered.html",
             authsession=get_logged_in_user(),
+            is_admin = check_for_admin_role(get_logged_in_user_id()),
             pageTitle=f"Query - {query}",
             subHeading="Search Query",
             q=query,
@@ -1419,6 +1433,8 @@ Route to the admin panel
 def admin():
     return render_template(
         "admin.html",
+        authsession=get_logged_in_user(),
+        is_admin = check_for_admin_role(get_logged_in_user_id()),
         tags=getAllTags(),
         accessPoints=getAllAccessPoints(),
         buildings=getAllBuildings(),
