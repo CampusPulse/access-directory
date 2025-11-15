@@ -53,8 +53,7 @@
                       
                       <select id="dropdown" name="building">
                         <option value="default" name="default">Select a building</option>
-                        {% for bldg in buildings: %}
-                        {{bldg.name}}
+                        {% for bldg in buildings %}
                         <option value="{{ bldg.acronym }}">{{bldg.number}} - {{bldg.name}}</option>
                         
                         {% endfor %}
