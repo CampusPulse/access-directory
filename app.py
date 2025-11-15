@@ -239,7 +239,8 @@ def access_point_json(access_point: AccessPoint):
             {
                 "title": title,
                 "room": rn.to_string(),
-                "door_count": access_point.door_count
+                "door_count": access_point.door_count,
+                "descriptor": "elevator"
             }
         )
 
@@ -263,6 +264,7 @@ def access_point_json(access_point: AccessPoint):
                 "mount_surface": access_point.mount_surface,
                 "mount_style": access_point.mount_style,
                 "powered_by": access_point.powered_by,
+                "descriptor": "button"
             }
         )
 
