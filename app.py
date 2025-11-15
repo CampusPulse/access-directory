@@ -464,7 +464,7 @@ Get all access points
 
 def getAllBuildings():
     b = db.session.execute(db.select(Building).order_by(Building.id.asc())).scalars()
-    return b
+    return list(b)
 
 
 """
