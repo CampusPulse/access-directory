@@ -219,7 +219,7 @@ View Full Size Image</a>{% endif %}</pre>
                 <form action="/add_status/{{accessPointDetails['id']}}" method="post">
                     <details>
                         <summary><b>Assign Manual Status</b></summary>
-                        <p class="thin">Sign on the elevator? Heard from another channel that its broken? Update it here! Don't forget to come back and update it again if it is fixed!</p>
+                        <p class="thin">Sign on the {{ accessPointDetails['descriptor'] }}? Heard from another channel that its broken? Update it here! Don't forget to come back and update it again if it is fixed!</p>
                         <label>
                             Status Bubble Text: 
                             <input type="text" class="form-control" id="status" name="status" title="The name for the status bubble (1-30 char)" required pattern=".{1,30}" placeholder="Reported">
