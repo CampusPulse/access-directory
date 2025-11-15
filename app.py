@@ -215,8 +215,7 @@ def access_point_json(access_point: AccessPoint):
         "status": status_style,
         "status_updated": statusUpdated,
         "images": images,
-        "tags": getTags(access_point.id),
-        "report_url": f"https://report.campuspulse.app/elevator?room={rn.to_string()}+{access_point.location.nickname}&campuspulse_id={access_point.id}&building={access_point.location.building.number}:{access_point.location.building.human_name()}"
+        "tags": getTags(access_point.id)
     }
 
     if thumbnail is not None:
@@ -240,7 +239,8 @@ def access_point_json(access_point: AccessPoint):
                 "title": title,
                 "room": rn.to_string(),
                 "door_count": access_point.door_count,
-                "descriptor": "elevator"
+                "descriptor": "elevator",
+                "report_url": f"https://report.campuspulse.app/elevator?room={rn.to_string()}+{access_point.location.nickname}&campuspulse_id={access_point.id}&building={access_point.location.building.number}:{access_point.location.building.human_name()}"
             }
         )
 
@@ -264,7 +264,8 @@ def access_point_json(access_point: AccessPoint):
                 "mount_surface": access_point.mount_surface,
                 "mount_style": access_point.mount_style,
                 "powered_by": access_point.powered_by,
-                "descriptor": "button"
+                "descriptor": "button",
+                "report_url": f"https://report.campuspulse.app/button?room={rn.to_string()}+{access_point.location.nickname}&campuspulse_id={access_point.id}&building={access_point.location.building.number}:{access_point.location.building.human_name()}"#&floor={}
             }
         )
 
