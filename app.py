@@ -247,6 +247,25 @@ def access_point_json(access_point: AccessPoint):
             base_data.update({ 
                 "floor": f"{integer_to_floor(access_point.floor_min)} to {integer_to_floor(access_point.floor_max)}",
             })
+    elif isinstance(access_point, DoorButton):
+
+        # TODO: Decide title
+        # title = access_point.location.building.human_name()
+        # title += f" - "
+        # title += access_point.location.human_name()\
+
+        base_data.update(
+            {
+                # "title": title,
+                "room": rn.to_string(),
+                "shelter": access_point.shelter,
+                "activation": access_point.activation,
+                "mount_surface": access_point.mount_surface,
+                "mount_style": access_point.mount_style,
+                "powered_by": access_point.powered_by,
+            }
+        )
+
     return base_data
 
 def access_point_admin_json(access_point: AccessPoint):

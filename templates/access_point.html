@@ -98,8 +98,23 @@ View Full Size Image</a>{% endif %}</pre>
                 
                 <span class="chip" style="background-color: {{ accessPointDetails["status"]["background_color"] }}; color:{{ accessPointDetails["status"]["text_color"] }}">
                     {{ accessPointDetails["status"]["message"] }}
-                </span>
+                </span><br>
 
+                {% if accessPointDetails['shelter'] %}
+                <strong>Placement</strong>: {{ accessPointDetails["shelter"].name.lower() }}<br>
+                {% endif %}
+                {% if accessPointDetails['activation'] %}
+                <strong>Activation Action</strong>: {{ accessPointDetails["activation"].name.lower() }}<br>
+                {% endif %}
+                {% if accessPointDetails['mount_surface'] %}
+                <strong>Mounted To</strong>: {{ accessPointDetails["mount_surface"].name.lower() }}<br>
+                {% endif %}
+                {% if accessPointDetails['mount_style'] %}
+                <strong>Mount Style</strong>: {{ accessPointDetails["mount_style"].name.lower() }}<br>
+                {% endif %}
+                {% if accessPointDetails['powered_by'] %}
+                <strong>Power Source</strong>: {{ accessPointDetails["powered_by"].name.lower() }}<br>
+                {% endif %}
 
                 {% if accessPointDetails["notes"] != '' %}
                 <h3>Description:</h3>
