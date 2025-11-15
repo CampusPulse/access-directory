@@ -1972,6 +1972,88 @@ def processAndUploadImages(images, access_point: AccessPoint):
         count += 1
 
 
+@app.route("/upload/button", methods=["POST"])
+@requires_admin
+def upload_button():
+
+    # Step 1: Find the building by its number
+    stmt = db.select(Building).where(Building.acronym == request.form["building"])
+    building = db.session.execute(stmt).scalar_one_or_none()
+
+    if not building:
+        raise ValueError(
+            f"Building with acronym {request.form['building']} not found."
+        )
+
+    # Step 2: Find or create the location
+    # for now we consider elevators as being "located" on "all" floors using the special floor number "0" (we are following the american standard where 1 is ground)
+
+    location, is_new = build_location(building, request.form["room"], request.form["location-nick"], request.form["coords"], request.form["location"])
+
+    if is_new:
+        db.session.add(location)
+        db.session.flush()  # Get the location ID
+    
+    
+    extra_data = {}
+    def check_add_extra(form_key, transform, extra_data, target_key):
+        value = request.form.get(form_key)
+        if value is not None:
+            try:
+                value = transform(value)
+                extra_data[target_key] = value
+            
+            except Exception as e:
+                app.logger.error(f"cound not parse {form_key}: {e}")
+
+    check_add_extra(
+        "shelter_type",
+        lambda v: ShelterType(int(v)),
+        extra_data,
+        "shelter"
+    )
+    check_add_extra(
+        "activation_style",
+        lambda v: ButtonActivation(int(v)),
+        extra_data,
+        "activation"
+    )
+    check_add_extra(
+        "mount_surface",
+        lambda v: MountSurface(int(v)),
+        extra_data,
+        "mount_surface"
+    )
+    check_add_extra(
+        "mount_style",
+        lambda v: MountStyle(int(v)),
+        extra_data,
+        "mount_style"
+    )
+    check_add_extra(
+        "power_source",
+        lambda v: PowerSource(int(v)),
+        extra_data,
+        "powered_by"
+    )
+
+    # Step 3: Insert the elevator access point
+    button = DoorButton(
+        location_id=location.id,
+        remarks=request.form["notes"],
+        active=request.form["active"] == "true",
+        **extra_data
+    )
+    db.session.add(button)
+
+    
+    processAndUploadImages(request.files.items(multi=True), button)
+
+    db.session.commit()
+
+    return redirect(f"/edit/{button.id}")
+
+
 @app.route("/upload/elevator", methods=["POST"])
 @requires_admin
 def upload_elevator():
