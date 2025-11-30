@@ -45,13 +45,13 @@ from db import (
 from flask_migrate import Migrate, stamp, upgrade
 from flask_cors import CORS, cross_origin
 from s3 import S3Bucket
-from typing import Optional
+from typing import Optional, Union
 import shutil
 import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 
@@ -248,6 +248,24 @@ def access_point_json(access_point: AccessPoint):
                 "floor": f"{integer_to_floor(access_point.floor_min)} to {integer_to_floor(access_point.floor_max)}",
             })
     return base_data
+
+def access_point_admin_json(access_point: AccessPoint):
+
+    status = get_item_status(access_point)
+    report = get_item_report(access_point)
+
+    status_categories = {i.name: i.value for i in StatusType}
+    
+
+    # TODO: use marshmallow to serialize
+    admin_data = {
+        "status_ticket_number": (status.report.ref or "No Ticket") if status else "No Status",
+        "status_report_id": status.report.id,
+        "report_id": report.id,
+        "status_categories": status_categories
+    }
+
+    return admin_data
 
 
 """
@@ -597,7 +615,7 @@ Get access point details
 """
 
 
-def getAccessPoint(id):
+def getAccessPoint(id, is_admin=False):
     access_point = db.session.execute(
         db.select(AccessPoint).where(AccessPoint.id == id)
     ).scalar()
@@ -608,6 +626,8 @@ def getAccessPoint(id):
         return None
 
     accessPointInfo = access_point_json(access_point)
+    if is_admin:
+        accessPointInfo.update(access_point_admin_json(access_point))
     logging.debug(accessPointInfo)
     return accessPointInfo
 
@@ -910,15 +930,18 @@ Page for specific access point details
 
 @app.route("/access_points/<id>")
 def access_point(id):
-    if checkAccessPointExists(id):
-        return render_template(
-            "access_point.html", 
-            authsession=get_logged_in_user(),
-            is_admin=check_for_admin_role(get_logged_in_user_id()),
-            accessPointDetails=getAccessPoint(id)
-        )
-    else:
+    if not checkAccessPointExists(id):
         return render_template("404.html"), 404
+    
+    is_admin = check_for_admin_role(get_logged_in_user_id())
+    return render_template(
+        "access_point.html", 
+        authsession=get_logged_in_user(),
+        is_admin=is_admin,
+        accessPointDetails=getAccessPoint(id, is_admin=is_admin)
+        
+    )
+        
 
 
 ########################
@@ -1138,6 +1161,53 @@ def add_ticket(item_id):
 
     return ("", 200)
 
+
+@app.route("/add_status/<item_id>", methods=["POST"])
+@requires_admin
+def add_status(item_id):
+    if not checkAccessPointExists(item_id):
+        return "Not found", 404
+
+    status_text = request.form.get("status")
+    note_text = request.form.get("note")
+    category = StatusType(int(request.form.get("category")))
+    author = get_logged_in_user_info()
+    author_identifier = f" - manually added by {author['name']} ({author['sub']}) via web UI"
+
+    note_text += author_identifier
+
+    prior_report = get_item_report(item_id)
+    current_report = None
+
+    previous_report_has_ticket = prior_report.ref is not None
+
+    if previous_report_has_ticket or category == StatusType.BROKEN:
+        current_report = Report()
+        db.session.add(current_report)
+        db.session.flush()
+
+        # associate new report with this access point
+        association = AccessPointReports(
+            report_id=current_report.id,
+            access_point_id=item_id
+        )
+        db.session.add(association)
+    
+    else:
+        current_report = prior_report
+
+    status_update = Status(
+        report = current_report,
+        status = status_text,
+        status_type = category,
+        timestamp = datetime.utcnow(),
+        notes = note_text
+    )
+    db.session.add(status_update)
+    db.session.commit()
+
+    return redirect(f"/access_points/{item_id}")
+
 ########################
 #
 # region Management Helpers
@@ -1225,24 +1295,47 @@ def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
     db.session.commit()
 
 
-def get_item_status(item):
-    """Fetch the status for the provided item.
+def get_item_status(item: Union[AccessPoint, int]):
+    """Fetch the most recent status for the provided item.
 
     Args:
-        item (AccessPoint): The item (in this case AccessPoint) to fetch status for
+        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch status for (or its integer ID)
 
     Returns:
         Status: the status of the access point, or None if none were found
     """
-
+    item_id = item.id if isinstance(item, AccessPoint) else item
     status = db.session.execute(
         db.select(Status)
         .join(AccessPointReports, AccessPointReports.report_id == Status.report_id)
-        .where(AccessPointReports.access_point_id == item.id)
+        .where(AccessPointReports.access_point_id == item_id)
         .order_by(Status.timestamp.desc())
     ).scalars().first()
     
     return status
+
+def get_item_report(item:Union[AccessPoint, int]):
+    """Fetch the latest report for the provided item.
+
+    While you can get this using get_item_status and accessing it through the associated report,
+    that method can miss scenarios where a report has been created but there is no status yet
+    This can happen when associating a ticket before any email has come in yet.
+
+    Args:
+        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch the report for (or its integer ID)
+
+    Returns:
+        Report: the report of the access point, or None if none were found
+    """
+    item_id = item.id if isinstance(item, AccessPoint) else item
+    report = db.session.execute(
+        db.select(Report)
+        .join(AccessPointReports, AccessPointReports.report_id == Report.id)
+        .where(AccessPointReports.access_point_id == item_id)
+        .order_by(Report.id.desc())
+    ).scalars().first()
+    
+    return report
 
 
 """
