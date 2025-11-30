@@ -14,6 +14,8 @@ S3_SECRET = os.getenv("S3_SECRET", default="")
 BUCKET_NAME = os.getenv("BUCKET_NAME", default="tunnelvision")
 ITEMSPERPAGE = 18
 
+MAX_IMG_HEIGHT = int(os.getenv("MAX_IMG_HEIGHT", default="2048"))
+
 WEBHOOK_CREDENTIAL = os.getenv("WEBHOOK_CREDENTIAL", default="")
 
 DEBUG = os.getenv("DEBUG", default=False)
