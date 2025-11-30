@@ -1335,7 +1335,7 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
 
     with PilImage.open(file_obj) as im:
         exif = im.getexif()
-        im = limit_height(im, app.config["MAX_IMG_HEIGHT"])
+        im = limit_height(im, int(app.config["MAX_IMG_HEIGHT"]))
         exif = scrubGPSFromExif(exif)
         exif[ExifBase.ImageWidth.value] = im.width
         exif[ExifBase.ImageLength.value] = im.height
