@@ -172,7 +172,14 @@ def validate_work_order(ticket_ref:str, allow_plain_wo=False):
     
     if ticket_ref is None or ticket_ref == "":
         return False
-    if not ticket_ref.startswith("WO" if allow_plain_wo else "WOT"):
+
+    ticket_ref = ticket_ref.upper()
+    prefix = "WO" if allow_plain_wo else "WOT"
+    
+    if not ticket_ref.startswith(prefix):
+        return False
+
+    if not ticket_ref[len(prefix):].isnumeric():
         return False
 
     return True
@@ -180,7 +187,7 @@ def validate_work_order(ticket_ref:str, allow_plain_wo=False):
 def clean_work_order(ticket_ref:str, allow_plain_wo=False):
     if not validate_work_order(ticket_ref, allow_plain_wo):
         return None
-    return ticket_ref
+    return ticket_ref.upper()
 
 def smart_add_status_report(session, new_status:Status, ticket_number:str, link_to: Union[AccessPoint, int], commit=False):
     """Intelligently decide whether to add a new status value to an existing report or create a new one
