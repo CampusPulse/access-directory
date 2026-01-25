@@ -167,7 +167,16 @@ def link_report_to_access_point(session, report: Union[Report, int], access_poin
     session.add(association)
     if commit:
         session.commit()
+
+def validate_work_order(ticket_ref:str, allow_plain_wo=False):
     
+    if ticket_ref is None or ticket_ref == "":
+        return False
+    if not ticket_ref.startswith("WO" if allow_plain_wo else "WOT"):
+        return False
+
+    return True
+
 
 def smart_add_status_report(session, new_status:Status, ticket_number:str, link_to: Union[AccessPoint, int], commit=False):
     """Intelligently decide whether to add a new status value to an existing report or create a new one

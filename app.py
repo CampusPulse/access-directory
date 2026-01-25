@@ -54,7 +54,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, FMSSheetUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, latest_status_for,highest_report_for, get_logged_in_user_info, smart_add_status_report
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, FMSSheetUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, latest_status_for,highest_report_for, get_logged_in_user_info, smart_add_status_report, validate_work_order
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 
@@ -1246,7 +1246,7 @@ def add_ticket(item_id):
         return "Not found", 404
 
     ticket_ref = request.form.get("ticket_ref")
-    if ticket_ref is None or ticket_ref == "" or not ticket_ref.startswith("WOT"):
+    if not validate_work_order(ticket_ref):
         return "invalid ticket number", 400
 
     report = db.session.execute(
