@@ -8,6 +8,7 @@ from flask import session
 import requests
 import os
 from db import Report, AccessPointReports, AccessPoint
+from typing import Union
 
 ANY_FLOOR_CHAR = "_"
 
@@ -168,6 +169,42 @@ def link_report_to_access_point(session, report: Union[Report, int], access_poin
         session.commit()
     
 
+def smart_add_status_report(session, new_status:Status, ticket_number:str, link_to: Union[AccessPoint, int], commit=False):
+    """Intelligently decide whether to add a new status value to an existing report or create a new one
+
+    Args:
+        session: the database session to use
+        new_status (Status): the new status value as a Status() DB object
+        ticket_number (str): the ticket number
+        link_to (Union[AccessPoint, int]): an access point or integer access point ID to link the report to
+        commit (bool): whether to commit the transaction once done
+    Returns:
+        (report, status): a tuple of the report and status values used.
+    """
+    # if the ticket number matches, we should always use the same report
+    if ticket_number:
+        current_report = session.query(Report).filter(Report.ref == ticket_number).first()
+        # if no current report for the given ticket number, make one
+        if current_report is None:
+            # create new report and status
+            new_report = Report(
+                ref=ticket_number
+            )
+            session.add(new_report)
+            session.flush() # get the report ID
+            new_status.report_id = new_report.id
+            current_report = new_report
+            
+        else:
+            new_status.report_id = current_report.id
+        
+        session.add(new_status)
+
+        if link_to: #if we have an access point id, we should link it
+            link_report_to_access_point(session, current_report, link_to)
+        if commit:
+            session.commit()
+        return current_report, new_status
 class FMSSheetUpdateType(enum.Enum):
     UNKNOWN = "unknown"
     BROKEN = "Out of Service"
