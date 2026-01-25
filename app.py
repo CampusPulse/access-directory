@@ -1745,25 +1745,23 @@ def detachImageEndpoint(image_id, item_id):
     return ("", 204)
 
 
-"""
-Route to perform public export
-"""
+# @app.route("/export", methods=["POST"])
+# @requires_admin
+# def export_data():
+#     """
+#     Route to perform public export
+#     """
+#     public = bool(int(request.args.get("p")))
+#     now = datetime.now()
+#     dir_name = "export" + now.strftime("%d%m%Y")
+#     basepath = "tmp/"
 
+#     export_images(basepath + dir_name + "/")
+#     export_database(basepath + dir_name + "/", public)
 
-@app.route("/export", methods=["POST"])
-@requires_admin
-def export_data():
-    public = bool(int(request.args.get("p")))
-    now = datetime.now()
-    dir_name = "export" + now.strftime("%d%m%Y")
-    basepath = "tmp/"
+#     shutil.make_archive(basepath + dir_name, "zip", basepath + dir_name)
 
-    export_images(basepath + dir_name + "/")
-    export_database(basepath + dir_name + "/", public)
-
-    shutil.make_archive(basepath + dir_name, "zip", basepath + dir_name)
-
-    return send_file(basepath + dir_name + ".zip")
+#     return send_file(basepath + dir_name + ".zip")
 
 
 
