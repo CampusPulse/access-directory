@@ -70,6 +70,24 @@ def link_report_to_access_point(session, report: Union[Report, int], access_poin
     if commit:
         session.commit()
 
+def create_fresh_report_for_status(session, new_status:Status, ticket_number:str, link_to: Optional[Union[AccessPoint, int]]=None, commit=False):
+    if ticket_number:
+        new_report = Report(ref=ticket_number)
+    else:
+        new_report = Report()
+    
+    session.add(new_report)
+    session.flush() # get the report ID
+    new_status.report_id = new_report.id
+
+    if link_to: #if we have an access point id, we should link it
+        link_report_to_access_point(session, new_report, link_to)
+
+    if commit:
+        session.commit()
+    return new_report, new_status
+
+
 
 def smart_add_status_report(session, new_status:Status, ticket_number:str, link_to: Optional[Union[AccessPoint, int]]=None, commit=False):
     """Intelligently decide whether to add a new status value to an existing report or create a new one
@@ -87,32 +105,29 @@ def smart_add_status_report(session, new_status:Status, ticket_number:str, link_
     if ticket_number:
         current_report = session.query(Report).filter(Report.ref == ticket_number).first()
         # if no current report for the given ticket number, make one
-        if current_report is None:
-            # create new report and link status
-            new_report = Report(
-                ref=ticket_number
-            )
-            session.add(new_report)
-            session.flush() # get the report ID
-            new_status.report_id = new_report.id
-            current_report = new_report
-            
-        else:
+        if current_report is not None:
             new_status.report_id = current_report.id
+        else:
+            # create new report and link status
+            current_report, _ = create_fresh_report_for_status(session, new_status, ticket_number)
         
+        if link_to: #if we have an access point id, we should link it
+            link_report_to_access_point(session, current_report, link_to)
+    
         # TODO: verify existing entry isnt present
         
         session.add(new_status)
 
-        if link_to: #if we have an access point id, we should link it
-            link_report_to_access_point(session, current_report, link_to)
         if commit:
             session.commit()
         return current_report, new_status
     elif link_to: # no ticket number, just a linked access point
 
         current_status = latest_status_for(session, link_to)
-        current_report = current_status.report
+        if not current_status: # no status/report has ever been assigned
+            current_report, current_status = create_fresh_report_for_status(session, new_status, ticket_number, link_to=link_to)
+        else:
+            current_report = current_status.report
 
         # here we use a bit of a hack to compute whether to add to the existing status item
         # we use the value (number) of the enum and do a >= comparison
@@ -125,11 +140,7 @@ def smart_add_status_report(session, new_status:Status, ticket_number:str, link_
 
         else:
             # create a new report
-            new_report = Report()
-            session.add(new_report)
-            session.flush() # get the report ID
-            new_status.report_id = new_report.id
-            current_report = new_report
+            current_report, _ = create_fresh_report_for_status(session, new_status, ticket_number, link_to=link_to)
 
         session.add(new_status)
 
