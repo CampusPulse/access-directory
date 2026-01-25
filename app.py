@@ -1139,11 +1139,12 @@ def webwatcher_hook():
         return
 
     # TODO: grab current timestamp for the change?
-    
+    change_message = change_message.split("---")
+    source_url = change_message[0].strip().split(" ")[0]
     # extract the actual diff contents
-    change_message = change_message.split("---")[1].strip()
+    change_message_diff = change_message[1].strip()
     # split the before and after diff
-    diff_parts = change_message.split("\n")
+    diff_parts = change_message_diff.split("\n")
     # make into CSV/dict data
     diff_parts =  [re.sub("\s{2,}", ",", p) for p in diff_parts]
     csvdata = headers_text + diff_parts
