@@ -1183,56 +1183,28 @@ def webwatcher_hook():
 
     changed_lines = [combine(i,j) for i, j in pair_by_line(reader_list)]
 
-
-    # lookup building identifier to resolve internal access point ID
-    # concordances table linking Access Point to an identifier (the string) and origin ("FMS")
-
-
-    # build a status 
-
-    # TODO: refactor this "should we make a new report for this incoming status" logic
-    # inputs: constructed status object, work order ticket number
-    # outputs: the associated report (existing or new) and updated status object
-
-        
-        
-        # report = db.session.execute(
-        #     db.select(Report).where(Report.ref == statusUpdate.ref)
-        # ).scalar()
-
-        # if report is None:
-        #     # create new report and status
-        #     report = Report(
-        #         ref=statusUpdate.ref
-        #     )
-
-        #     db.session.add(report)
-        #     db.session.flush()
-        
-        
-        # statusNotes = ""
-        # if statusUpdate.comment is not None and statusUpdate.comment != "":
-        #     statusNotes = statusUpdate.comment
-        # else:
-        #     statusNotes = subject
-
-        # # create new status
-        # status = Status(
-        #     report_id=report.id,
-        #     status=status,
-        #     status_type=status_type,
-        #     timestamp=statusUpdate.timestamp,
-        #     notes=statusNotes
-        # )
-
-    # Create object linking this report to this access point so it shows on the site
-
-
-
-    # db.session.add(status)
-
+    for line in changed_lines:
+        # resolve FMS spreadsheet ID to our internal access point ID with the concordances table
+        access_point_for_fms_id = (
+            db.session.query(AccessPoint)
+            .filter(AccessPointConcordances, AccessPointConcordances.access_point_id == AccessPoint.id)
+            .filter(AccessPointConcordances.identifier == line.get("identifier"))
+        ).first()
     
-    # db.session.commit()
+        status_type, status_text = line.get("after").get("status")
+        work_order_number = line.get("after").get("work_order_number")
+
+        new_status = Status(
+            # report_id=report.id,
+            status=status_text,
+            status_type=status_type,
+            timestamp=datetime.utcnow(),
+            notes=line.get("after").get("notes")
+        )
+
+        report, status = smart_add_status_report(db.session, new_status, ticket_number=work_order_number, link_to=access_point_for_fms_id)
+
+        db.session.commit()
 
     # TODO: send event to notifications/event handling system
 
