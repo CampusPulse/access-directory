@@ -54,7 +54,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, FMSSheetUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, latest_status_for,highest_report_for, get_logged_in_user_info
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, FMSSheetUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, latest_status_for,highest_report_for, get_logged_in_user_info, smart_add_status_report
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 
@@ -1062,19 +1062,6 @@ def email_webhook():
 
     statusUpdate = ServiceNowStatus.from_email(from_addr, subject, html_body)
 
-    report = db.session.execute(
-        db.select(Report).where(Report.ref == statusUpdate.ref)
-    ).scalar()
-
-    if report is None:
-        # create new report and status
-        report = Report(
-            ref=statusUpdate.ref
-        )
-
-        db.session.add(report)
-        db.session.flush()
-    
     statusMap = {
         ServiceNowUpdateType.NEW: (StatusType.BROKEN, "Filed"),
         ServiceNowUpdateType.RESOLVED:  (StatusType.FIXED , "Fixed"),
@@ -1092,15 +1079,15 @@ def email_webhook():
         statusNotes = subject
 
     # create new status
-    status = Status(
-        report_id=report.id,
+    new_status = Status(
         status=status,
         status_type=status_type,
         timestamp=statusUpdate.timestamp,
         notes=statusNotes
     )
-    db.session.add(status)
 
+    report, status = smart_add_status_report(db.session, new_status, ticket_number=statusUpdate.ref)
+    
     
     db.session.commit()
 
