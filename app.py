@@ -1558,6 +1558,9 @@ def submit_suggestion():
 
     return redirect("/catalog")
 
+########################
+# region Tag Routes
+########################
 
 
 @app.route("/deleteTag/<name>", methods=["POST"])
@@ -1570,6 +1573,30 @@ def deleteTag(name):
     return redirect("/admin")
 
 
+@app.route("/editTag/<name>", methods=["POST"])
+@requires_admin
+def edit_tag(name):
+    """
+    Route to edit tag description
+    """
+    t = db.session.execute(db.select(Tag).where(Tag.name == name)).scalar_one()
+    t.description = request.form["description"]
+    db.session.commit()
+    return ("", 204)
+
+
+@app.route("/addTag", methods=["POST"])
+@requires_admin
+def add_tag():
+    """
+    Add tag with blank description
+    """
+    tag = Tag(name=request.form["name"], description="")
+
+    db.session.add(tag)
+    db.session.commit()
+
+    return redirect("/admin")
 
 
 @app.route("/delete/<id>", methods=["POST"])
@@ -1636,20 +1663,6 @@ def editAccessPoint(id):
         m.door_count = int(request.form["door_count"])
     # if request.form["private_notes"]  not in ("None", ""):
     #     m.private_notes = request.form["private_notes"]
-    db.session.commit()
-    return ("", 204)
-
-
-"""
-Route to edit tag description
-"""
-
-
-@app.route("/editTag/<name>", methods=["POST"])
-@requires_admin
-def edit_tag(name):
-    t = db.session.execute(db.select(Tag).where(Tag.name == name)).scalar_one()
-    t.description = request.form["description"]
     db.session.commit()
     return ("", 204)
 
@@ -1751,21 +1764,6 @@ def export_data():
     shutil.make_archive(basepath + dir_name, "zip", basepath + dir_name)
 
     return send_file(basepath + dir_name + ".zip")
-
-"""
-Add tag with blank description
-"""
-
-
-@app.route("/addTag", methods=["POST"])
-@requires_admin
-def add_tag():
-    tag = Tag(name=request.form["name"], description="")
-
-    db.session.add(tag)
-    db.session.commit()
-
-    return redirect("/admin")
 
 
 
