@@ -1124,14 +1124,18 @@ def webwatcher_hook():
     headers_text = ["change_state","line_no", "building", "identifier", "location_type", "floor_count", "status", "notes", "work_order_number"]
     # status: "In service", "Parts on Order", "Investigating", "Out of Service", 
     #  "Manuf",
+    change_message = request.json
 
-    change_message = request.json.get("message")
     if change_message is None:
-        app.logger.error("client didnt send json with proper content type")
+        app.logger.error("client didn't send json with proper content type")
         app.logger.info(request.data)
-        return
+        return (400, "Improper content type header. Expected application/json")
+    change_message = change_message.get("message")
+    if change_message is None:
+        app.logger.error("client didn't send json in the proper format. 'message` key expected")
+        app.logger.info(request.data)
+        return (400, "Improper data. Expected key: message")
 
-    # TODO: grab current timestamp for the change?
     change_message = change_message.split("---")
     source_url = change_message[0].strip().split(" ")[0]
     # extract the actual diff contents
@@ -1139,10 +1143,10 @@ def webwatcher_hook():
     # split the before and after diff
     diff_parts = change_message_diff.split("\n")
     # make into CSV/dict data
-    diff_parts =  [re.sub("\s{2,}", ",", p) for p in diff_parts]
-    csvdata = headers_text + diff_parts
+    diff_parts =  [re.sub('\s{2,}', ",", p) for p in diff_parts]
+    csvdata = [",".join(headers_text)] + diff_parts
 
-    reader_list = csv.DictReader(csvdata)
+    reader_list = list(csv.DictReader(csvdata))
     
     # match "changed" and "into" into pairs (before and after changes)
     # filter into two lists and zip if both lists are same length
@@ -1192,8 +1196,8 @@ def webwatcher_hook():
         # resolve FMS spreadsheet ID to our internal access point ID with the concordances table
         access_point_for_fms_id = (
             db.session.query(AccessPoint)
-            .filter(AccessPointConcordances, AccessPointConcordances.access_point_id == AccessPoint.id)
-            .filter(AccessPointConcordances.identifier == line.get("identifier"))
+            .join(AccessPointConcordances, AccessPointConcordances.access_point_id == AccessPoint.id)
+            .where(AccessPointConcordances.identifier == line.get("identifier"))
         ).first()
     
         status_type, status_text = line.get("after").get("status")

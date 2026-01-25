@@ -1,7 +1,7 @@
 # Helpers that are dependent on the database (to prevent circular imports)
 from db import Report, AccessPointReports, AccessPoint, StatusType, Status
 
-from typing import Union
+from typing import Union, Optional
 
 
 def latest_status_for(session, item: Union[AccessPoint, int]):
@@ -17,8 +17,8 @@ def latest_status_for(session, item: Union[AccessPoint, int]):
     item_id = item.id if isinstance(item, AccessPoint) else item
     status = (
         session.query(Status)
-        .filter(AccessPointReports, AccessPointReports.report_id == Status.report_id)
-        .filter(AccessPointReports.access_point_id == item_id)
+        .join(AccessPointReports, AccessPointReports.report_id == Status.report_id)
+        .where(AccessPointReports.access_point_id == item_id)
         .order_by(Status.timestamp.desc())
     ).first()
     
@@ -41,8 +41,8 @@ def highest_report_for(session, item:Union[AccessPoint, int]):
     item_id = item.id if isinstance(item, AccessPoint) else item
     report = (
         session.query(Report)
-        .filter(AccessPointReports, AccessPointReports.report_id == Report.id)
-        .filter(AccessPointReports.access_point_id == item_id)
+        .join(AccessPointReports, AccessPointReports.report_id == Report.id)
+        .where(AccessPointReports.access_point_id == item_id)
         .order_by(Report.id.desc())
     ).first()
     
@@ -71,14 +71,14 @@ def link_report_to_access_point(session, report: Union[Report, int], access_poin
         session.commit()
 
 
-def smart_add_status_report(session, new_status:Status, ticket_number:str, link_to: Union[AccessPoint, int], commit=False):
+def smart_add_status_report(session, new_status:Status, ticket_number:str, link_to: Optional[Union[AccessPoint, int]]=None, commit=False):
     """Intelligently decide whether to add a new status value to an existing report or create a new one
 
     Args:
         session: the database session to use
         new_status (Status): the new status value as a Status() DB object
         ticket_number (str): the ticket number
-        link_to (Union[AccessPoint, int]): an access point or integer access point ID to link the report to
+        link_to (Optional[Union[AccessPoint, int]]): an access point or integer access point ID to link the report to. Also accepts None.
         commit (bool): whether to commit the transaction once done
     Returns:
         (report, status): a tuple of the report and status values used.
