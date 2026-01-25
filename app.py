@@ -591,15 +591,6 @@ def export_images(path):
             s3_bucket.get_file(i.fullsizehash, basepath + str(i.ordering) + ".jpg")
 
 
-"""
-Imports data export into database, S3
-"""
-
-
-def import_data(file):
-    return
-
-
 def getAccessPoint(id, is_admin=False):
     """
     Get access point details
@@ -1760,18 +1751,6 @@ def export_data():
     shutil.make_archive(basepath + dir_name, "zip", basepath + dir_name)
 
     return send_file(basepath + dir_name + ".zip")
-
-
-"""
-Route to perform data import
-"""
-
-
-@app.route("/import", methods=["POST"])
-@requires_admin
-def import_data():
-    return ("", 501)
-
 
 """
 Add tag with blank description
