@@ -139,6 +139,18 @@ class Report(Base):
     ref: Mapped[Optional[str]] # ticket number/reference
 
 
+
+class AccessPointConcordances(Base):
+    """
+    Stores alternate identifiers for access points for interfacing with other systems
+    """
+    __tablename__ = "access_point_concordances"
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
+    identifier: Mapped[str] = mapped_column(primary_key=True) # the identifier from the foreign system
+    origin: Mapped[str] # a name/identifier of the foreign system
+   
+    access_point = relationship("AccessPoint")
+
 class Status(Base):
     """
     Enables the storage of status history for each report.
