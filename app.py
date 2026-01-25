@@ -33,6 +33,7 @@ from db import (
     DoorButton,
     Elevator,
     AccessPointReports,
+    AccessPointConcordances,
     Report,
     Status,
     Image,
@@ -171,6 +172,14 @@ def path_for_image(file_hash:str, image_type: ImageType, naming_version=0) -> st
         return file_hash
     elif naming_version == 1:
         return f"{file_hash}_{image_type.value}.jpg"
+
+
+def lookup_access_point_for_concordance_id(session, identifier:str):
+    concordance = session.execute(
+        db.select(AccessPointConcordances)
+        .where(AccessPointConcordances.identifier == identifier)
+    ).scalars().first
+    return concordance.access_point
 
 
 def access_point_json(access_point: AccessPoint):
