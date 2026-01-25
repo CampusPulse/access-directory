@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 from flask import session
 import requests
 import os
-from db import Report, AccessPointReports, AccessPoint
+from db import Report, AccessPointReports, AccessPoint, StatusType, Status
+
 from typing import Union
 
 ANY_FLOOR_CHAR = "_"
@@ -225,6 +226,49 @@ def smart_add_status_report(session, new_status:Status, ticket_number:str, link_
         if commit:
             session.commit()
         return current_report, new_status
+    elif link_to: # no ticket number, just a linked access point
+
+        current_status = latest_status_for(session, link_to)
+        current_report = current_status.report
+
+        # here we use a bit of a hack to compute whether to add to the existing status item
+        # we use the value (number) of the enum and do a >= comparison
+        # i.e. if the incoming status is the same (in progress only) or greater than the current one, then we reuse the existing one
+
+        allow_matching = current_status.status_type == StatusType.IN_PROGRESS
+
+        if current_status.status_type.value < new_status.status_type.value or (allow_matching and current_status.status_type.value == new_status.status_type.value):
+            new_status.report_id = current_report.id
+
+            session.add(new_status)
+        else:
+            # create a new report
+            new_report = Report()
+            session.add(new_report)
+            session.flush() # get the report ID
+            new_status.report_id = new_report.id
+            current_report = new_report
+
+        if commit:
+            session.commit()
+        return current_report, new_status
+    
+    else:
+        # no ticket and no known links
+        # we cant really do anything and i cant think of when we would encounter this
+        # but since we have a status report,lets insert it at least
+        # this requires creating a report for it
+
+        # create a new report
+        new_report = Report()
+        session.add(new_report)
+        session.flush() # get the report ID
+        new_status.report_id = new_report.id
+        if commit:
+            session.commit()
+        return new_report, new_status
+
+
 class FMSSheetUpdateType(enum.Enum):
     UNKNOWN = "unknown"
     BROKEN = "Out of Service"
