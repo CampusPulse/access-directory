@@ -54,7 +54,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, FMSSheetUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, latest_status_for,highest_report_for, get_logged_in_user_info, smart_add_status_report, validate_work_order
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, FMSSheetUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, latest_status_for,highest_report_for, get_logged_in_user_info, smart_add_status_report, validate_work_order, clean_work_order
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 
@@ -1172,12 +1172,12 @@ def webwatcher_hook():
             "before": {
                 "status": statusMap[FMSSheetUpdateType(before.get("status"))],
                 "notes": before.get("notes"),
-                "work_order_number": before.get("work_order_number"),
+                "work_order_number": clean_work_order(before.get("work_order_number")),
             },
             "after": {
                 "status": statusMap[FMSSheetUpdateType(after.get("status"))],
                 "notes": after.get("notes"),
-                "work_order_number": after.get("work_order_number"),
+                "work_order_number": clean_work_order(after.get("work_order_number")),
             }
         }
 

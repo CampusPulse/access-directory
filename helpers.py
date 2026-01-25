@@ -177,6 +177,10 @@ def validate_work_order(ticket_ref:str, allow_plain_wo=False):
 
     return True
 
+def clean_work_order(ticket_ref:str, allow_plain_wo=False):
+    if not validate_work_order(ticket_ref, allow_plain_wo):
+        return None
+    return ticket_ref
 
 def smart_add_status_report(session, new_status:Status, ticket_number:str, link_to: Union[AccessPoint, int], commit=False):
     """Intelligently decide whether to add a new status value to an existing report or create a new one
