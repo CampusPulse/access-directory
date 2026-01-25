@@ -490,25 +490,6 @@ def getAccessPointFeedback(access_point_id):
 
 
 """
-Get all access points from year
-"""
-
-
-def getAllAccessPointsFromYear(year):
-    return list(
-        map(
-            access_point_json,
-            db.paginate(
-                db.select(AccessPoint)
-                .where(AccessPoint.year == year)
-                .order_by(AccessPoint.id.asc()),
-                per_page=150,
-            ).items,
-        )
-    )
-
-
-"""
 Get all tags
 """
 
