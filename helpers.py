@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from flask import session
 import requests
 import os
+from db import Report, AccessPointReports, AccessPoint
 
 ANY_FLOOR_CHAR = "_"
 
@@ -100,6 +101,49 @@ class MapLocation():
         return long, lat
 
 
+def latest_status_for(session, item: Union[AccessPoint, int]):
+    """Fetch the most recent status for the provided item.
+
+    Args:
+        session: the database session to use
+        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch status for (or its integer ID)
+
+    Returns:
+        Status: the status of the access point, or None if none were found
+    """
+    item_id = item.id if isinstance(item, AccessPoint) else item
+    status = (
+        session.query(Status)
+        .filter(AccessPointReports, AccessPointReports.report_id == Status.report_id)
+        .filter(AccessPointReports.access_point_id == item_id)
+        .order_by(Status.timestamp.desc())
+    ).first()
+    
+    return status
+
+def highest_report_for(session, item:Union[AccessPoint, int]):
+    """Fetch the latest report for the provided item.
+
+    While you can get this using get_item_status and accessing it through the associated report,
+    that method can miss scenarios where a report has been created but there is no status yet
+    This can happen when associating a ticket before any email has come in yet.
+
+    Args:
+        session: the database session to use
+        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch the report for (or its integer ID)
+
+    Returns:
+        Report: the report of the access point, or None if none were found
+    """
+    item_id = item.id if isinstance(item, AccessPoint) else item
+    report = (
+        session.query(Report)
+        .filter(AccessPointReports, AccessPointReports.report_id == Report.id)
+        .filter(AccessPointReports.access_point_id == item_id)
+        .order_by(Report.id.desc())
+    ).first()
+    
+    return report
 class FMSSheetUpdateType(enum.Enum):
     UNKNOWN = "unknown"
     BROKEN = "Out of Service"

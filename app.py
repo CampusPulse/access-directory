@@ -6,6 +6,7 @@ from enum import Enum
 from flask import Flask, render_template, request, redirect, abort, url_for, make_response, session
 import logging
 from werkzeug.utils import secure_filename
+from warnings import deprecated
 from werkzeug.exceptions import HTTPException
 import hashlib
 import re
@@ -53,7 +54,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, FMSSheetUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, FMSSheetUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, latest_status_for,highest_report_for, get_logged_in_user_info
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 
@@ -1390,49 +1391,13 @@ def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
 
     db.session.commit()
 
-
+@deprecated("Use helpers.latest_status_for instead")
 def get_item_status(item: Union[AccessPoint, int]):
-    """Fetch the most recent status for the provided item.
+    return latest_status_for(db.session, item)
 
-    Args:
-        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch status for (or its integer ID)
-
-    Returns:
-        Status: the status of the access point, or None if none were found
-    """
-    item_id = item.id if isinstance(item, AccessPoint) else item
-    status = db.session.execute(
-        db.select(Status)
-        .join(AccessPointReports, AccessPointReports.report_id == Status.report_id)
-        .where(AccessPointReports.access_point_id == item_id)
-        .order_by(Status.timestamp.desc())
-    ).scalars().first()
-    
-    return status
-
+@deprecated("Use helpers.highest_report_for instead")
 def get_item_report(item:Union[AccessPoint, int]):
-    """Fetch the latest report for the provided item.
-
-    While you can get this using get_item_status and accessing it through the associated report,
-    that method can miss scenarios where a report has been created but there is no status yet
-    This can happen when associating a ticket before any email has come in yet.
-
-    Args:
-        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch the report for (or its integer ID)
-
-    Returns:
-        Report: the report of the access point, or None if none were found
-    """
-    item_id = item.id if isinstance(item, AccessPoint) else item
-    report = db.session.execute(
-        db.select(Report)
-        .join(AccessPointReports, AccessPointReports.report_id == Report.id)
-        .where(AccessPointReports.access_point_id == item_id)
-        .order_by(Report.id.desc())
-    ).scalars().first()
-    
-    return report
-
+    return highest_report_for(db.session, item)
 
 
 def deleteTagGivenName(name):
