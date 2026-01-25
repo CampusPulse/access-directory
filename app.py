@@ -6,7 +6,11 @@ from enum import Enum
 from flask import Flask, render_template, request, redirect, abort, url_for, make_response, session
 import logging
 from werkzeug.utils import secure_filename
-from warnings import deprecated
+import sys
+if sys.version_info >= (3, 12):
+    from typing_extensions import deprecated
+else:
+    from warnings import deprecated
 from werkzeug.exceptions import HTTPException
 import hashlib
 import re
