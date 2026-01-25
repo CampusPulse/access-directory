@@ -1,9 +1,9 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 # git is needed for getting the repo commit
 RUN apt-get update && apt-get install -y git libmagic1
 
-COPY --from=ghcr.io/astral-sh/uv:0.4.9 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.9.8 /uv /bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
 ENV UV_PROJECT_ENVIRONMENT=/app/venv

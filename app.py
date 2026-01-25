@@ -6,6 +6,11 @@ from enum import Enum
 from flask import Flask, render_template, request, redirect, abort, url_for, make_response, session
 import logging
 from werkzeug.utils import secure_filename
+import sys
+if sys.version_info >= (3, 12):
+    from typing_extensions import deprecated
+else:
+    from warnings import deprecated
 from werkzeug.exceptions import HTTPException
 import hashlib
 import re
@@ -16,6 +21,7 @@ from relative_datetime import DateTimeUtils
 from PIL.ExifTags import TAGS as EXIF_TAGS, Base as ExifBase
 from datetime import datetime, timezone
 from sqlalchemy import and_
+import csv
 from db import (
     db,
     func,
@@ -33,6 +39,7 @@ from db import (
     DoorButton,
     Elevator,
     AccessPointReports,
+    AccessPointConcordances,
     Report,
     Status,
     Image,
@@ -51,7 +58,8 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, FMSSheetUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info, validate_work_order, clean_work_order
+from db_helpers import latest_status_for,highest_report_for, smart_add_status_report
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 
@@ -172,13 +180,17 @@ def path_for_image(file_hash:str, image_type: ImageType, naming_version=0) -> st
     elif naming_version == 1:
         return f"{file_hash}_{image_type.value}.jpg"
 
-"""
-Create a JSON object for a access_point
-"""
+
+def lookup_access_point_for_concordance_id(session, identifier:str):
+    concordance = session.query(AccessPointConcordances).filter(AccessPointConcordances.identifier == identifier).first()
+    if concordance:
+        return concordance.access_point
 
 
 def access_point_json(access_point: AccessPoint):
-
+    """
+    Create a JSON object for a access_point
+    """
     image_data = db.session.execute(
         db.select(Image)
         .join(ImageAccessPointRelation, Image.id == ImageAccessPointRelation.image_id)
@@ -215,8 +227,7 @@ def access_point_json(access_point: AccessPoint):
         "status": status_style,
         "status_updated": statusUpdated,
         "images": images,
-        "tags": getTags(access_point.id),
-        "report_url": f"https://report.campuspulse.app/elevator?room={rn.to_string()}+{access_point.location.nickname}&campuspulse_id={access_point.id}&building={access_point.location.building.number}:{access_point.location.building.human_name()}"
+        "tags": getTags(access_point.id)
     }
 
     if thumbnail is not None:
@@ -239,7 +250,9 @@ def access_point_json(access_point: AccessPoint):
             {
                 "title": title,
                 "room": rn.to_string(),
-                "door_count": access_point.door_count
+                "door_count": access_point.door_count,
+                "descriptor": "elevator",
+                "report_url": f"https://report.campuspulse.app/elevator?room={rn.to_string()}+{access_point.location.nickname}&campuspulse_id={access_point.id}&building={access_point.location.building.number}:{access_point.location.building.human_name()}"
             }
         )
 
@@ -247,33 +260,69 @@ def access_point_json(access_point: AccessPoint):
             base_data.update({ 
                 "floor": f"{integer_to_floor(access_point.floor_min)} to {integer_to_floor(access_point.floor_max)}",
             })
+    elif isinstance(access_point, DoorButton):
+
+        # TODO: Decide title
+        # title = access_point.location.building.human_name()
+        # title += f" - "
+        # title += access_point.location.human_name()\
+
+        base_data.update(
+            {
+                # "title": title,
+                "room": rn.to_string(),
+                "shelter": access_point.shelter,
+                "activation": access_point.activation,
+                "mount_surface": access_point.mount_surface,
+                "mount_style": access_point.mount_style,
+                "powered_by": access_point.powered_by,
+                "descriptor": "button",
+                "report_url": f"https://report.campuspulse.app/button?room={rn.to_string()}+{access_point.location.nickname}&campuspulse_id={access_point.id}&building={access_point.location.building.number}:{access_point.location.building.human_name()}"#&floor={}
+            }
+        )
+
     return base_data
 
 def access_point_admin_json(access_point: AccessPoint):
 
     status = get_item_status(access_point)
     report = get_item_report(access_point)
-
-    status_categories = {i.name: i.value for i in StatusType}
     
+    formfielddata = formFieldData()
 
     # TODO: use marshmallow to serialize
     admin_data = {
         "status_ticket_number": (status.report.ref or "No Ticket") if status else "No Status",
-        "status_report_id": status.report.id,
-        "report_id": report.id,
-        "status_categories": status_categories
+        "status_report_id": status.report.id if status and status.report else "None",
+        "report_id": report.id if report else "None",
+        **formfielddata
     }
 
     return admin_data
 
+def formFieldData():
 
-"""
-Creates a geojson for map feature
-"""
+    status_categories = {i.name: i.value for i in StatusType}
+    shelter_categories = {i.name: i.value for i in ShelterType}
+    activation_categories = {i.name: i.value for i in ButtonActivation}
+    surface_categories = {i.name: i.value for i in MountSurface}
+    mount_categories = {i.name: i.value for i in MountStyle}
+    power_categories = {i.name: i.value for i in PowerSource}
+    return {
+        "categories": {
+            "status": status_categories,
+            "shelter": shelter_categories,
+            "activation": activation_categories,
+            "surface": surface_categories,
+            "mount": mount_categories,
+            "power": power_categories,
+        }
+    }
 
 def map_features_geojson(access_point: AccessPoint):
-    
+    """
+    Creates a geojson for map feature
+    """
     status = get_item_status(access_point)
 
     if status is None:
@@ -298,13 +347,10 @@ def map_features_geojson(access_point: AccessPoint):
     return base_data
 
 
-
-"""
-Create a JSON object for Feedback
-"""
-
-
 def feedback_json(feedback: Feedback):
+    """
+    Create a JSON object for Feedback
+    """
     feedback = feedback[0]
     fb_dt = parser.parse(feedback.time)
 
@@ -320,21 +366,18 @@ def feedback_json(feedback: Feedback):
     }
 
 
-"""
-Create a JSON object for a tag
-"""
-
-
 def tag_json(tag: Tag):
+    """
+    Create a JSON object for a tag
+    """
     return {"name": tag.name, "description": tag.description}
 
 
-"""
-Create a JSON object for an image
-"""
-
-
 def image_json(image: Image):
+    """
+    Create a JSON object for an image
+    """
+
     out = {
         "imgurl": s3_bucket.get_file_s3(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version)),
         "caption": image.caption or "",
@@ -348,12 +391,10 @@ def image_json(image: Image):
     return out
 
 
-"""
-Crop a given image to a centered square
-"""
-
-
 def crop_center(pil_img, crop_width, crop_height):
+    """
+    Crop a given image to a centered square
+    """
     img_width, img_height = pil_img.size
     return pil_img.crop(
         (
@@ -363,7 +404,6 @@ def crop_center(pil_img, crop_width, crop_height):
             (img_height + crop_height) // 2,
         )
     )
-
 
 
 def limit_height(pil_img, height_limit):
@@ -377,12 +417,10 @@ def limit_height(pil_img, height_limit):
     return pil_img.resize((width, height))
 
 
-"""
-Search all access points given query
-"""
-
-
 def searchAccessPoints(query):
+    """
+    Search all access points given query
+    """
     return list(
         map(
             access_point_json,
@@ -401,12 +439,10 @@ def searchAccessPoints(query):
     )
 
 
-"""
-Get access points in list, paginated
-"""
-
-
 def getAccessPointsPaginated(page_num):
+    """
+    Get access points in list, paginated
+    """
     return list(
         map(
             access_point_json,
@@ -423,12 +459,10 @@ def getAccessPointsPaginated(page_num):
     )
 
 
-"""
-Get all access points
-"""
-
-
 def getAllAccessPoints():
+    """
+    Get all access points
+    """
     return list(
         map(
             access_point_json,
@@ -440,56 +474,31 @@ def getAllAccessPoints():
     )
 
 
-"""
-Get all access points
-"""
-
-
 def getAllBuildings():
+    """
+    Get all buildings
+    """
     b = db.session.execute(db.select(Building).order_by(Building.id.asc())).scalars()
-    return b
-
-
-"""
-Get all tags
-"""
+    return list(b)
 
 
 def getAllTags():
+    """
+    Get all tags
+    """
     return list(db.session.execute(db.select(Tag)).scalars())
 
 
-"""
-Get Feedback for a AccessPoint
-"""
-
-
 def getAccessPointFeedback(access_point_id):
+    """
+    Get Feedback for a AccessPoint
+    """
     return list(
         map(
             feedback_json,
             db.session.execute(
                 db.select(Feedback).where(Feedback.access_point_id == access_point_id)
             ),
-        )
-    )
-
-
-"""
-Get all access points from year
-"""
-
-
-def getAllAccessPointsFromYear(year):
-    return list(
-        map(
-            access_point_json,
-            db.paginate(
-                db.select(AccessPoint)
-                .where(AccessPoint.year == year)
-                .order_by(AccessPoint.id.asc()),
-                per_page=150,
-            ).items,
         )
     )
 
@@ -503,24 +512,21 @@ def getAllTags():
     return list(db.session.execute(db.select(Tag.name)).scalars())
 
 
-"""
-Get Tag details
-"""
-
-
 def getTagDetails(name):
+    """
+    Get Tag details
+    """
     return tag_json(
         db.session.execute(db.select(Tag).where(Tag.name == name)).scalar_one()
     )
 
 
-"""
-Exports database tables to CSV files
-Stores in provided directory
-"""
-
-
 def export_database(dir, public):
+    """
+    Exports database tables to CSV files
+    Stores in provided directory
+    Not currently used/tested
+    """
     if public:
         access_point_select = db.select(
             AccessPoint.id,
@@ -571,12 +577,10 @@ def export_database(dir, public):
     images_df.to_csv(dir + "images.csv")
 
 
-"""
-Exports images to <path>/images
-"""
-
-
 def export_images(path):
+    """
+    Exports images to <path>/images
+    """
     access_points = db.session.execute(
         db.select(AccessPoint).order_by(AccessPoint.id.asc())
     ).scalars()
@@ -601,21 +605,10 @@ def export_images(path):
             s3_bucket.get_file(i.fullsizehash, basepath + str(i.ordering) + ".jpg")
 
 
-"""
-Imports data export into database, S3
-"""
-
-
-def import_data(file):
-    return
-
-
-"""
-Get access point details
-"""
-
-
 def getAccessPoint(id, is_admin=False):
+    """
+    Get access point details
+    """
     access_point = db.session.execute(
         db.select(AccessPoint).where(AccessPoint.id == id)
     ).scalar()
@@ -656,12 +649,10 @@ def checkAccessPointExists(id):
     )
 
 
-"""
-Get all access points with given tag
-"""
-
-
 def getAccessPointsTagged(tag):
+    """
+    Get all access points with given tag
+    """
     return list(
         map(
             access_point_json,
@@ -676,13 +667,11 @@ def getAccessPointsTagged(tag):
     )
 
 
-"""
-Get all tags / Get all tags on certain access point
-(logic based on whether access_point_id is passed in)
-"""
-
-
 def getTags(access_point_id=None):
+    """
+    Get all tags / Get all tags on certain access point
+    (logic based on whether access_point_id is passed in)
+    """
     if access_point_id == None:
         return db.session.execute(db.select(Tag.name)).scalars()
     else:
@@ -695,12 +684,10 @@ def getTags(access_point_id=None):
         )
 
 
-"""
-Get a random assortment of images from DB, excluding thumbnails
-"""
-
-
 def getRandomImages(count):
+    """
+    Get a random assortment of images from DB, excluding thumbnails
+    """
     images = list(
         map(
             image_json,
@@ -984,13 +971,11 @@ if auth_configured:
         )
 
 
-"""
-Generic error handler
-"""
-
-
 @app.errorhandler(HTTPException)
 def not_found(e):
+    """
+    Worlds most Generic error handler
+    """
     app.logger.error(e)
     return render_template("404.html"), 404
 
@@ -1033,8 +1018,8 @@ def requires_admin(f):
 
 ########################
 #
-# region Ingest
-#
+# region Ingest 
+#   (helpers and functions)
 ########################
 
 
@@ -1082,19 +1067,6 @@ def email_webhook():
 
     statusUpdate = ServiceNowStatus.from_email(from_addr, subject, html_body)
 
-    report = db.session.execute(
-        db.select(Report).where(Report.ref == statusUpdate.ref)
-    ).scalar()
-
-    if report is None:
-        # create new report and status
-        report = Report(
-            ref=statusUpdate.ref
-        )
-
-        db.session.add(report)
-        db.session.flush()
-    
     statusMap = {
         ServiceNowUpdateType.NEW: (StatusType.BROKEN, "Filed"),
         ServiceNowUpdateType.RESOLVED:  (StatusType.FIXED , "Fixed"),
@@ -1112,17 +1084,138 @@ def email_webhook():
         statusNotes = subject
 
     # create new status
-    status = Status(
-        report_id=report.id,
+    new_status = Status(
         status=status,
         status_type=status_type,
         timestamp=statusUpdate.timestamp,
         notes=statusNotes
     )
-    db.session.add(status)
 
+    report, status = smart_add_status_report(db.session, new_status, ticket_number=statusUpdate.ref)
+    
     
     db.session.commit()
+
+    return ("", 200)
+
+@app.route("/webwatcher_hook", methods=["POST"])
+def webwatcher_hook():
+    """Webhook for receiving updates about the elevator status spreadsheet from changedetection.io 
+
+    Returns:
+        _type_: _description_
+    """
+    webhook_credential = app.config["WEBHOOK_CREDENTIAL"]
+
+    # check to make sure that the POST came from an authorized source (NFSN) and not some random person POSTing stuff to this endpoint
+    if request.args.get("token") != webhook_credential:
+        return ("Unauthorized", 401)
+
+
+#     {
+# 	"version": "1.0",
+# 	"title": "Elevator Maintainance Sheet updated",
+# 	"message": "https://docs.google.com/spreadsheets/d/18Y5WI9-RBf4UDa_4s32kDtPsuKpkSrWfaNQ6auuTcBM/edit?gid=0#gid=0 has a change.\n---\n(changed)               36  Grace Watson Hall          25-ELEV-01          GW LOBBY           2               Out of Service                                  called in for service                                       NO-WO\n(into)               36  Grace Watson Hall          25-ELEV-01          GW LOBBY           2               In service\n---",
+# 	"attachments": [],
+# 	"type": <NotifyType.INFO: "info">
+# }
+
+
+    headers_text = ["change_state","line_no", "building", "identifier", "location_type", "floor_count", "status", "notes", "work_order_number"]
+    # status: "In service", "Parts on Order", "Investigating", "Out of Service", 
+    #  "Manuf",
+    change_message = request.json
+
+    if change_message is None:
+        app.logger.error("client didn't send json with proper content type")
+        app.logger.info(request.data)
+        return (400, "Improper content type header. Expected application/json")
+    change_message = change_message.get("message")
+    if change_message is None:
+        app.logger.error("client didn't send json in the proper format. 'message` key expected")
+        app.logger.info(request.data)
+        return (400, "Improper data. Expected key: message")
+
+    change_message = change_message.split("---")
+    source_url = change_message[0].strip().split(" ")[0]
+    # extract the actual diff contents
+    change_message_diff = change_message[1].strip()
+    # split the before and after diff
+    diff_parts = change_message_diff.split("\n")
+    # make into CSV/dict data
+    diff_parts =  [re.sub('\s{2,}', ",", p) for p in diff_parts]
+    csvdata = [",".join(headers_text)] + diff_parts
+
+    reader_list = list(csv.DictReader(csvdata))
+    
+    # match "changed" and "into" into pairs (before and after changes)
+    # filter into two lists and zip if both lists are same length
+    # actually, better way is to pair up by line number
+    # should also probably deduplicate the first entries that are static too
+
+    def pair_by_line(values_list):
+        
+        for i in range(100):
+            filtered = list(filter(lambda l: int(l.get("line_no")) == i, values_list))
+            if len(filtered) == 0:
+                continue
+            assert filtered[0].get("change_state") == "(changed)"
+            assert filtered[1].get("change_state") == "(into)"
+            yield filtered[0], filtered[1]
+
+    def combine(before, after):
+        statusMap = {
+            FMSSheetUpdateType.UNKNOWN: (StatusType.UNKNOWN, "Unknown"),
+            FMSSheetUpdateType.BROKEN:  (StatusType.BROKEN, "Out of Service"),
+            FMSSheetUpdateType.INVESTIGATING:  (StatusType.IN_PROGRESS, "Investigating"),
+            FMSSheetUpdateType.ORDERED_PARTS:  (StatusType.IN_PROGRESS, "Pending Parts"),
+            FMSSheetUpdateType.WORKING:  (StatusType.FIXED, "Working")
+        }
+
+        return {
+            "line_no": int(before.get("line_no")),
+            "building": before.get("building"),
+            "identifier": before.get("identifier"),
+            "location_type": before.get("location_type"),
+            "floor_count": int(before.get("floor_count")),
+            "before": {
+                "status": statusMap[FMSSheetUpdateType(before.get("status"))],
+                "notes": before.get("notes"),
+                "work_order_number": clean_work_order(before.get("work_order_number")),
+            },
+            "after": {
+                "status": statusMap[FMSSheetUpdateType(after.get("status"))],
+                "notes": after.get("notes"),
+                "work_order_number": clean_work_order(after.get("work_order_number")),
+            }
+        }
+
+    changed_lines = [combine(i,j) for i, j in pair_by_line(reader_list)]
+
+    for line in changed_lines:
+        # resolve FMS spreadsheet ID to our internal access point ID with the concordances table
+        access_point_for_fms_id = (
+            db.session.query(AccessPoint)
+            .join(AccessPointConcordances, AccessPointConcordances.access_point_id == AccessPoint.id)
+            .where(AccessPointConcordances.identifier == line.get("identifier"))
+        ).first()
+    
+        status_type, status_text = line.get("after").get("status")
+        work_order_number = line.get("after").get("work_order_number")
+
+        new_status = Status(
+            # report_id=report.id,
+            status=status_text,
+            status_type=status_type,
+            timestamp=datetime.utcnow(),
+            notes=line.get("after").get("notes")
+        )
+
+        report, status = smart_add_status_report(db.session, new_status, ticket_number=work_order_number, link_to=access_point_for_fms_id)
+
+        db.session.commit()
+
+    # TODO: send event to notifications/event handling system
 
     return ("", 200)
 
@@ -1134,7 +1227,7 @@ def add_ticket(item_id):
         return "Not found", 404
 
     ticket_ref = request.form.get("ticket_ref")
-    if ticket_ref is None or ticket_ref == "" or not ticket_ref.startswith("WOT"):
+    if not validate_work_order(ticket_ref):
         return "invalid ticket number", 400
 
     report = db.session.execute(
@@ -1150,14 +1243,7 @@ def add_ticket(item_id):
         db.session.add(report)
         db.session.flush()
     
-    # create new association
-    association = AccessPointReports(
-        report_id=report.id,
-        access_point_id=item_id
-    )
-    db.session.add(association)
-    
-    db.session.commit()
+    link_report_to_access_point(db.session, report, item_id, commit=True)
 
     return ("", 200)
 
@@ -1294,68 +1380,30 @@ def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
 
     db.session.commit()
 
-
+@deprecated("Use helpers.latest_status_for instead")
 def get_item_status(item: Union[AccessPoint, int]):
-    """Fetch the most recent status for the provided item.
+    return latest_status_for(db.session, item)
 
-    Args:
-        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch status for (or its integer ID)
-
-    Returns:
-        Status: the status of the access point, or None if none were found
-    """
-    item_id = item.id if isinstance(item, AccessPoint) else item
-    status = db.session.execute(
-        db.select(Status)
-        .join(AccessPointReports, AccessPointReports.report_id == Status.report_id)
-        .where(AccessPointReports.access_point_id == item_id)
-        .order_by(Status.timestamp.desc())
-    ).scalars().first()
-    
-    return status
-
+@deprecated("Use helpers.highest_report_for instead")
 def get_item_report(item:Union[AccessPoint, int]):
-    """Fetch the latest report for the provided item.
-
-    While you can get this using get_item_status and accessing it through the associated report,
-    that method can miss scenarios where a report has been created but there is no status yet
-    This can happen when associating a ticket before any email has come in yet.
-
-    Args:
-        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch the report for (or its integer ID)
-
-    Returns:
-        Report: the report of the access point, or None if none were found
-    """
-    item_id = item.id if isinstance(item, AccessPoint) else item
-    report = db.session.execute(
-        db.select(Report)
-        .join(AccessPointReports, AccessPointReports.report_id == Report.id)
-        .where(AccessPointReports.access_point_id == item_id)
-        .order_by(Report.id.desc())
-    ).scalars().first()
-    
-    return report
-
-
-"""
-Delete tag and all relations from DB
-"""
+    return highest_report_for(db.session, item)
 
 
 def deleteTagGivenName(name):
+    """
+    Delete tag and all relations from DB
+    """
     t = db.session.execute(db.select(Tag).where(Tag.name == name)).scalar_one()
     db.session.execute(db.delete(AccessPointTag).where(AccessPointTag.tag_id == t.id))
     db.session.execute(db.delete(Tag).where(Tag.id == t.id))
     db.session.commit()
 
 
-"""
-Delete access point entry, all relations, and all images from DB and S3
-"""
-
-
 def deleteAccessPointEntry(id):
+    """
+    Delete access point entry, all relations, and all images from DB and S3
+    """
+
     # Get all images relating to this access point from the DB
     images = db.paginate(
         db.select(Image)
@@ -1384,7 +1432,9 @@ def deleteAccessPointEntry(id):
     db.session.delete(m)
     db.session.commit()
 
-
+########################
+# region Image Helpers
+########################
 
 def creationTimeFromFileExif(file, default=datetime.now()):
     with PilImage.open(file) as im:
@@ -1416,12 +1466,12 @@ def generateImageHash(file):
     file.seek(0)
     return hashvalue
 
-"""
-Upload fullsize and resized image, add relation to access point given ID
-"""
-
 
 def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
+    """
+    Upload fullsize and resized image, add relation to access point given ID
+    """
+
     file_obj = io.BytesIO(file.read())
     fullsizehash = generateImageHash(file_obj)
     file_obj.seek(0)
@@ -1495,16 +1545,12 @@ def uploadImageResize(file, access_point_id, count, is_thumbnail=False):
 ########################
 # region Admin Pages
 ########################
-
-"""
-Route to edit access point page
-"""
-
-
 @app.route("/edit/<id>")
 @requires_admin
 def edit(id):
-
+    """
+    Route to edit access point page
+    """
     if checkAccessPointExists(id):
         return render_template(
             "edit.html",
@@ -1516,19 +1562,18 @@ def edit(id):
         return render_template("404.html"), 404
 
 
-"""
-Route to the admin panel
-"""
-
-
 @app.route("/admin")
 @requires_admin
 def admin():
+    """
+    Route to the admin panel
+    """
     return render_template(
         "admin.html",
         authsession=get_logged_in_user(),
         is_admin = check_for_admin_role(get_logged_in_user_id()),
         tags=getAllTags(),
+        formData=formFieldData(),
         accessPoints=getAllAccessPoints(),
         buildings=getAllBuildings(),
     )
@@ -1573,13 +1618,12 @@ def buildingdata():
 # region Form submissions
 ########################
 
-"""
-Suggestion/feedback form
-"""
-
-
 @app.route("/suggestion", methods=["POST"])
 def submit_suggestion():
+    """
+    Suggestion/feedback form
+    """
+
 
     dt = datetime.now(timezone.utc)
 
@@ -1595,27 +1639,57 @@ def submit_suggestion():
 
     return redirect("/catalog")
 
-
-"""
-Route to delete Tag
-"""
+########################
+# region Tag Routes
+########################
 
 
 @app.route("/deleteTag/<name>", methods=["POST"])
 @requires_admin
 def deleteTag(name):
+    """
+    Route to delete Tag
+    """
     deleteTagGivenName(name)
     return redirect("/admin")
 
 
-"""
-Route to delete access point entry
-"""
+@app.route("/editTag/<name>", methods=["POST"])
+@requires_admin
+def edit_tag(name):
+    """
+    Route to edit tag description
+    """
+    t = db.session.execute(db.select(Tag).where(Tag.name == name)).scalar_one()
+    t.description = request.form["description"]
+    db.session.commit()
+    return ("", 204)
+
+
+@app.route("/addTag", methods=["POST"])
+@requires_admin
+def add_tag():
+    """
+    Add tag with blank description
+    """
+    tag = Tag(name=request.form["name"], description="")
+
+    db.session.add(tag)
+    db.session.commit()
+
+    return redirect("/admin")
+
+########################
+# region Access Point Routes
+########################
 
 
 @app.route("/delete/<id>", methods=["POST"])
 @requires_admin
 def delete(id):
+    """
+    Route to delete access point entry
+    """
     if checkAccessPointExists(id):
         deleteAccessPointEntry(id)
         return redirect("/admin")
@@ -1623,15 +1697,14 @@ def delete(id):
         return render_template("404.html"), 404
 
 
-"""
-Route to edit access point details
-Sets all fields based on http form
-"""
-
-
 @app.route("/editaccesspoint/<id>", methods=["POST"])
 @requires_admin
 def editAccessPoint(id):
+    """
+    Route to edit access point details
+    Sets all fields based on http form
+    """
+
     m = db.session.execute(
         db.select(AccessPoint).where(AccessPoint.id == id)
     ).scalar_one()
@@ -1679,29 +1752,13 @@ def editAccessPoint(id):
     return ("", 204)
 
 
-"""
-Route to edit tag description
-"""
-
-
-@app.route("/editTag/<name>", methods=["POST"])
-@requires_admin
-def edit_tag(name):
-    t = db.session.execute(db.select(Tag).where(Tag.name == name)).scalar_one()
-    t.description = request.form["description"]
-    db.session.commit()
-    return ("", 204)
-
-
-"""
-Route to edit access point title
-Sets access point title based on http form
-"""
-
-
 @app.route("/edittitle/<id>", methods=["POST"])
 @requires_admin
 def editTitle(id):
+    """
+    Route to edit access point title
+    Sets access point title based on http form
+    """
     m = db.session.execute(
         db.select(AccessPoint).where(AccessPoint.id == id)
     ).scalar_one()
@@ -1710,15 +1767,13 @@ def editTitle(id):
     return ("", 204)
 
 
-"""
-Route to edit image details
-Set caption and alttext based on http form
-"""
-
-
 @app.route("/editimage/<id>", methods=["POST"])
 @requires_admin
 def editImage(id):
+    """
+    Route to edit image details
+    Set caption and alttext based on http form
+    """
     image = db.session.execute(db.select(Image).where(Image.id == id)).scalar_one()
 
     if request.form["caption"].strip() != "":
@@ -1731,16 +1786,14 @@ def editImage(id):
     return ("", 204)
 
 
-"""
-Replaces access point thumbnail with selected image
-Route:
-    /makethumbnail?accesspointid=m_id&imageid=i_id
-"""
-
-
 @app.route("/makethumbnail", methods=["POST"])
 @requires_admin
 def makeThumbnail():
+    """
+    Replaces access point thumbnail with selected image
+    Route:
+        /makethumbnail?accesspointid=m_id&imageid=i_id
+    """
     access_point_id = request.args.get("accesspointid", None)
     image_id = request.args.get("imageid", None)
 
@@ -1763,14 +1816,12 @@ def makeThumbnail():
     return redirect(f"/edit/{access_point_id}")
 
 
-"""
-Route to delete image
-"""
-
-
 @app.route("/detachimage/<image_id>/from/<item_id>", methods=["POST"])
 @requires_admin
 def detachImageEndpoint(image_id, item_id):
+    """
+    Route to detach (but not delete) an image from the db
+    """
 
     detachImageByID(image_id, item_id)
     
@@ -1779,62 +1830,33 @@ def detachImageEndpoint(image_id, item_id):
     return ("", 204)
 
 
-"""
-Route to perform public export
-"""
+# @app.route("/export", methods=["POST"])
+# @requires_admin
+# def export_data():
+#     """
+#     Route to perform public export
+#     """
+#     public = bool(int(request.args.get("p")))
+#     now = datetime.now()
+#     dir_name = "export" + now.strftime("%d%m%Y")
+#     basepath = "tmp/"
+
+#     export_images(basepath + dir_name + "/")
+#     export_database(basepath + dir_name + "/", public)
+
+#     shutil.make_archive(basepath + dir_name, "zip", basepath + dir_name)
+
+#     return send_file(basepath + dir_name + ".zip")
 
 
-@app.route("/export", methods=["POST"])
-@requires_admin
-def export_data():
-    public = bool(int(request.args.get("p")))
-    now = datetime.now()
-    dir_name = "export" + now.strftime("%d%m%Y")
-    basepath = "tmp/"
-
-    export_images(basepath + dir_name + "/")
-    export_database(basepath + dir_name + "/", public)
-
-    shutil.make_archive(basepath + dir_name, "zip", basepath + dir_name)
-
-    return send_file(basepath + dir_name + ".zip")
-
-
-"""
-Route to perform data import
-"""
-
-
-@app.route("/import", methods=["POST"])
-@requires_admin
-def import_data():
-    return ("", 501)
-
-
-"""
-Add tag with blank description
-"""
-
-
-@app.route("/addTag", methods=["POST"])
-@requires_admin
-def add_tag():
-    tag = Tag(name=request.form["name"], description="")
-
-    db.session.add(tag)
-    db.session.commit()
-
-    return redirect("/admin")
-
-
-"""
-Route to upload new image
-"""
 
 
 @app.route("/uploadimage/<id>", methods=["POST"])
 @requires_admin
 def uploadNewImage(id):
+    """
+    Route to upload new image
+    """
     count = db.session.execute(
         db.select(func.count()).where(ImageAccessPointRelation.access_point_id == id)
     ).scalar()
@@ -1846,14 +1868,116 @@ def uploadNewImage(id):
     return redirect(f"/edit/{id}")
 
 
-"""
-Route to add new entry
-"""
+def build_location(building: Building, room_form_data: str, location_nick:str, coords: str, notes:str) -> tuple[Location, bool]:
+    """Builds or returns a location object
+
+    Args:
+        building (Building): the building this location is in
+        room_form_data (str): the room number of this location
+        location_nick (str): the nickname for this location
+        coords (str): the coordinates of this location
+        notes (str): any notes for this location
+
+    Returns:
+        Location, bool: The location and a boolean indicating if the location was created new.
+    """
+    floor, room = RoomNumber.from_string(room_form_data).integers()
+
+    stmt = db.select(Location).where(
+        Location.building_id == building.id,
+        Location.floor_number == floor,
+        Location.room_number == room,
+    )
+    location = db.session.execute(stmt).scalar_one_or_none()
+
+    gpsLocation = MapLocation.from_string(coords)
+
+    if not location:
+
+        locationData = {
+            "building_id": building.id,
+            "floor_number": floor or 0,
+            "room_number": room,
+            "nickname": location_nick,
+            "additional_info": notes,
+        }
+
+        if gpsLocation is not None:
+            lat, long = gpsLocation
+            locationData.update({
+                "latitude": lat,
+                "longitude": long
+            })
+
+        return Location(
+            **locationData
+        ), True
+    else:
+        # update location with new values if it doesnt already have them
+        if not location.has_coordinates and gpsLocation is not None:
+            lat, long = gpsLocation
+            location.latitude = lat
+            location.longitude = long
+
+        if location.additional_info is None:
+            location.additional_info = notes
+
+        if location.nickname is None:
+            location.nickname = location_nick
+
+    return location, False
 
 
-@app.route("/upload/elevator", methods=["POST"])
+def processAndUploadImages(images, access_point: AccessPoint):
+    """Helper function to deduplicate handling of image uploads across multiple access point types
+
+    Args:
+        images (_type_): the images/file handles to process
+        access_point (AccessPoint): the access point the images should be associated with
+    """
+
+    # Count is the order in which the images are shown
+    count = 1
+    for f in images:
+        # print(f[1].filename)
+
+        fullsizehash = generateImageHash(f[1])
+        f[1].seek(0)
+
+        # Check if image is already used in DB
+        usecount = db.session.execute(
+            db.select(func.count()).where(Image.fullsizehash == fullsizehash)
+        ).scalar()
+        if usecount > 0:
+            # print(fullsizehash)
+            # associate image
+            existing_image = db.session.execute(
+                db.select(Image).where(Image.fullsizehash == fullsizehash)
+            ).scalar()
+
+            db.session.add(
+                ImageAccessPointRelation(image_id=existing_image.id, 
+                ordering=count,
+                access_point_id=access_point.id)
+            )
+            count += 1
+            continue
+            # return render_template("404.html"), 404
+
+        # Begin adding full size to database
+        f[1].seek(0)
+
+        uploadImageResize(f[1], access_point.id, count, is_thumbnail=(count == 0))
+
+        count += 1
+
+
+@app.route("/upload/button", methods=["POST"])
 @requires_admin
-def upload():
+def upload_button():
+    """
+    Route to add new elevator
+    """
 
     # Step 1: Find the building by its number
     stmt = db.select(Building).where(Building.acronym == request.form["building"])
@@ -1866,37 +1990,92 @@ def upload():
 
     # Step 2: Find or create the location
     # for now we consider elevators as being "located" on "all" floors using the special floor number "0" (we are following the american standard where 1 is ground)
-    floor, room = RoomNumber.from_string(request.form["room"]).integers()
 
-    stmt = db.select(Location).where(
-        Location.building_id == building.id,
-        Location.floor_number == floor,
-        Location.room_number == room,
-        Location.is_outside is False,  # elevators should not be outside
+    location, is_new = build_location(building, request.form["room"], request.form["location-nick"], request.form["coords"], request.form["location"])
+
+    if is_new:
+        db.session.add(location)
+        db.session.flush()  # Get the location ID
+    
+    
+    extra_data = {}
+    def check_add_extra(form_key, transform, extra_data, target_key):
+        value = request.form.get(form_key)
+        if value is not None:
+            try:
+                value = transform(value)
+                extra_data[target_key] = value
+            
+            except Exception as e:
+                app.logger.error(f"cound not parse {form_key}: {e}")
+
+    check_add_extra(
+        "shelter_type",
+        lambda v: ShelterType(int(v)),
+        extra_data,
+        "shelter"
     )
-    location = db.session.execute(stmt).scalar_one_or_none()
+    check_add_extra(
+        "activation_style",
+        lambda v: ButtonActivation(int(v)),
+        extra_data,
+        "activation"
+    )
+    check_add_extra(
+        "mount_surface",
+        lambda v: MountSurface(int(v)),
+        extra_data,
+        "mount_surface"
+    )
+    check_add_extra(
+        "mount_style",
+        lambda v: MountStyle(int(v)),
+        extra_data,
+        "mount_style"
+    )
+    check_add_extra(
+        "power_source",
+        lambda v: PowerSource(int(v)),
+        extra_data,
+        "powered_by"
+    )
 
-    if not location:
+    # Step 3: Insert the elevator access point
+    button = DoorButton(
+        location_id=location.id,
+        remarks=request.form["notes"],
+        active=request.form["active"] == "true",
+        **extra_data
+    )
+    db.session.add(button)
 
-        locationData = {
-            "building_id": building.id,
-            "floor_number": floor or 0,
-            "room_number": room,
-            "nickname": request.form["location-nick"],
-            "additional_info": request.form["location"],
-        }
-        gpsLocation = MapLocation.from_string(request.form["coords"])
+    
+    processAndUploadImages(request.files.items(multi=True), button)
 
-        if gpsLocation is not None:
-            lat, long = gpsLocation
-            locationData.update({
-                "latitude": lat,
-                "longitude": long
-            })
+    db.session.commit()
 
-        location = Location(
-            **locationData
+    return redirect(f"/edit/{button.id}")
+
+
+@app.route("/upload/elevator", methods=["POST"])
+@requires_admin
+def upload_elevator():
+
+    # Step 1: Find the building by its number
+    stmt = db.select(Building).where(Building.acronym == request.form["building"])
+    building = db.session.execute(stmt).scalar_one_or_none()
+
+    if not building:
+        raise ValueError(
+            f"Building with acronym {request.form['building']} not found."
         )
+
+    # Step 2: Find or create the location
+    # for now we consider elevators as being "located" on "all" floors using the special floor number "0" (we are following the american standard where 1 is ground)
+
+    location, is_new = build_location(building, request.form["room"], request.form["location-nick"], request.form["coords"], request.form["location"])
+
+    if is_new:
         db.session.add(location)
         db.session.flush()  # Get the location ID
     
@@ -1922,40 +2101,8 @@ def upload():
     )
     db.session.add(elevator)
 
-    # Count is the order in which the images are shown
-    count = 1
-    for f in request.files.items(multi=True):
-        # print(f[1].filename)
-
-        fullsizehash = generateImageHash(f[1])
-        f[1].seek(0)
-
-        # Check if image is already used in DB
-        usecount = db.session.execute(
-            db.select(func.count()).where(Image.fullsizehash == fullsizehash)
-        ).scalar()
-        if usecount > 0:
-            # print(fullsizehash)
-            # associate image
-            existing_image = db.session.execute(
-                db.select(Image).where(Image.fullsizehash == fullsizehash)
-            ).scalar()
-
-            db.session.add(
-                ImageAccessPointRelation(image_id=existing_image.id, 
-                ordering=count,
-                access_point_id=elevator.id)
-            )
-            count += 1
-            continue
-            # return render_template("404.html"), 404
-
-        # Begin adding full size to database
-        f[1].seek(0)
-
-        uploadImageResize(f[1], elevator.id, count, is_thumbnail=(count == 0))
-
-        count += 1
+    
+    processAndUploadImages(request.files.items(multi=True), elevator)
 
     db.session.commit()
 

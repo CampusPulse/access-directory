@@ -8,23 +8,28 @@ from helpers import RoomNumber
 
 
 class ShelterType(enum.Enum):
+    UNKNOWN = 0
     INTERIOR = 1
     EXTERIOR = 2
     VESTIBULE = 3
 
 class ButtonActivation(enum.Enum):
+    UNKNOWN = 0
     PUSH = 1
     WAVE = 2
 
 class MountSurface(enum.Enum):
+    UNKNOWN = 0
     WALL = 1
     POLE = 2
 
 class MountStyle(enum.Enum):
+    UNKNOWN = 0
     PROTRUDING = 1
     RECESSED = 2
 
 class PowerSource(enum.Enum):
+    UNKNOWN = 0
     HARDWIRED = 1
     BATTERY = 2
 
@@ -72,7 +77,6 @@ class Location(Base):
     nickname: Mapped[Optional[str]]  # Example: "Main Library", "Engineering Hall"
     latitude: Mapped[Optional[int]] # northing
     longitude: Mapped[Optional[int]] # easting
-    is_outside: Mapped[bool] = mapped_column(server_default='FALSE')
     additional_info: Mapped[Optional[str]]  # Example: "The accessible entrance between X and Y"
     access_points = relationship("AccessPoint", backref="location")
 
@@ -81,6 +85,10 @@ class Location(Base):
             return self.nickname
         else:
             return RoomNumber(self.floor_number, self.room_number).to_string()
+
+    @property
+    def has_coordinates(self):
+        return self.latitude is None or self.longitude is None
 
 
 class AccessPoint(Base):
@@ -117,6 +125,7 @@ class Elevator(AccessPoint):
     floor_min: Mapped[int]
     floor_max: Mapped[int]
     door_count: Mapped[int] = mapped_column(server_default="1" )
+    manufacturer: Mapped[str] = mapped_column(nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "elevator",
@@ -130,6 +139,18 @@ class Report(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     ref: Mapped[Optional[str]] # ticket number/reference
 
+
+
+class AccessPointConcordances(Base):
+    """
+    Stores alternate identifiers for access points for interfacing with other systems
+    """
+    __tablename__ = "access_point_concordances"
+    access_point_id: Mapped[int] = mapped_column(ForeignKey("access_point.id"), primary_key=True)
+    identifier: Mapped[str] = mapped_column(primary_key=True) # the identifier from the foreign system
+    origin: Mapped[str] # a name/identifier of the foreign system
+   
+    access_point = relationship("AccessPoint")
 
 class Status(Base):
     """

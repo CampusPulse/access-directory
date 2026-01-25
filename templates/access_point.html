@@ -98,8 +98,23 @@ View Full Size Image</a>{% endif %}</pre>
                 
                 <span class="chip" style="background-color: {{ accessPointDetails["status"]["background_color"] }}; color:{{ accessPointDetails["status"]["text_color"] }}">
                     {{ accessPointDetails["status"]["message"] }}
-                </span>
+                </span><br>
 
+                {% if accessPointDetails['shelter'] %}
+                <strong>Placement</strong>: {{ accessPointDetails["shelter"].name.lower() }}<br>
+                {% endif %}
+                {% if accessPointDetails['activation'] %}
+                <strong>Activation Action</strong>: {{ accessPointDetails["activation"].name.lower() }}<br>
+                {% endif %}
+                {% if accessPointDetails['mount_surface'] %}
+                <strong>Mounted To</strong>: {{ accessPointDetails["mount_surface"].name.lower() }}<br>
+                {% endif %}
+                {% if accessPointDetails['mount_style'] %}
+                <strong>Mount Style</strong>: {{ accessPointDetails["mount_style"].name.lower() }}<br>
+                {% endif %}
+                {% if accessPointDetails['powered_by'] %}
+                <strong>Power Source</strong>: {{ accessPointDetails["powered_by"].name.lower() }}<br>
+                {% endif %}
 
                 {% if accessPointDetails["notes"] != '' %}
                 <h3>Description:</h3>
@@ -204,7 +219,7 @@ View Full Size Image</a>{% endif %}</pre>
                 <form action="/add_status/{{accessPointDetails['id']}}" method="post">
                     <details>
                         <summary><b>Assign Manual Status</b></summary>
-                        <p class="thin">Sign on the elevator? Heard from another channel that its broken? Update it here! Don't forget to come back and update it again if it is fixed!</p>
+                        <p class="thin">Sign on the {{ accessPointDetails['descriptor'] }}? Heard from another channel that its broken? Update it here! Don't forget to come back and update it again if it is fixed!</p>
                         <label>
                             Status Bubble Text: 
                             <input type="text" class="form-control" id="status" name="status" title="The name for the status bubble (1-30 char)" required pattern=".{1,30}" placeholder="Reported">
@@ -216,7 +231,7 @@ View Full Size Image</a>{% endif %}</pre>
                         <label>
                             Category
                             <select name="category">
-                                {% for name, val in accessPointDetails['status_categories'].items() %}
+                                {% for name, val in accessPointDetails['categories']['status'].items() %}
                                 <option value="{{val}}">{{name}}</option>
                                 {% endfor %}
                             </select>

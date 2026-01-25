@@ -53,8 +53,7 @@
                       
                       <select id="dropdown" name="building">
                         <option value="default" name="default">Select a building</option>
-                        {% for bldg in buildings: %}
-                        {{bldg.name}}
+                        {% for bldg in buildings %}
                         <option value="{{ bldg.acronym }}">{{bldg.number}} - {{bldg.name}}</option>
                         
                         {% endfor %}
@@ -110,6 +109,107 @@
             </div>
         </div>
       </div>
+    </div>
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingThree">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+          Upload New Door Button
+        </button>
+      </h2>
+      <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+        <div class="accordion-body collapsed">
+          <div class="container mt-5">
+            <h2>New Button</h2>
+            <form action="/upload/button" method="post" enctype="multipart/form-data">
+              <div class="mb-3">
+                <label for="building" class="form-label">What building is this button in?</label>
+    
+                <select id="dropdown2" name="building">
+                  <option value="default" name="default">Select a building</option>
+                  {% for bldg in buildings %}
+                  <option value="{{ bldg.acronym }}">{{bldg.number}} - {{bldg.name}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="room" class="form-label">What room number is associated with this button?</label>
+                <input type="room" class="form-control" id="room" name="room" title="Numeric digits (usually 4) representing a room number" required pattern="[0-9]+">
+              </div>
+    
+              <label>
+                Shelter Type:
+                <select name="shelter_type">
+                  {% for name, val in formData['categories']['shelter'].items() %}
+                  <option value="{{val}}">{{name}}</option>
+                  {% endfor %}
+                </select>
+              </label><br>
+    
+              <label>
+                Activation Style:
+                <select name="activation_style">
+                  {% for name, val in formData['categories']['activation'].items() %}
+                  <option value="{{val}}">{{name}}</option>
+                  {% endfor %}
+                </select>
+              </label><br>
+    
+              <label>
+                Mounting Surface:
+                <select name="mount_surface">
+                  {% for name, val in formData['categories']['surface'].items() %}
+                  <option value="{{val}}">{{name}}</option>
+                  {% endfor %}
+                </select>
+              </label><br>
+    
+              <label>
+                Mounting Style:
+                <select name="mount_style">
+                  {% for name, val in formData['categories']['mount'].items() %}
+                  <option value="{{val}}">{{name}}</option>
+                  {% endfor %}
+                </select>
+              </label><br>
+    
+              <label>
+                Power Source:
+                <select name="power_source">
+                  {% for name, val in formData['categories']['power'].items() %}
+                  <option value="{{val}}">{{name}}</option>
+                  {% endfor %}
+                </select>
+              </label><br>
+              <div class="mb-3">
+                <label for="location-nick" class="form-label">Location Nickname (public, ex. "Wallace Vestibule")</label>
+                <input type="text" class="form-control" id="location-nick" name="location-nick">
+              </div>
+              <div class="mb-3">
+                <label for="location" class="form-label">Location Notes</label>
+                <input type="text" class="form-control" id="location" name="location">
+              </div>
+              <div class="mb-3">
+                <label for="coords" class="form-label">Coordinates (lat,long)</label>
+                <input type="text" class="form-control" id="coords" name="coords">
+              </div>
+              <div class="mb-3">
+                <label for="notes" class="form-label">Button Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+              </div>
+              <div class="mb-3">
+                <label for="images" class="form-label">Multiple Images</label>
+                <input type="file" class="form-control" id="images" name="images[]" multiple required>
+              </div>
+              <div class="mb-3">
+                <label for="active" class="form-label">Is active?</label>
+                <input type="checkbox" id="active" name="active" value="true" checked />
+              </div>
+              <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
       <div class="accordion-item">
         <h2 class="accordion-header" id="headingTwo">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
@@ -135,7 +235,8 @@
                     </div>
                 {% endfor %}
                 </div>
-            </div>          </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="accordion-item">
@@ -188,7 +289,7 @@
       // Load data on page load
         window.onload = () => {
           // Initialize Select2 on the building dropdown
-          $('#dropdown').select2({
+          $('#dropdown, #dropdown2').select2({
             placeholder: "Search and select a building",
             width: '100%',
             minimumResultsForSearch: 0  // Always shows search bar

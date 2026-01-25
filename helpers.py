@@ -99,6 +99,47 @@ class MapLocation():
 
         return long, lat
 
+
+def validate_work_order(ticket_ref:str, allow_plain_wo=False):
+    
+    if ticket_ref is None or ticket_ref == "":
+        return False
+
+    ticket_ref = ticket_ref.upper()
+    prefix = "WO" if allow_plain_wo else "WOT"
+    
+    if not ticket_ref.startswith(prefix):
+        return False
+
+    if not ticket_ref[len(prefix):].isnumeric():
+        return False
+
+    return True
+
+def clean_work_order(ticket_ref:str, allow_plain_wo=False):
+    if not validate_work_order(ticket_ref, allow_plain_wo):
+        return None
+    return ticket_ref.upper()
+
+
+class FMSSheetUpdateType(enum.Enum):
+    UNKNOWN = "unknown"
+    BROKEN = "Out of Service"
+    INVESTIGATING = "Investigating"
+    ORDERED_PARTS = "Parts on Order"
+    WORKING = "In service"
+
+
+# @dataclass
+# class FMSSheetStatus:
+
+# 	# timestamp: datetime
+# 	status_type: FMSSheetUpdateType
+# 	ref: str
+# 	comment: str
+
+
+
 class ServiceNowUpdateType(enum.Enum):
     UNKNOWN = 0
     NEW = 1
