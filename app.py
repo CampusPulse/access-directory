@@ -1157,16 +1157,44 @@ def webwatcher_hook():
     # actually, better way is to pair up by line number
     # should also probably deduplicate the first entries that are static too
 
-    # pass through custom class to extract the status information??? 
-    # statusMap = {
-    #     ServiceNowUpdateType.NEW: (StatusType.BROKEN, "Filed"),
-    #     ServiceNowUpdateType.RESOLVED:  (StatusType.FIXED , "Fixed"),
-    #     ServiceNowUpdateType.IN_PROGRESS:  (StatusType.IN_PROGRESS, "In Progress"),
-    #     ServiceNowUpdateType.UNKNOWN:  (StatusType.UNKNOWN, "Unknown")
-    # }
+    def pair_by_line(values_list):
+        
+        for i in range(100):
+            filtered = list(filter(lambda l: int(l.get("line_no")) == i, values_list))
+            if len(filtered) == 0:
+                continue
+            assert filtered[0].get("change_state") == "(changed)"
+            assert filtered[1].get("change_state") == "(into)"
+            yield filtered[0], filtered[1]
 
-    # status_type, status = statusMap[statusUpdate.status_type]
+    def combine(before, after):
+        statusMap = {
+            FMSSheetUpdateType.UNKNOWN: (StatusType.UNKNOWN, "Unknown"),
+            FMSSheetUpdateType.BROKEN:  (StatusType.BROKEN, "Out of Service"),
+            FMSSheetUpdateType.INVESTIGATING:  (StatusType.IN_PROGRESS, "Investigating"),
+            FMSSheetUpdateType.ORDERED_PARTS:  (StatusType.IN_PROGRESS, "Pending Parts"),
+            FMSSheetUpdateType.WORKING:  (StatusType.FIXED, "Working")
+        }
 
+        return {
+            "line_no": int(before.get("line_no")),
+            "building": before.get("building"),
+            "identifier": before.get("identifier"),
+            "location_type": before.get("location_type"),
+            "floor_count": int(before.get("floor_count")),
+            "before": {
+                "status": statusMap[FMSSheetUpdateType(before.get("status"))],
+                "notes": before.get("notes"),
+                "work_order_number": before.get("work_order_number"),
+            },
+            "after": {
+                "status": statusMap[FMSSheetUpdateType(after.get("status"))],
+                "notes": after.get("notes"),
+                "work_order_number": after.get("work_order_number"),
+            }
+        }
+
+    changed_lines = [combine(i,j) for i, j in pair_by_line(reader_list)]
 
 
     # lookup building identifier to resolve internal access point ID
