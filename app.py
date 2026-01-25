@@ -16,6 +16,7 @@ from relative_datetime import DateTimeUtils
 from PIL.ExifTags import TAGS as EXIF_TAGS, Base as ExifBase
 from datetime import datetime, timezone
 from sqlalchemy import and_
+import csv
 from db import (
     db,
     func,
@@ -1101,6 +1102,122 @@ def email_webhook():
 
     
     db.session.commit()
+
+    return ("", 200)
+
+@app.route("/email_webhook", methods=["POST"])
+def webwatcher_hook():
+    """Webhook for receiving updates about the elevator status spreadsheet from changedetection.io 
+
+    Returns:
+        _type_: _description_
+    """
+    webhook_credential = app.config["WEBHOOK_CREDENTIAL"]
+
+    # check to make sure that the POST came from an authorized source (NFSN) and not some random person POSTing stuff to this endpoint
+    if request.args.get("token") != webhook_credential:
+        return ("Unauthorized", 401)
+
+
+#     {
+# 	"version": "1.0",
+# 	"title": "Elevator Maintainance Sheet updated",
+# 	"message": "https://docs.google.com/spreadsheets/d/18Y5WI9-RBf4UDa_4s32kDtPsuKpkSrWfaNQ6auuTcBM/edit?gid=0#gid=0 has a change.\n---\n(changed)               36  Grace Watson Hall          25-ELEV-01          GW LOBBY           2               Out of Service                                  called in for service                                       NO-WO\n(into)               36  Grace Watson Hall          25-ELEV-01          GW LOBBY           2               In service\n---",
+# 	"attachments": [],
+# 	"type": <NotifyType.INFO: "info">
+# }
+
+
+    headers_text = ["change_state","line_no", "building", "identifier", "location_type", "floor_count", "status", "notes", "work_order_number"]
+    # status: "In service", "Parts on Order", "Investigating", "Out of Service", 
+    #  "Manuf",
+
+    change_message = request.json.get("message")
+    if change_message is None:
+        app.logger.error("client didnt send json with proper content type")
+        app.logger.info(request.data)
+        return
+
+    # TODO: grab current timestamp for the change?
+    
+    # extract the actual diff contents
+    change_message = change_message.split("---")[1].strip()
+    # split the before and after diff
+    diff_parts = change_message.split("\n")
+    # make into CSV/dict data
+    diff_parts =  [re.sub("\s{2,}", ",", p) for p in diff_parts]
+    csvdata = headers_text + diff_parts
+
+    reader_list = csv.DictReader(csvdata)
+    
+    # match "changed" and "into" into pairs (before and after changes)
+    # filter into two lists and zip if both lists are same length
+    # actually, better way is to pair up by line number
+    # should also probably deduplicate the first entries that are static too
+
+    # pass through custom class to extract the status information??? 
+    # statusMap = {
+    #     ServiceNowUpdateType.NEW: (StatusType.BROKEN, "Filed"),
+    #     ServiceNowUpdateType.RESOLVED:  (StatusType.FIXED , "Fixed"),
+    #     ServiceNowUpdateType.IN_PROGRESS:  (StatusType.IN_PROGRESS, "In Progress"),
+    #     ServiceNowUpdateType.UNKNOWN:  (StatusType.UNKNOWN, "Unknown")
+    # }
+
+    # status_type, status = statusMap[statusUpdate.status_type]
+
+
+
+    # lookup building identifier to resolve internal access point ID
+    # concordances table linking Access Point to an identifier (the string) and origin ("FMS")
+
+
+    # build a status 
+
+    # TODO: refactor this "should we make a new report for this incoming status" logic
+    # inputs: constructed status object, work order ticket number
+    # outputs: the associated report (existing or new) and updated status object
+
+        
+        
+        # report = db.session.execute(
+        #     db.select(Report).where(Report.ref == statusUpdate.ref)
+        # ).scalar()
+
+        # if report is None:
+        #     # create new report and status
+        #     report = Report(
+        #         ref=statusUpdate.ref
+        #     )
+
+        #     db.session.add(report)
+        #     db.session.flush()
+        
+        
+        # statusNotes = ""
+        # if statusUpdate.comment is not None and statusUpdate.comment != "":
+        #     statusNotes = statusUpdate.comment
+        # else:
+        #     statusNotes = subject
+
+        # # create new status
+        # status = Status(
+        #     report_id=report.id,
+        #     status=status,
+        #     status_type=status_type,
+        #     timestamp=statusUpdate.timestamp,
+        #     notes=statusNotes
+        # )
+
+    # Create object linking this report to this access point so it shows on the site
+
+
+
+    # db.session.add(status)
+
+    
+    # db.session.commit()
+
+    # TODO: send event to notifications/event handling system
 
     return ("", 200)
 

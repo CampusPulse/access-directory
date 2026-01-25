@@ -99,6 +99,15 @@ class MapLocation():
 
         return long, lat
 
+
+class FMSSheetUpdateType(enum.Enum):
+    UNKNOWN = "unknown"
+    BROKEN = "Out of Service"
+    INVESTIGATING = "Investigating"
+    ORDERED_PARTS = "Parts on Order"
+    WORKING = "In service"
+
+
 class ServiceNowUpdateType(enum.Enum):
     UNKNOWN = 0
     NEW = 1
