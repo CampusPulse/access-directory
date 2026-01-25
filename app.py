@@ -175,11 +175,9 @@ def path_for_image(file_hash:str, image_type: ImageType, naming_version=0) -> st
 
 
 def lookup_access_point_for_concordance_id(session, identifier:str):
-    concordance = session.execute(
-        db.select(AccessPointConcordances)
-        .where(AccessPointConcordances.identifier == identifier)
-    ).scalars().first
-    return concordance.access_point
+    concordance = session.query(AccessPointConcordances).filter(AccessPointConcordances.identifier == identifier).first()
+    if concordance:
+        return concordance.access_point
 
 
 def access_point_json(access_point: AccessPoint):
