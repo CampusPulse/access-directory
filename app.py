@@ -215,8 +215,7 @@ def access_point_json(access_point: AccessPoint):
         "status": status_style,
         "status_updated": statusUpdated,
         "images": images,
-        "tags": getTags(access_point.id),
-        "report_url": f"https://report.campuspulse.app/elevator?room={rn.to_string()}+{access_point.location.nickname}&campuspulse_id={access_point.id}&building={access_point.location.building.number}:{access_point.location.building.human_name()}"
+        "tags": getTags(access_point.id)
     }
 
     if thumbnail is not None:
@@ -239,7 +238,9 @@ def access_point_json(access_point: AccessPoint):
             {
                 "title": title,
                 "room": rn.to_string(),
-                "door_count": access_point.door_count
+                "door_count": access_point.door_count,
+                "descriptor": "elevator",
+                "report_url": f"https://report.campuspulse.app/elevator?room={rn.to_string()}+{access_point.location.nickname}&campuspulse_id={access_point.id}&building={access_point.location.building.number}:{access_point.location.building.human_name()}"
             }
         )
 
@@ -247,26 +248,64 @@ def access_point_json(access_point: AccessPoint):
             base_data.update({ 
                 "floor": f"{integer_to_floor(access_point.floor_min)} to {integer_to_floor(access_point.floor_max)}",
             })
+    elif isinstance(access_point, DoorButton):
+
+        # TODO: Decide title
+        # title = access_point.location.building.human_name()
+        # title += f" - "
+        # title += access_point.location.human_name()\
+
+        base_data.update(
+            {
+                # "title": title,
+                "room": rn.to_string(),
+                "shelter": access_point.shelter,
+                "activation": access_point.activation,
+                "mount_surface": access_point.mount_surface,
+                "mount_style": access_point.mount_style,
+                "powered_by": access_point.powered_by,
+                "descriptor": "button",
+                "report_url": f"https://report.campuspulse.app/button?room={rn.to_string()}+{access_point.location.nickname}&campuspulse_id={access_point.id}&building={access_point.location.building.number}:{access_point.location.building.human_name()}"#&floor={}
+            }
+        )
+
     return base_data
 
 def access_point_admin_json(access_point: AccessPoint):
 
     status = get_item_status(access_point)
     report = get_item_report(access_point)
-
-    status_categories = {i.name: i.value for i in StatusType}
     
+    formfielddata = formFieldData()
 
     # TODO: use marshmallow to serialize
     admin_data = {
         "status_ticket_number": (status.report.ref or "No Ticket") if status else "No Status",
-        "status_report_id": status.report.id,
-        "report_id": report.id,
-        "status_categories": status_categories
+        "status_report_id": status.report.id if status and status.report else "None",
+        "report_id": report.id if report else "None",
+        **formfielddata
     }
 
     return admin_data
 
+def formFieldData():
+
+    status_categories = {i.name: i.value for i in StatusType}
+    shelter_categories = {i.name: i.value for i in ShelterType}
+    activation_categories = {i.name: i.value for i in ButtonActivation}
+    surface_categories = {i.name: i.value for i in MountSurface}
+    mount_categories = {i.name: i.value for i in MountStyle}
+    power_categories = {i.name: i.value for i in PowerSource}
+    return {
+        "categories": {
+            "status": status_categories,
+            "shelter": shelter_categories,
+            "activation": activation_categories,
+            "surface": surface_categories,
+            "mount": mount_categories,
+            "power": power_categories,
+        }
+    }
 
 """
 Creates a geojson for map feature
@@ -447,7 +486,7 @@ Get all access points
 
 def getAllBuildings():
     b = db.session.execute(db.select(Building).order_by(Building.id.asc())).scalars()
-    return b
+    return list(b)
 
 
 """
@@ -1529,6 +1568,7 @@ def admin():
         authsession=get_logged_in_user(),
         is_admin = check_for_admin_role(get_logged_in_user_id()),
         tags=getAllTags(),
+        formData=formFieldData(),
         accessPoints=getAllAccessPoints(),
         buildings=getAllBuildings(),
     )
@@ -1850,10 +1890,113 @@ def uploadNewImage(id):
 Route to add new entry
 """
 
+def build_location(building: Building, room_form_data: str, location_nick:str, coords: str, notes:str) -> tuple[Location, bool]:
+    """Builds or returns a location object
 
-@app.route("/upload/elevator", methods=["POST"])
+    Args:
+        building (Building): the building this location is in
+        room_form_data (str): the room number of this location
+        location_nick (str): the nickname for this location
+        coords (str): the coordinates of this location
+        notes (str): any notes for this location
+
+    Returns:
+        Location, bool: The location and a boolean indicating if the location was created new.
+    """
+    floor, room = RoomNumber.from_string(room_form_data).integers()
+
+    stmt = db.select(Location).where(
+        Location.building_id == building.id,
+        Location.floor_number == floor,
+        Location.room_number == room,
+    )
+    location = db.session.execute(stmt).scalar_one_or_none()
+
+    gpsLocation = MapLocation.from_string(coords)
+
+    if not location:
+
+        locationData = {
+            "building_id": building.id,
+            "floor_number": floor or 0,
+            "room_number": room,
+            "nickname": location_nick,
+            "additional_info": notes,
+        }
+
+        if gpsLocation is not None:
+            lat, long = gpsLocation
+            locationData.update({
+                "latitude": lat,
+                "longitude": long
+            })
+
+        return Location(
+            **locationData
+        ), True
+    else:
+        # update location with new values if it doesnt already have them
+        if not location.has_coordinates and gpsLocation is not None:
+            lat, long = gpsLocation
+            location.latitude = lat
+            location.longitude = long
+
+        if location.additional_info is None:
+            location.additional_info = notes
+
+        if location.nickname is None:
+            location.nickname = location_nick
+
+    return location, False
+
+
+def processAndUploadImages(images, access_point: AccessPoint):
+    """Helper function to deduplicate handling of image uploads across multiple access point types
+
+    Args:
+        images (_type_): the images/file handles to process
+        access_point (AccessPoint): the access point the images should be associated with
+    """
+
+    # Count is the order in which the images are shown
+    count = 1
+    for f in images:
+        # print(f[1].filename)
+
+        fullsizehash = generateImageHash(f[1])
+        f[1].seek(0)
+
+        # Check if image is already used in DB
+        usecount = db.session.execute(
+            db.select(func.count()).where(Image.fullsizehash == fullsizehash)
+        ).scalar()
+        if usecount > 0:
+            # print(fullsizehash)
+            # associate image
+            existing_image = db.session.execute(
+                db.select(Image).where(Image.fullsizehash == fullsizehash)
+            ).scalar()
+
+            db.session.add(
+                ImageAccessPointRelation(image_id=existing_image.id, 
+                ordering=count,
+                access_point_id=access_point.id)
+            )
+            count += 1
+            continue
+            # return render_template("404.html"), 404
+
+        # Begin adding full size to database
+        f[1].seek(0)
+
+        uploadImageResize(f[1], access_point.id, count, is_thumbnail=(count == 0))
+
+        count += 1
+
+
+@app.route("/upload/button", methods=["POST"])
 @requires_admin
-def upload():
+def upload_button():
 
     # Step 1: Find the building by its number
     stmt = db.select(Building).where(Building.acronym == request.form["building"])
@@ -1866,37 +2009,92 @@ def upload():
 
     # Step 2: Find or create the location
     # for now we consider elevators as being "located" on "all" floors using the special floor number "0" (we are following the american standard where 1 is ground)
-    floor, room = RoomNumber.from_string(request.form["room"]).integers()
 
-    stmt = db.select(Location).where(
-        Location.building_id == building.id,
-        Location.floor_number == floor,
-        Location.room_number == room,
-        Location.is_outside is False,  # elevators should not be outside
+    location, is_new = build_location(building, request.form["room"], request.form["location-nick"], request.form["coords"], request.form["location"])
+
+    if is_new:
+        db.session.add(location)
+        db.session.flush()  # Get the location ID
+    
+    
+    extra_data = {}
+    def check_add_extra(form_key, transform, extra_data, target_key):
+        value = request.form.get(form_key)
+        if value is not None:
+            try:
+                value = transform(value)
+                extra_data[target_key] = value
+            
+            except Exception as e:
+                app.logger.error(f"cound not parse {form_key}: {e}")
+
+    check_add_extra(
+        "shelter_type",
+        lambda v: ShelterType(int(v)),
+        extra_data,
+        "shelter"
     )
-    location = db.session.execute(stmt).scalar_one_or_none()
+    check_add_extra(
+        "activation_style",
+        lambda v: ButtonActivation(int(v)),
+        extra_data,
+        "activation"
+    )
+    check_add_extra(
+        "mount_surface",
+        lambda v: MountSurface(int(v)),
+        extra_data,
+        "mount_surface"
+    )
+    check_add_extra(
+        "mount_style",
+        lambda v: MountStyle(int(v)),
+        extra_data,
+        "mount_style"
+    )
+    check_add_extra(
+        "power_source",
+        lambda v: PowerSource(int(v)),
+        extra_data,
+        "powered_by"
+    )
 
-    if not location:
+    # Step 3: Insert the elevator access point
+    button = DoorButton(
+        location_id=location.id,
+        remarks=request.form["notes"],
+        active=request.form["active"] == "true",
+        **extra_data
+    )
+    db.session.add(button)
 
-        locationData = {
-            "building_id": building.id,
-            "floor_number": floor or 0,
-            "room_number": room,
-            "nickname": request.form["location-nick"],
-            "additional_info": request.form["location"],
-        }
-        gpsLocation = MapLocation.from_string(request.form["coords"])
+    
+    processAndUploadImages(request.files.items(multi=True), button)
 
-        if gpsLocation is not None:
-            lat, long = gpsLocation
-            locationData.update({
-                "latitude": lat,
-                "longitude": long
-            })
+    db.session.commit()
 
-        location = Location(
-            **locationData
+    return redirect(f"/edit/{button.id}")
+
+
+@app.route("/upload/elevator", methods=["POST"])
+@requires_admin
+def upload_elevator():
+
+    # Step 1: Find the building by its number
+    stmt = db.select(Building).where(Building.acronym == request.form["building"])
+    building = db.session.execute(stmt).scalar_one_or_none()
+
+    if not building:
+        raise ValueError(
+            f"Building with acronym {request.form['building']} not found."
         )
+
+    # Step 2: Find or create the location
+    # for now we consider elevators as being "located" on "all" floors using the special floor number "0" (we are following the american standard where 1 is ground)
+
+    location, is_new = build_location(building, request.form["room"], request.form["location-nick"], request.form["coords"], request.form["location"])
+
+    if is_new:
         db.session.add(location)
         db.session.flush()  # Get the location ID
     
@@ -1922,40 +2120,8 @@ def upload():
     )
     db.session.add(elevator)
 
-    # Count is the order in which the images are shown
-    count = 1
-    for f in request.files.items(multi=True):
-        # print(f[1].filename)
-
-        fullsizehash = generateImageHash(f[1])
-        f[1].seek(0)
-
-        # Check if image is already used in DB
-        usecount = db.session.execute(
-            db.select(func.count()).where(Image.fullsizehash == fullsizehash)
-        ).scalar()
-        if usecount > 0:
-            # print(fullsizehash)
-            # associate image
-            existing_image = db.session.execute(
-                db.select(Image).where(Image.fullsizehash == fullsizehash)
-            ).scalar()
-
-            db.session.add(
-                ImageAccessPointRelation(image_id=existing_image.id, 
-                ordering=count,
-                access_point_id=elevator.id)
-            )
-            count += 1
-            continue
-            # return render_template("404.html"), 404
-
-        # Begin adding full size to database
-        f[1].seek(0)
-
-        uploadImageResize(f[1], elevator.id, count, is_thumbnail=(count == 0))
-
-        count += 1
+    
+    processAndUploadImages(request.files.items(multi=True), elevator)
 
     db.session.commit()
 

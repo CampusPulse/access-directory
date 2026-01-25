@@ -8,23 +8,28 @@ from helpers import RoomNumber
 
 
 class ShelterType(enum.Enum):
+    UNKNOWN = 0
     INTERIOR = 1
     EXTERIOR = 2
     VESTIBULE = 3
 
 class ButtonActivation(enum.Enum):
+    UNKNOWN = 0
     PUSH = 1
     WAVE = 2
 
 class MountSurface(enum.Enum):
+    UNKNOWN = 0
     WALL = 1
     POLE = 2
 
 class MountStyle(enum.Enum):
+    UNKNOWN = 0
     PROTRUDING = 1
     RECESSED = 2
 
 class PowerSource(enum.Enum):
+    UNKNOWN = 0
     HARDWIRED = 1
     BATTERY = 2
 
@@ -72,7 +77,6 @@ class Location(Base):
     nickname: Mapped[Optional[str]]  # Example: "Main Library", "Engineering Hall"
     latitude: Mapped[Optional[int]] # northing
     longitude: Mapped[Optional[int]] # easting
-    is_outside: Mapped[bool] = mapped_column(server_default='FALSE')
     additional_info: Mapped[Optional[str]]  # Example: "The accessible entrance between X and Y"
     access_points = relationship("AccessPoint", backref="location")
 
@@ -81,6 +85,10 @@ class Location(Base):
             return self.nickname
         else:
             return RoomNumber(self.floor_number, self.room_number).to_string()
+
+    @property
+    def has_coordinates(self):
+        return self.latitude is None or self.longitude is None
 
 
 class AccessPoint(Base):
