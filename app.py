@@ -6,6 +6,11 @@ from enum import Enum
 from flask import Flask, render_template, request, redirect, abort, url_for, make_response, session
 import logging
 from werkzeug.utils import secure_filename
+import sys
+if sys.version_info >= (3, 12):
+    from typing_extensions import deprecated
+else:
+    from warnings import deprecated
 from werkzeug.exceptions import HTTPException
 import hashlib
 import re
@@ -16,6 +21,7 @@ from relative_datetime import DateTimeUtils
 from PIL.ExifTags import TAGS as EXIF_TAGS, Base as ExifBase
 from datetime import datetime, timezone
 from sqlalchemy import and_
+import csv
 from db import (
     db,
     func,
@@ -52,7 +58,8 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, FMSSheetUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info, validate_work_order, clean_work_order
+from db_helpers import latest_status_for,highest_report_for, smart_add_status_report
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 
@@ -1060,19 +1067,6 @@ def email_webhook():
 
     statusUpdate = ServiceNowStatus.from_email(from_addr, subject, html_body)
 
-    report = db.session.execute(
-        db.select(Report).where(Report.ref == statusUpdate.ref)
-    ).scalar()
-
-    if report is None:
-        # create new report and status
-        report = Report(
-            ref=statusUpdate.ref
-        )
-
-        db.session.add(report)
-        db.session.flush()
-    
     statusMap = {
         ServiceNowUpdateType.NEW: (StatusType.BROKEN, "Filed"),
         ServiceNowUpdateType.RESOLVED:  (StatusType.FIXED , "Fixed"),
@@ -1090,17 +1084,138 @@ def email_webhook():
         statusNotes = subject
 
     # create new status
-    status = Status(
-        report_id=report.id,
+    new_status = Status(
         status=status,
         status_type=status_type,
         timestamp=statusUpdate.timestamp,
         notes=statusNotes
     )
-    db.session.add(status)
 
+    report, status = smart_add_status_report(db.session, new_status, ticket_number=statusUpdate.ref)
+    
     
     db.session.commit()
+
+    return ("", 200)
+
+@app.route("/webwatcher_hook", methods=["POST"])
+def webwatcher_hook():
+    """Webhook for receiving updates about the elevator status spreadsheet from changedetection.io 
+
+    Returns:
+        _type_: _description_
+    """
+    webhook_credential = app.config["WEBHOOK_CREDENTIAL"]
+
+    # check to make sure that the POST came from an authorized source (NFSN) and not some random person POSTing stuff to this endpoint
+    if request.args.get("token") != webhook_credential:
+        return ("Unauthorized", 401)
+
+
+#     {
+# 	"version": "1.0",
+# 	"title": "Elevator Maintainance Sheet updated",
+# 	"message": "https://docs.google.com/spreadsheets/d/18Y5WI9-RBf4UDa_4s32kDtPsuKpkSrWfaNQ6auuTcBM/edit?gid=0#gid=0 has a change.\n---\n(changed)               36  Grace Watson Hall          25-ELEV-01          GW LOBBY           2               Out of Service                                  called in for service                                       NO-WO\n(into)               36  Grace Watson Hall          25-ELEV-01          GW LOBBY           2               In service\n---",
+# 	"attachments": [],
+# 	"type": <NotifyType.INFO: "info">
+# }
+
+
+    headers_text = ["change_state","line_no", "building", "identifier", "location_type", "floor_count", "status", "notes", "work_order_number"]
+    # status: "In service", "Parts on Order", "Investigating", "Out of Service", 
+    #  "Manuf",
+    change_message = request.json
+
+    if change_message is None:
+        app.logger.error("client didn't send json with proper content type")
+        app.logger.info(request.data)
+        return (400, "Improper content type header. Expected application/json")
+    change_message = change_message.get("message")
+    if change_message is None:
+        app.logger.error("client didn't send json in the proper format. 'message` key expected")
+        app.logger.info(request.data)
+        return (400, "Improper data. Expected key: message")
+
+    change_message = change_message.split("---")
+    source_url = change_message[0].strip().split(" ")[0]
+    # extract the actual diff contents
+    change_message_diff = change_message[1].strip()
+    # split the before and after diff
+    diff_parts = change_message_diff.split("\n")
+    # make into CSV/dict data
+    diff_parts =  [re.sub('\s{2,}', ",", p) for p in diff_parts]
+    csvdata = [",".join(headers_text)] + diff_parts
+
+    reader_list = list(csv.DictReader(csvdata))
+    
+    # match "changed" and "into" into pairs (before and after changes)
+    # filter into two lists and zip if both lists are same length
+    # actually, better way is to pair up by line number
+    # should also probably deduplicate the first entries that are static too
+
+    def pair_by_line(values_list):
+        
+        for i in range(100):
+            filtered = list(filter(lambda l: int(l.get("line_no")) == i, values_list))
+            if len(filtered) == 0:
+                continue
+            assert filtered[0].get("change_state") == "(changed)"
+            assert filtered[1].get("change_state") == "(into)"
+            yield filtered[0], filtered[1]
+
+    def combine(before, after):
+        statusMap = {
+            FMSSheetUpdateType.UNKNOWN: (StatusType.UNKNOWN, "Unknown"),
+            FMSSheetUpdateType.BROKEN:  (StatusType.BROKEN, "Out of Service"),
+            FMSSheetUpdateType.INVESTIGATING:  (StatusType.IN_PROGRESS, "Investigating"),
+            FMSSheetUpdateType.ORDERED_PARTS:  (StatusType.IN_PROGRESS, "Pending Parts"),
+            FMSSheetUpdateType.WORKING:  (StatusType.FIXED, "Working")
+        }
+
+        return {
+            "line_no": int(before.get("line_no")),
+            "building": before.get("building"),
+            "identifier": before.get("identifier"),
+            "location_type": before.get("location_type"),
+            "floor_count": int(before.get("floor_count")),
+            "before": {
+                "status": statusMap[FMSSheetUpdateType(before.get("status"))],
+                "notes": before.get("notes"),
+                "work_order_number": clean_work_order(before.get("work_order_number")),
+            },
+            "after": {
+                "status": statusMap[FMSSheetUpdateType(after.get("status"))],
+                "notes": after.get("notes"),
+                "work_order_number": clean_work_order(after.get("work_order_number")),
+            }
+        }
+
+    changed_lines = [combine(i,j) for i, j in pair_by_line(reader_list)]
+
+    for line in changed_lines:
+        # resolve FMS spreadsheet ID to our internal access point ID with the concordances table
+        access_point_for_fms_id = (
+            db.session.query(AccessPoint)
+            .join(AccessPointConcordances, AccessPointConcordances.access_point_id == AccessPoint.id)
+            .where(AccessPointConcordances.identifier == line.get("identifier"))
+        ).first()
+    
+        status_type, status_text = line.get("after").get("status")
+        work_order_number = line.get("after").get("work_order_number")
+
+        new_status = Status(
+            # report_id=report.id,
+            status=status_text,
+            status_type=status_type,
+            timestamp=datetime.utcnow(),
+            notes=line.get("after").get("notes")
+        )
+
+        report, status = smart_add_status_report(db.session, new_status, ticket_number=work_order_number, link_to=access_point_for_fms_id)
+
+        db.session.commit()
+
+    # TODO: send event to notifications/event handling system
 
     return ("", 200)
 
@@ -1112,7 +1227,7 @@ def add_ticket(item_id):
         return "Not found", 404
 
     ticket_ref = request.form.get("ticket_ref")
-    if ticket_ref is None or ticket_ref == "" or not ticket_ref.startswith("WOT"):
+    if not validate_work_order(ticket_ref):
         return "invalid ticket number", 400
 
     report = db.session.execute(
@@ -1128,14 +1243,7 @@ def add_ticket(item_id):
         db.session.add(report)
         db.session.flush()
     
-    # create new association
-    association = AccessPointReports(
-        report_id=report.id,
-        access_point_id=item_id
-    )
-    db.session.add(association)
-    
-    db.session.commit()
+    link_report_to_access_point(db.session, report, item_id, commit=True)
 
     return ("", 200)
 
@@ -1272,49 +1380,13 @@ def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
 
     db.session.commit()
 
-
+@deprecated("Use helpers.latest_status_for instead")
 def get_item_status(item: Union[AccessPoint, int]):
-    """Fetch the most recent status for the provided item.
+    return latest_status_for(db.session, item)
 
-    Args:
-        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch status for (or its integer ID)
-
-    Returns:
-        Status: the status of the access point, or None if none were found
-    """
-    item_id = item.id if isinstance(item, AccessPoint) else item
-    status = db.session.execute(
-        db.select(Status)
-        .join(AccessPointReports, AccessPointReports.report_id == Status.report_id)
-        .where(AccessPointReports.access_point_id == item_id)
-        .order_by(Status.timestamp.desc())
-    ).scalars().first()
-    
-    return status
-
+@deprecated("Use helpers.highest_report_for instead")
 def get_item_report(item:Union[AccessPoint, int]):
-    """Fetch the latest report for the provided item.
-
-    While you can get this using get_item_status and accessing it through the associated report,
-    that method can miss scenarios where a report has been created but there is no status yet
-    This can happen when associating a ticket before any email has come in yet.
-
-    Args:
-        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch the report for (or its integer ID)
-
-    Returns:
-        Report: the report of the access point, or None if none were found
-    """
-    item_id = item.id if isinstance(item, AccessPoint) else item
-    report = db.session.execute(
-        db.select(Report)
-        .join(AccessPointReports, AccessPointReports.report_id == Report.id)
-        .where(AccessPointReports.access_point_id == item_id)
-        .order_by(Report.id.desc())
-    ).scalars().first()
-    
-    return report
-
+    return highest_report_for(db.session, item)
 
 
 def deleteTagGivenName(name):

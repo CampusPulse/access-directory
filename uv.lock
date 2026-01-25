@@ -32,6 +32,7 @@ dependencies = [
     { name = "requests" },
     { name = "six" },
     { name = "sqlalchemy" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
     { name = "werkzeug" },
 ]
 
@@ -57,6 +58,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.5" },
     { name = "six", specifier = "==1.16.0" },
     { name = "sqlalchemy", specifier = "==2.0.29" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'", specifier = ">=4.15.0" },
     { name = "werkzeug", specifier = "==3.0.1" },
 ]
 
