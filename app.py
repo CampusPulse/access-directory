@@ -1004,8 +1004,8 @@ def requires_admin(f):
 
 ########################
 #
-# region Ingest
-#
+# region Ingest 
+#   (helpers and functions)
 ########################
 
 
@@ -1353,7 +1353,9 @@ def deleteAccessPointEntry(id):
     db.session.delete(m)
     db.session.commit()
 
-
+########################
+# region Image Helpers
+########################
 
 def creationTimeFromFileExif(file, default=datetime.now()):
     with PilImage.open(file) as im:
@@ -1597,6 +1599,10 @@ def add_tag():
     db.session.commit()
 
     return redirect("/admin")
+
+########################
+# region Access Point Routes
+########################
 
 
 @app.route("/delete/<id>", methods=["POST"])
