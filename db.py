@@ -125,6 +125,7 @@ class Elevator(AccessPoint):
     floor_min: Mapped[int]
     floor_max: Mapped[int]
     door_count: Mapped[int] = mapped_column(server_default="1" )
+    manufacturer: Mapped[str] = mapped_column(nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "elevator",
