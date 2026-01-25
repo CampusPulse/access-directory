@@ -240,7 +240,6 @@ def smart_add_status_report(session, new_status:Status, ticket_number:str, link_
         if current_status.status_type.value < new_status.status_type.value or (allow_matching and current_status.status_type.value == new_status.status_type.value):
             new_status.report_id = current_report.id
 
-            session.add(new_status)
         else:
             # create a new report
             new_report = Report()
@@ -248,6 +247,8 @@ def smart_add_status_report(session, new_status:Status, ticket_number:str, link_
             session.flush() # get the report ID
             new_status.report_id = new_report.id
             current_report = new_report
+
+        session.add(new_status)
 
         if commit:
             session.commit()
@@ -264,6 +265,9 @@ def smart_add_status_report(session, new_status:Status, ticket_number:str, link_
         session.add(new_report)
         session.flush() # get the report ID
         new_status.report_id = new_report.id
+
+        session.add(new_status)
+
         if commit:
             session.commit()
         return new_report, new_status
