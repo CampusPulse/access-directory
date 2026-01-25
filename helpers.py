@@ -144,6 +144,30 @@ def highest_report_for(session, item:Union[AccessPoint, int]):
     ).first()
     
     return report
+
+def link_report_to_access_point(session, report: Union[Report, int], access_point: Union[AccessPoint, int], commit=False):
+    """links a report of a problem to its access point
+
+    Args:
+        session: the database session to use
+        item 
+        report (Union[Report, int]): The item (in this case AccessPoint) to fetch the report for (or its integer ID)
+        access_point (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch the report for (or its integer ID)
+        commit (bool): whether to commit the transaction once done
+    """
+    access_point_id = access_point.id if isinstance(access_point, AccessPoint) else access_point
+    report_id = report.id if isinstance(report, Report) else report
+
+    # create new association
+    association = AccessPointReports(
+        report_id=report_id,
+        access_point_id=access_point_id
+    )
+    session.add(association)
+    if commit:
+        session.commit()
+    
+
 class FMSSheetUpdateType(enum.Enum):
     UNKNOWN = "unknown"
     BROKEN = "Out of Service"

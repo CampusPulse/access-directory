@@ -1275,14 +1275,7 @@ def add_ticket(item_id):
         db.session.add(report)
         db.session.flush()
     
-    # create new association
-    association = AccessPointReports(
-        report_id=report.id,
-        access_point_id=item_id
-    )
-    db.session.add(association)
-    
-    db.session.commit()
+    link_report_to_access_point(db.session, report, item_id, commit=True)
 
     return ("", 200)
 
