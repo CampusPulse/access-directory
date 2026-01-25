@@ -1105,7 +1105,7 @@ def email_webhook():
 
     return ("", 200)
 
-@app.route("/email_webhook", methods=["POST"])
+@app.route("/webwatcher_hook", methods=["POST"])
 def webwatcher_hook():
     """Webhook for receiving updates about the elevator status spreadsheet from changedetection.io 
 
