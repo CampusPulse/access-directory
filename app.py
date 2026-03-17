@@ -3,7 +3,7 @@ import io
 import subprocess
 from dateutil import parser
 from enum import Enum
-from flask import Flask, render_template, request, redirect, abort, url_for, make_response, session
+from flask import Flask, render_template, request, redirect, abort, url_for, make_response, session, jsonify
 import logging
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import HTTPException
@@ -55,6 +55,7 @@ from dotenv import load_dotenv
 from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
+from openai import OpenAI
 
 
 app = Flask(__name__)
@@ -116,6 +117,11 @@ if auth_configured:
 else:
     logging.info("Auth configuration not available due to missing variables. Ensure all of AUTH0_DOMAIN, CPACCESS_SECRET_KEY, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET are present")
 
+
+# Make sure your OPENAI_API_KEY is in your environment variables
+gptClient = None
+if os.environ.get("OPENAI_API_KEY"):
+    gptClient = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 
 logging.info(f"Connecting to S3 Bucket {app.config['BUCKET_NAME']}")
@@ -1485,6 +1491,7 @@ def edit(id):
             accessPointDetails=getAccessPoint(id),
             accessPointFeedback=getAccessPointFeedback(id),
             tags=getAllTags(),
+            showAIButton=False if gptClient is None else True
         )
     else:
         return render_template("404.html"), 404
@@ -1541,6 +1548,61 @@ def buildingdata():
     resp.headers['Cache-Control'] = f'public,max-age={int(60 * 10080)}'
     return resp
 
+@app.route('/api/alt-text/<image_id>', methods=['POST'])
+def generate_alt_text(image_id):
+
+    if gptClient is None:
+        return jsonify({"error": "No openAI API key configured on server"}), 500
+
+
+    if not image_id:
+        return jsonify({"error": "No imageId provided"}), 400
+
+    image = db.session.execute(db.select(Image).where(Image.id == image_id)).scalar_one_or_none()
+
+    if image is None:
+        return jsonify({"error": "No image found for the given ID"}), 404
+
+
+    image_url = s3_bucket.get_file_s3(path_for_image(image.fullsizehash, ImageType.RESIZED, naming_version=image.naming_version))
+
+    try:
+        response = gptClient.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": (
+                                "Please describe the contents of this image in detail using the format of a11y alt text. "
+                                "If possible, please keep the response length to within three sentences or 50 words. "
+                                "Please try to keep the response scope limited to the primary focuses of the image. "
+                                "Please do not start the response with the phrase 'Alt text' or similar phrases. "
+                                "Only include the actual alt text in the response."
+                            )
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_url,
+                                "detail": "low"  # Saves tokens/money
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=300
+        )
+
+        alt_text = response.choices[0].message.content
+        return jsonify({"altText": alt_text})
+
+    except Exception as e:
+        # Basic error logging
+        print(f"OpenAI Error: {e}")
+        return jsonify({"error": "Failed to generate description"}), 500
 
 ########################
 # region Form submissions
