@@ -1601,7 +1601,7 @@ def generate_alt_text(image_id):
 
     except Exception as e:
         # Basic error logging
-        print(f"OpenAI Error: {e}")
+        app.logger.error(f"OpenAI Error: {e}")
         return jsonify({"error": "Failed to generate description"}), 500
 
 ########################
