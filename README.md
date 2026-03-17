@@ -27,7 +27,20 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 8. Run the app
 9. visit the `/login` page. When prompted, sign up with whatever method you choose
 
+## Configuring AI Features
 
+This app optionally makes use of an OpenAI API key to provide admins with suggested first-pass alt-text for uploaded images.
+
+To make this work:
+1. register for an API key from OpenAI (requires funding the account with at least $5).
+2. generate an API key. The minimal permissions you need if you choose a restricted key are
+   - list models: Read
+   - model capabilities: Request (this will set everything under this section. [Making anything under here more granular breaks things](https://community.openai.com/t/missing-scopes-model-request-on-restricted-api-key/1371602/2))
+   - Files: read
+3. Provide the API key in the environment variables as `OPENAI_API_KEY`
+4. the "generate alt text" button on the edit page should now appear (note this replaces anything that was there before. Its recommended to only use it when theres no existing alt text)
+
+This feature is designed to be very economical, about a couple cents for every half-dozen or so queries.
 
 ## Database Schema
 This project uses SQLAlchemy to access a PostgresQL database. The DB schema is defined in `db.py`
