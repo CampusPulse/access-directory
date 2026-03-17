@@ -48,6 +48,7 @@
                     <input value="{{ accessPointDetails['images'][loop.index-1]['alttext'] }}" type="text" class="form-control" id="alttext-{{ image.id }}" name="alttext">
                     {% if showAIButton %}
                     <button class="btn btn-info" type="button" onclick="autoGenerateAltText('{{ image.id }}')">Generate Alt Text</button>
+                    <button class="btn btn-secondary" type="button" onclick="resetAltText('{{ image.id }}', '{{ accessPointDetails['images'][loop.index-1]['alttext'] }}')">Reset</button>
                     {% endif %}
                 </div>
                 <div class="mb-3">
@@ -218,6 +219,11 @@
         inputField.disabled = false;
       }
     }
+
+    async function resetAltText(imageId, original) {
+        const inputField = document.getElementById('alttext-' + imageId);
+        inputField.value = original;
+      }
 </script>
 {% endif %}
 
