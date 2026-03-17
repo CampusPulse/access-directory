@@ -1549,6 +1549,7 @@ def buildingdata():
     return resp
 
 @app.route('/api/alt-text/<image_id>', methods=['POST'])
+@requires_admin
 def generate_alt_text(image_id):
 
     if gptClient is None:
