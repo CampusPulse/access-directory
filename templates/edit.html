@@ -47,7 +47,7 @@
                     <p class="thin">Write a description of this image in particular. Refer to <a href="https://developers.google.com/tech-writing/accessibility/self-study/write-alt-text#write-useful-text">this article</a> on writing good alt text.</p>
                     <input value="{{ accessPointDetails['images'][loop.index-1]['alttext'] }}" type="text" class="form-control" id="alttext-{{ image.id }}" name="alttext">
                     {% if showAIButton %}
-                    <button class="btn btn-secondary" type="button" onclick="autoGenerateAltText('{{ image.id }}')">Generate Alt Text</button>
+                    <button class="btn btn-info" type="button" onclick="autoGenerateAltText('{{ image.id }}')">Generate Alt Text</button>
                     {% endif %}
                 </div>
                 <div class="mb-3">
