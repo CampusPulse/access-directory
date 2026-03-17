@@ -40,7 +40,7 @@ To make this work:
 3. Provide the API key in the environment variables as `OPENAI_API_KEY`
 4. the "generate alt text" button on the edit page should now appear (note this replaces anything that was there before. Its recommended to only use it when theres no existing alt text)
 
-This feature is designed to be very economical, about a couple cents for every half-dozen or so queries.
+This feature is designed to be very economical, In development, it took 9-10 queries to cost one cent in API credits.
 
 ## Database Schema
 This project uses SQLAlchemy to access a PostgresQL database. The DB schema is defined in `db.py`
