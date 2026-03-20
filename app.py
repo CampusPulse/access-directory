@@ -1156,8 +1156,10 @@ def add_status(item_id):
 
     prior_report = get_item_report(item_id)
     current_report = None
+    previous_report_has_ticket = None
 
-    previous_report_has_ticket = prior_report.ref is not None
+    if prior_report is not None:
+        previous_report_has_ticket = prior_report.ref is not None
 
     if previous_report_has_ticket or category == StatusType.BROKEN:
         current_report = Report()
