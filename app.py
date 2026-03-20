@@ -1161,7 +1161,11 @@ def add_status(item_id):
     if prior_report is not None:
         previous_report_has_ticket = prior_report.ref is not None
 
-    if previous_report_has_ticket or category == StatusType.BROKEN:
+    if prior_report is None or previous_report_has_ticket or category == StatusType.BROKEN:
+        # make a new report if:
+        #   - the last one had a ticket number (manual status is unlikely to have one, so this is prob a different incident/should be tracked separately)
+        #   - the ticket is for something broken (new report flow)
+        #   - there is no prior report 
         current_report = Report()
         db.session.add(current_report)
         db.session.flush()
