@@ -45,7 +45,11 @@
                 <div class="mb-3">
                     <label for="alttext" class="form-label">Alt Text</label>
                     <p class="thin">Write a description of this image in particular. Refer to <a href="https://developers.google.com/tech-writing/accessibility/self-study/write-alt-text#write-useful-text">this article</a> on writing good alt text.</p>
-                    <input value="{{ accessPointDetails['images'][loop.index-1]['alttext'] }}" type="text" class="form-control" id="alttext" name="alttext">
+                    <input value="{{ accessPointDetails['images'][loop.index-1]['alttext'] }}" type="text" class="form-control" id="alttext-{{ image.id }}" name="alttext">
+                    {% if showAIButton %}
+                    <button class="btn btn-info" type="button" onclick="autoGenerateAltText('{{ image.id }}')">Generate Alt Text</button>
+                    <button class="btn btn-secondary" type="button" onclick="resetAltText('{{ image.id }}', '{{ accessPointDetails['images'][loop.index-1]['alttext'] }}')">Reset</button>
+                    {% endif %}
                 </div>
                 <div class="mb-3">
                     <label for="attribution" class="form-label">Attribution</label>
@@ -183,5 +187,44 @@
             </div>
           </div>
 </div>
+{% if showAIButton %}
+<script>
+  async function autoGenerateAltText(imageId) {
+      const inputField = document.getElementById('alttext-'+imageId);
+      const originalPlaceholder = inputField.placeholder;
+
+      // 1. UI Feedback
+      inputField.value = "";
+      inputField.placeholder = "Generating description...";
+      inputField.disabled = true;
+
+      try {
+        const response = await fetch('/api/alt-text/'+imageId, {
+          method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.altText) {
+          // 2. Pre-fill the field
+          inputField.value = data.altText;
+        } else {
+          alert("Error generating alt text: " + (data.error || "Unknown error"));
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        // 3. Reset UI
+        inputField.placeholder = originalPlaceholder;
+        inputField.disabled = false;
+      }
+    }
+
+    async function resetAltText(imageId, original) {
+        const inputField = document.getElementById('alttext-' + imageId);
+        inputField.value = original;
+      }
+</script>
+{% endif %}
 
 {% endblock %}
