@@ -30,4 +30,6 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = []
+dev = [
+    "awscli>=1.44.62",
+]
