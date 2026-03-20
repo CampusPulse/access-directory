@@ -6,3 +6,5 @@ venv/*
 .env
 compose.env
 garage.toml
+
+test.sh
