@@ -1,108 +1,21 @@
 # CampusPulse Access
-
 An interactive catalog of accessibility devices on RIT's campus by maintenance status
 
 This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 
-## Critical Devlopment Setup
 
-### Overview
 
-- Fork the repo and run the following commands in that directory:
-- [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) (if you dont already have it installed)
-- `cp sample.env compose.env`
-- `[podman or docker] compose up` (this starts up the database and garage for S3)
-- `uv run python3 app.py` (this runs the app in development mode)
+## Running Locally
+(Reach out to a maintainer of this repo for credentials for the dev database)
 
-### Detailed Steps
 
-#### Creating the env files
+* Fork the repo and run the following commands in that directory:
+* [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) (if you dont already have it installed)
+* `cp sample.env compose.env`
+* `[podman or docker] compose up` (this starts up the database and minio for S3)
+* `uv run python3 app.py` (this runs the app in development mode)
 
-Run this command to generate a sample garage.toml file in the project root.
-
-```bash
-cat > garage.toml <<EOF
-metadata_dir = "/tmp/meta"
-data_dir = "/tmp/data"
-db_engine = "sqlite"
-
-replication_factor = 1
-
-rpc_bind_addr = "[::]:3901"
-rpc_public_addr = "127.0.0.1:3901"
-rpc_secret = "$(openssl rand -hex 32)"
-
-[s3_api]
-s3_region = "garage"
-api_bind_addr = "[::]:3900"
-root_domain = ".s3.garage.localhost"
-
-[s3_web]
-bind_addr = "[::]:3902"
-root_domain = ".web.garage.localhost"
-index = "index.html"
-
-[k2v_api]
-api_bind_addr = "[::]:3904"
-
-[admin]
-api_bind_addr = "[::]:3903"
-admin_token = "$(openssl rand -base64 32)"
-metrics_token = "$(openssl rand -base64 32)"
-EOF
-```
-
-#### Create a test.sh file in project directory for extra environment variables
-
-```bash
-#!/usr/bin/env bash
-
-export DBNAME=campuspulse
-export DBUSER=campuspulse
-export DBPWD=DBPWD
-export DBHOST=localhost
-export S3_URL=http://localhost:3900
-export S3_KEY=S3_KEY
-export S3_SECRET=S3_SECRET
-export BUCKET_NAME=campuspulse
-export JSON_LOGS=false
-
-export CPACCESS_SECRET_KEY=INSERT_RANDOM_STRING
-export AUTH0_CLIENT_ID=AUTH0_CLIENT_ID
-export AUTH0_CLIENT_SECRET=AUTH0_CLIENT_SECRET
-export AUTH0_DOMAIN=mytenant.us.auth0.com
-```
-
-#### Create the compose.env file in the root project directory
-```
-GARAGE_ACCESS_KEY_ID=admin
-GARAGE_SECRET_ACCESS_KEY=
-POSTGRES_USER=campuspulse
-POSTGRES_PASSWORD=
-```
-
-#### Inserting Proper Environment Variables
-
-1. cp `sample.env` to `compose.env`
-2. Run `uv run`
-3. Run `docker compose up`
-4. For following steps, in another shell while docker container is up, run `docker exec -it tunnelvision_garage /garage status`. You should see proper status output without any errors.
-5. Run `docker exec -it tunnelvision_garage /garage layout assign -z dc1 -c 1G <NODE_ID>`. Replace <NODE_ID> with the ID in the previous step which is in the first column of output.
-6. Run `docker exec -it tunnelvision_garage /garage layout apply --version 1` to apply the partition assignment.
-7. Run `docker exec -it tunnelvision_garage /garage bucket create campuspulse-access` to create the bucket.
-8. Run `docker exec -it tunnelvision_garage /garage key create campuspulse-access-key` to create the access key.
-9. The Key ID and Secret Key should be listed in previous step output. Insert the `Key ID` as the `S3_KEY` and the `Secret key` as the `S3_Secret` in the test.sh file.
-10. Run `docker exec -it tunnelvision_garage /garage bucket allow  --read  --write  --owner  campuspulse-access  --key campuspulse-access-key` so the bucket allows the key.
-11. Create a random pass key and insert it in `compose.env` as the `POSTGRES_PASSWORD` and `DBPWD` in test.sh.
-12. Create a random pass key and insert it in `compose.env` as the `GARAGE_SECRET_ACCESS_KEY`.
-13. Create a random string and insert it in `test.sh` as the `CPACCESS_SECRET_KEY`.
-14. Run `source test.sh` to load the new environment variables.
-15. Run `uv run python3 app.py`
-16. You should now have the development server running on localhost:8080 now!
-
-## Additional Information (Production Info)
-
-### Configuring Auth
+## Configuring Auth
 
 1. Create an auth0 tenant
 2. create an application (type: Regular Web Application)
@@ -140,8 +53,7 @@ to create a new revision:
 to upgrade your schema:
 `uv run flask db upgrade`
 
-### Docker Infrastructure:
-
+## Docker Infrastructure:
 The docker compose config in this repository is intended to provide a small/simple suite of services for TunnelVision to rely on. This is for development and testing purposes.
 
 To use this suite:
@@ -149,12 +61,11 @@ To use this suite:
 1. create a file called `compose.env` in the root of the repository. Use the following template to get started:
 
 ```
-GARAGE_ACCESS_KEY_ID=
-GARAGE_SECRET_ACCESS_KEY=
+MINIO_ROOT_USER=
+MINIO_ROOT_PASSWORD=
 POSTGRES_USER=
 POSTGRES_PASSWORD=
 ```
-
 2. fill in appropriate values
 3. `docker compose up`
 4. navigate to http://localhost:9001, log in with the root credentials for minio specified above, add create a bucket for TunnelVision
@@ -167,6 +78,8 @@ POSTGRES_PASSWORD=
    - DB user and password: whatever you set in `compose.env` for postgres
    - DB name: should match the db user by default
 
+
+
 ## Running in prod
 
-The app will assume you are using a proxy or some other tool to ensure the application is accessible via HTTPS (https urls are provided as callback and logout urls to auth0).
+The app will assume you are using a proxy or some other tool to ensure the application is accessible via HTTPS (https urls are provided as callback and logout urls to auth0)
