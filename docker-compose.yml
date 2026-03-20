@@ -6,8 +6,8 @@ services:
     container_name: tunnelvision_garage
     env_file: "compose.env"
     ports:
-      - "3900:3900"
-      - "3901:3901"
+      - "3900:3900" # garage HTTP API endpoint
+      - "3901:3901" # garage metrics/health endpoint
     volumes:
       - garage-data:/data
       - garage-meta:/meta
