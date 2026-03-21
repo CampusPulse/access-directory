@@ -90,9 +90,7 @@ logging.info("Starting up...")
 git_cmd = ["git", "rev-parse", "--short", "HEAD"]
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode("utf-8").rstrip()
 
-auth_configured = is_auth_configured()
-
-if auth_configured:
+if is_auth_configured():
     # Auth Setup
     app.secret_key = os.environ.get("CPACCESS_SECRET_KEY")
 
@@ -932,7 +930,7 @@ def access_point(id):
 #
 ########################
 
-if auth_configured:
+if is_auth_configured():
     @app.route("/callback", methods=["GET", "POST"])
     def callback():
         token = oauth.auth0.authorize_access_token()
