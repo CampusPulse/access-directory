@@ -56,6 +56,7 @@ from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation,
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from openai import OpenAI
+from auth0service import is_auth_configured
 
 
 app = Flask(__name__)
@@ -89,12 +90,7 @@ logging.info("Starting up...")
 git_cmd = ["git", "rev-parse", "--short", "HEAD"]
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode("utf-8").rstrip()
 
-auth_configured = not None in [
-    os.environ.get("AUTH0_DOMAIN"),
-    os.environ.get("CPACCESS_SECRET_KEY"),
-    os.environ.get("AUTH0_CLIENT_ID"),
-    os.environ.get("AUTH0_CLIENT_SECRET")
-]
+auth_configured = is_auth_configured()
 
 if auth_configured:
     # Auth Setup
