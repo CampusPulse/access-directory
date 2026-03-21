@@ -1492,6 +1492,8 @@ def edit(id):
     if checkAccessPointExists(id):
         return render_template(
             "edit.html",
+            authsession=get_logged_in_user(debug_mode=app.debug),
+            is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
             accessPointDetails=getAccessPoint(id),
             accessPointFeedback=getAccessPointFeedback(id),
             tags=getAllTags(),
