@@ -110,6 +110,10 @@ if is_auth_configured():
 
 else:
     logging.info("Auth configuration not available due to missing variables. Ensure all of AUTH0_DOMAIN, CPACCESS_SECRET_KEY, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET are present")
+    logging.info("To use admin mode features without configuring, run in debug mode.")
+
+    if app.debug:
+        logging.info("You are currently in debug mode")
 
 
 # Make sure your OPENAI_API_KEY is in your environment variables
