@@ -71,9 +71,6 @@ export BUCKET_NAME=campuspulse
 export JSON_LOGS=false
 
 export CPACCESS_SECRET_KEY=CPACCESS_SECRET_KEY
-export AUTH0_CLIENT_ID=AUTH0_CLIENT_ID
-export AUTH0_CLIENT_SECRET=AUTH0_CLIENT_SECRET
-export AUTH0_DOMAIN=mytenant.us.auth0.com
 ```
 
 8. Create a random string and insert it in `test.sh` as the `CPACCESS_SECRET_KEY`.
