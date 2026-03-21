@@ -54,7 +54,7 @@ POSTGRES_USER=campuspulse
 POSTGRES_PASSWORD=
 ```
 
-6. Create a random pass key and insert it in `compose.env` as the `GARAGE_SECRET_ACCESS_KEY`.
+6. Create a random pass key and insert it in `compose.env` as the `GARAGE_SECRET_ACCESS_KEY`. Use [BitWarden Password Manager](https://bitwarden.com/password-generator/).
 
 7. Create a test.sh file in the root project directory:
 ```bash
