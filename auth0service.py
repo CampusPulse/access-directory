@@ -1,5 +1,10 @@
 import os 
 
+DEBUG_MODE_USERINFO = {
+	"name": "DEVELOPER",
+	"sub": "debug:1234567890"
+}
+
 def is_auth_configured() -> bool:
 	"""Whether auth is configured to run in production mode
 	"""
