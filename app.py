@@ -52,10 +52,11 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from openai import OpenAI
+from auth0service import is_auth_configured, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info
 
 
 app = Flask(__name__)
@@ -89,14 +90,7 @@ logging.info("Starting up...")
 git_cmd = ["git", "rev-parse", "--short", "HEAD"]
 app.config["GIT_REVISION"] = subprocess.check_output(git_cmd).decode("utf-8").rstrip()
 
-auth_configured = not None in [
-    os.environ.get("AUTH0_DOMAIN"),
-    os.environ.get("CPACCESS_SECRET_KEY"),
-    os.environ.get("AUTH0_CLIENT_ID"),
-    os.environ.get("AUTH0_CLIENT_SECRET")
-]
-
-if auth_configured:
+if is_auth_configured():
     # Auth Setup
     app.secret_key = os.environ.get("CPACCESS_SECRET_KEY")
 
@@ -116,6 +110,10 @@ if auth_configured:
 
 else:
     logging.info("Auth configuration not available due to missing variables. Ensure all of AUTH0_DOMAIN, CPACCESS_SECRET_KEY, AUTH0_CLIENT_ID, AUTH0_CLIENT_SECRET are present")
+    logging.info("To use admin mode features without configuring, run in debug mode.")
+
+    if app.debug:
+        logging.info("You are currently in debug mode")
 
 
 # Make sure your OPENAI_API_KEY is in your environment variables
@@ -836,8 +834,8 @@ def home():
 def about():
     return render_template("about.html",
         pageTitle="About CampusPulse Access",
-        authsession=get_logged_in_user(),
-        is_admin = check_for_admin_role(get_logged_in_user_id())
+        authsession=get_logged_in_user(debug_mode=app.debug),
+        is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug))
     )
 
 
@@ -845,16 +843,16 @@ def about():
 def fmsreport():
     return render_template("fmsreport.html",
         pageTitle="Reporting to the RIT Service Center",
-        authsession=get_logged_in_user(),
-        is_admin = check_for_admin_role(get_logged_in_user_id())
+        authsession=get_logged_in_user(debug_mode=app.debug),
+        is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug))
     )
 
 
 @app.route("/map")
 def map_page():
     return render_template("map.html",
-        authsession=get_logged_in_user(),
-        is_admin = check_for_admin_role(get_logged_in_user_id())
+        authsession=get_logged_in_user(debug_mode=app.debug),
+        is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug))
         )
 
 
@@ -866,8 +864,8 @@ def catalog():
         if page is None:
             return render_template(
             "catalog.html",
-            authsession=get_logged_in_user(),
-            is_admin = check_for_admin_role(get_logged_in_user_id()),
+            authsession=get_logged_in_user(debug_mode=app.debug),
+            is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
             q=query,
             page=1,
             accessPoints=getAccessPointsPaginated(0),
@@ -877,16 +875,16 @@ def catalog():
             page = int(page)
             return render_template(
                 "paginated.html",
-                authsession=get_logged_in_user(),
-                is_admin = check_for_admin_role(get_logged_in_user_id()),
+                authsession=get_logged_in_user(debug_mode=app.debug),
+                is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
                 page=(page+1),
                 murals=getAccessPointsPaginated(page)
             )
     else:
         return render_template(
             "filtered.html",
-            authsession=get_logged_in_user(),
-            is_admin = check_for_admin_role(get_logged_in_user_id()),
+            authsession=get_logged_in_user(debug_mode=app.debug),
+            is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
             pageTitle=f"Query - {query}",
             subHeading="Search Query",
             q=query,
@@ -919,10 +917,10 @@ def access_point(id):
     if not checkAccessPointExists(id):
         return render_template("404.html"), 404
     
-    is_admin = check_for_admin_role(get_logged_in_user_id())
+    is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug))
     return render_template(
         "access_point.html", 
-        authsession=get_logged_in_user(),
+        authsession=get_logged_in_user(debug_mode=app.debug),
         is_admin=is_admin,
         accessPointDetails=getAccessPoint(id, is_admin=is_admin)
         
@@ -936,7 +934,7 @@ def access_point(id):
 #
 ########################
 
-if auth_configured:
+if is_auth_configured():
     @app.route("/callback", methods=["GET", "POST"])
     def callback():
         token = oauth.auth0.authorize_access_token()
@@ -1001,7 +999,7 @@ def requires_admin(f):
     """
     @wraps(f)
     def decorated(*args, **kwargs):
-        user = get_logged_in_user_id()
+        user = get_logged_in_user_id(debug_mode=app.debug)
         is_admin = check_for_admin_role(user)
 
         if user is None:
@@ -1155,7 +1153,7 @@ def add_status(item_id):
     status_text = request.form.get("status")
     note_text = request.form.get("note")
     category = StatusType(int(request.form.get("category")))
-    author = get_logged_in_user_info()
+    author = get_logged_in_user_info(debug_mode=app.debug)
     author_identifier = f" - manually added by {author['name']} ({author['sub']}) via web UI"
 
     note_text += author_identifier
@@ -1494,6 +1492,8 @@ def edit(id):
     if checkAccessPointExists(id):
         return render_template(
             "edit.html",
+            authsession=get_logged_in_user(debug_mode=app.debug),
+            is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
             accessPointDetails=getAccessPoint(id),
             accessPointFeedback=getAccessPointFeedback(id),
             tags=getAllTags(),
@@ -1511,8 +1511,8 @@ def admin():
     """
     return render_template(
         "admin.html",
-        authsession=get_logged_in_user(),
-        is_admin = check_for_admin_role(get_logged_in_user_id()),
+        authsession=get_logged_in_user(debug_mode=app.debug),
+        is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
         tags=getAllTags(),
         formData=formFieldData(),
         accessPoints=getAllAccessPoints(),
