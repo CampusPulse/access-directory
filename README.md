@@ -84,7 +84,14 @@ export AUTH0_DOMAIN=mytenant.us.auth0.com
 
 11. S3 Key Setup (in another shell)
   * Run `docker exec -it tunnelvision_garage /garage status`.
-    * You should see proper status output without any errors.
+    * You should see proper status output without any errors. Example is shown below:
+  ```
+  2026-03-21T23:32:34.362800Z  INFO garage_net::netapp: Connected to 127.0.0.1:3901, negotiating handshake...
+  2026-03-21T23:32:34.404931Z  INFO garage_net::netapp: Connection established to 6ec135b139310866
+  ==== HEALTHY NODES ====
+  ID                Hostname      Address         Tags  Zone  Capacity          DataAvail  Version
+  6ec135b139310866  eb638945d04b  127.0.0.1:3901              NO ROLE ASSIGNED             v2.2.0
+  ```
   
   * Run `docker exec -it tunnelvision_garage /garage layout assign -z dc1 -c 1G <NODE_ID>`.
     * Replace <NODE_ID> with the ID in the previous step which is in the first column of output.
