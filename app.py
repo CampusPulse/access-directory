@@ -834,8 +834,8 @@ def home():
 def about():
     return render_template("about.html",
         pageTitle="About CampusPulse Access",
-        authsession=get_logged_in_user(),
-        is_admin = check_for_admin_role(get_logged_in_user_id())
+        authsession=get_logged_in_user(debug_mode=app.debug),
+        is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug))
     )
 
 
@@ -843,16 +843,16 @@ def about():
 def fmsreport():
     return render_template("fmsreport.html",
         pageTitle="Reporting to the RIT Service Center",
-        authsession=get_logged_in_user(),
-        is_admin = check_for_admin_role(get_logged_in_user_id())
+        authsession=get_logged_in_user(debug_mode=app.debug),
+        is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug))
     )
 
 
 @app.route("/map")
 def map_page():
     return render_template("map.html",
-        authsession=get_logged_in_user(),
-        is_admin = check_for_admin_role(get_logged_in_user_id())
+        authsession=get_logged_in_user(debug_mode=app.debug),
+        is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug))
         )
 
 
@@ -864,8 +864,8 @@ def catalog():
         if page is None:
             return render_template(
             "catalog.html",
-            authsession=get_logged_in_user(),
-            is_admin = check_for_admin_role(get_logged_in_user_id()),
+            authsession=get_logged_in_user(debug_mode=app.debug),
+            is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
             q=query,
             page=1,
             accessPoints=getAccessPointsPaginated(0),
@@ -875,16 +875,16 @@ def catalog():
             page = int(page)
             return render_template(
                 "paginated.html",
-                authsession=get_logged_in_user(),
-                is_admin = check_for_admin_role(get_logged_in_user_id()),
+                authsession=get_logged_in_user(debug_mode=app.debug),
+                is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
                 page=(page+1),
                 murals=getAccessPointsPaginated(page)
             )
     else:
         return render_template(
             "filtered.html",
-            authsession=get_logged_in_user(),
-            is_admin = check_for_admin_role(get_logged_in_user_id()),
+            authsession=get_logged_in_user(debug_mode=app.debug),
+            is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
             pageTitle=f"Query - {query}",
             subHeading="Search Query",
             q=query,
@@ -917,10 +917,10 @@ def access_point(id):
     if not checkAccessPointExists(id):
         return render_template("404.html"), 404
     
-    is_admin = check_for_admin_role(get_logged_in_user_id())
+    is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug))
     return render_template(
         "access_point.html", 
-        authsession=get_logged_in_user(),
+        authsession=get_logged_in_user(debug_mode=app.debug),
         is_admin=is_admin,
         accessPointDetails=getAccessPoint(id, is_admin=is_admin)
         
@@ -999,7 +999,7 @@ def requires_admin(f):
     """
     @wraps(f)
     def decorated(*args, **kwargs):
-        user = get_logged_in_user_id()
+        user = get_logged_in_user_id(debug_mode=app.debug)
         is_admin = check_for_admin_role(user)
 
         if user is None:
@@ -1153,7 +1153,7 @@ def add_status(item_id):
     status_text = request.form.get("status")
     note_text = request.form.get("note")
     category = StatusType(int(request.form.get("category")))
-    author = get_logged_in_user_info()
+    author = get_logged_in_user_info(debug_mode=app.debug)
     author_identifier = f" - manually added by {author['name']} ({author['sub']}) via web UI"
 
     note_text += author_identifier
@@ -1509,8 +1509,8 @@ def admin():
     """
     return render_template(
         "admin.html",
-        authsession=get_logged_in_user(),
-        is_admin = check_for_admin_role(get_logged_in_user_id()),
+        authsession=get_logged_in_user(debug_mode=app.debug),
+        is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
         tags=getAllTags(),
         formData=formFieldData(),
         accessPoints=getAllAccessPoints(),
