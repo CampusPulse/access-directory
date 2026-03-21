@@ -225,7 +225,14 @@ def get_auth0_user_roles(user_id):
 def check_for_admin_role(user_id):
     if user_id is None:
         return False
-    
+
+    # this function is always passed the result of get_logged_in_user_id()
+    # (yeah theyre badly structured i know)
+    # and that function gets given a dev mode value, so it wouldnt make sense to have to pass it in here too. Therefore we basically check whether the user id matches
+    # the hardcoded developer user id
+    if (not is_auth_configured()) and user_id == DEBUG_MODE_USERINFO.get("sub"):
+        return True
+
     roles_json = get_auth0_user_roles(user_id)
     # current_app.logger.info(roles_json)
     for r in roles_json:
