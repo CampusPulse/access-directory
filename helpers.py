@@ -4,6 +4,8 @@ from dateutil import parser
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 
+from auth0service import is_auth_configured, DEBUG_MODE_USERINFO
+
 from flask import session
 import requests
 import os
@@ -232,18 +234,23 @@ def check_for_admin_role(user_id):
             return True
     return False
 
-def get_logged_in_user():
-    return session.get("user")
+def get_logged_in_user(debug_mode=False):
+    if is_auth_configured():
+        return session.get("user")
+    elif debug_mode:
+        return {
+            "userinfo": DEBUG_MODE_USERINFO
+        }
 
-def get_logged_in_user_info():
-    user = get_logged_in_user()
+def get_logged_in_user_info(debug_mode=False):
+    user = get_logged_in_user(debug_mode=debug_mode)
     userinfo = None
     if user is not None:
         userinfo = user.get("userinfo")
     return userinfo
 
-def get_logged_in_user_id():
-    userinfo = get_logged_in_user_info()
+def get_logged_in_user_id(debug_mode=False):
+    userinfo = get_logged_in_user_info(debug_mode=debug_mode)
     if userinfo is not None:
         return userinfo.get("sub")
 
