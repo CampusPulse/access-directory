@@ -80,8 +80,9 @@ export CPACCESS_SECRET_KEY=CPACCESS_SECRET_KEY
 10. `[podman or docker] compose up` (this starts up the database and garage for S3)
 
 11. S3 Key Setup (in another shell)
-  * Run `docker exec -it tunnelvision_garage /garage status`.
-    * You should see proper status output without any errors. Example is shown below:
+  * We need to confirm that indeed our garage is running correctly.
+    * To do this run `docker exec -it tunnelvision_garage /garage status`.
+    * You should see something similar to the output below:
   ```
   2026-03-21T23:32:34.362800Z  INFO garage_net::netapp: Connected to 127.0.0.1:3901, negotiating handshake...
   2026-03-21T23:32:34.404931Z  INFO garage_net::netapp: Connection established to 6ec135b139310866
@@ -89,27 +90,30 @@ export CPACCESS_SECRET_KEY=CPACCESS_SECRET_KEY
   ID                Hostname      Address         Tags  Zone  Capacity          DataAvail  Version
   6ec135b139310866  eb638945d04b  127.0.0.1:3901              NO ROLE ASSIGNED             v2.2.0
   ```
-  
-  * Run `docker exec -it tunnelvision_garage /garage layout assign -z dc1 -c 1G <NODE_ID>`.
+  * We need to create a cluster layout for garage. We need to inform garage of the disk space available on each cluster `-c` and the name of the zone for the node `-z`
+    * Run `docker exec -it tunnelvision_garage /garage layout assign -z dc1 -c 1G <NODE_ID>`.
     * Replace <NODE_ID> with the ID in the previous step which is in the first column of output.
+    * This will have one node with a zone named `dc1` with a capacity of `1G` or one Gigabyte.
   
-  * Run `docker exec -it tunnelvision_garage /garage layout apply --version 1`.
-    * This applies the partition assignment.
+  * Now we need to actually apply the changes we just specified in the previous step.
+    * Run `docker exec -it tunnelvision_garage /garage layout apply --version 1`.
+    * This will apply our changes with an initial version of 1.
   
-  * Run `docker exec -it tunnelvision_garage /garage bucket create campuspulse-access`.
-    * This creates the bucket.
+  * Now we need to create a bucket which can be accessed with a key.
+    * Run `docker exec -it tunnelvision_garage /garage bucket create campuspulse-access`.
+    * This will create a new bucket to store the catalog data in.
   
-  * Run `docker exec -it tunnelvision_garage /garage key create campuspulse-access-key`.
-    * This creates the access key.
+  * Now we need to create the key for the bucket.
+    * Run `docker exec -it tunnelvision_garage /garage key create campuspulse-access-key`.
+    * This will create a key which we can use to access the bucket.
   
   * The Key ID and Secret Key should be listed in previous step output. Insert the `Key ID` as the `S3_KEY` and the `Secret key` as the `S3_SECRET` in the test.sh file.
   
-  * Run `docker exec -it tunnelvision_garage /garage bucket allow  --read  --write  --owner  campuspulse-access  --key campuspulse-access-key`.
-    *  This makes it so the bucket allows the key.
-  
-  * Run `source test.sh` to load the new environment variables.
+  * Before we can run the app, we need to actually assign the key we just created to the bucket we created.
+    * Run `docker exec -it tunnelvision_garage /garage bucket allow  --read  --write  --owner  campuspulse-access  --key campuspulse-access-key`.
+    *  This makes it so the bucket uses the key we created.
 
-12. `uv run python3 app.py` (this runs the app in development mode)
+12. Run `source test.sh` to load the new environment variables. Then run `uv run python3 app.py` (this runs the app in development mode).
 
 13. You should now have the development server running on localhost:8080 now!
 
