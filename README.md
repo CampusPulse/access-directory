@@ -69,6 +69,7 @@ export S3_KEY=S3_KEY
 export S3_SECRET=S3_SECRET
 export BUCKET_NAME=campuspulse
 export JSON_LOGS=false
+export DEBUG=true
 
 export CPACCESS_SECRET_KEY=CPACCESS_SECRET_KEY
 ```
@@ -115,7 +116,7 @@ export CPACCESS_SECRET_KEY=CPACCESS_SECRET_KEY
 
 12. Run `source test.sh` to load the new environment variables. Then run `uv run python3 app.py` (this runs the app in development mode).
 
-13. You should now have the development server running on localhost:8080 now!
+13. You should now have the development server running on localhost:5000 now!
 
 ## Configuring Auth
 
