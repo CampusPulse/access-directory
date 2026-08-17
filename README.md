@@ -12,7 +12,7 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 * Fork the repo and run the following commands in that directory:
 * [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) (if you dont already have it installed)
 * `cp sample.env compose.env`
-* `[podman or docker] compose up` (this starts up the database and minio for S3)
+* `[podman or docker] compose up` (this starts up the database and silo for S3)
 * `uv run python3 app.py` (this runs the app in development mode)
 
 ## Configuring Auth
@@ -58,19 +58,13 @@ The docker compose config in this repository is intended to provide a small/simp
 
 To use this suite:
 
-1. create a file called `compose.env` in the root of the repository. Use the following template to get started:
-
-```
-MINIO_ROOT_USER=
-MINIO_ROOT_PASSWORD=
-POSTGRES_USER=
-POSTGRES_PASSWORD=
-```
+1. create a file called `compose.env` in the root of the repository. To get started you can make a copy of `sample.env`
 2. fill in appropriate values
 3. `docker compose up`
-4. navigate to http://localhost:9001, log in with the root credentials for minio specified above, add create a bucket for TunnelVision
-5. while still in the minio console, navigate to "access keys" on the left and create an access key and secret for tunnelvision to use.
-6. Provide the the information to TunnelVision
+4. navigate to http://localhost:9001, log in with the root credentials for silo specified above, add create a bucket for CampusPulse Access
+5. while still in the silo console, navigate to "users" on the left and create a user for the application to use. select `tablesReadWrite` for permissions
+6. edit the user you just created and under "Service accounts" create an access key and secret for tunnelvision to use.
+7. Provide the the information to TunnelVision
    - S3 url: `http://localhost:9000`
    - the s3 secret and key you generated
    - S3 bucket name: whatever you created
@@ -83,3 +77,5 @@ POSTGRES_PASSWORD=
 ## Running in prod
 
 The app will assume you are using a proxy or some other tool to ensure the application is accessible via HTTPS (https urls are provided as callback and logout urls to auth0)
+
+in prod, the app runs from docker, so the S3 URL should be  `http://silo:9000` instead of the `localhost` address above 
