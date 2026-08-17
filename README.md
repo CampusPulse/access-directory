@@ -11,9 +11,9 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 
 2. [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) (if you dont already have it installed)
 
-3. `cp sample.env compose.env`
+3. `cp sample.env compose.env`. All the values that are in all caps will be replaced as a result of following these instructions
 
-4. Create a garage.toml file by running this command in bash:
+4. Create a `garage.toml` file by running this command in bash:
 ```bash
 cat > garage.toml <<EOF
 metadata_dir = "/tmp/meta"
@@ -46,41 +46,17 @@ metrics_token = "$(openssl rand -base64 32)"
 EOF
 ```
 
-5. Create the compose.env file in the root project directory:
-```
-GARAGE_ACCESS_KEY_ID=admin
-GARAGE_SECRET_ACCESS_KEY=
-POSTGRES_USER=campuspulse
-POSTGRES_PASSWORD=
-```
+<!-- 5. Create a random pass key and insert it in `compose.env` as the `GARAGE_SECRET_ACCESS_KEY`. Use [BitWarden Password Manager](https://bitwarden.com/password-generator/). -->
 
-6. Create a random pass key and insert it in `compose.env` as the `GARAGE_SECRET_ACCESS_KEY`. Use [BitWarden Password Manager](https://bitwarden.com/password-generator/).
+5. Create a random string and insert it in `compose.env` as the `CPACCESS_SECRET_KEY`. *This may not be needed unless youre configuring auth, but just make something up to be safe*
 
-7. Create a test.sh file in the root project directory:
-```bash
-#!/usr/bin/env bash
+6. Create a random password and insert it into `compose.env` as the value for `POSTGRES_PASSWORD` and `DBPWD`.
 
-export DBNAME=campuspulse
-export DBUSER=campuspulse
-export DBPWD=DBPWD
-export DBHOST=localhost
-export S3_URL=http://localhost:3900
-export S3_KEY=S3_KEY
-export S3_SECRET=S3_SECRET
-export BUCKET_NAME=campuspulse
-export JSON_LOGS=false
-export DEBUG=true
+7.  `[podman or docker] compose up` (this starts up the database and garage for S3)
 
-export CPACCESS_SECRET_KEY=CPACCESS_SECRET_KEY
-```
+8.  First time S3 Key Setup (in another shell)
+  * This sets up S3 for the first time. As long as the `garage-data` docker volume is not deleted this should not need to be repeated. 
 
-8. Create a random string and insert it in `test.sh` as the `CPACCESS_SECRET_KEY`.
-
-9. Create a random pass key and insert it in `compose.env` as the `POSTGRES_PASSWORD` and `DBPWD` in test.sh.
-
-10. `[podman or docker] compose up` (this starts up the database and garage for S3)
-
-11. S3 Key Setup (in another shell)
   * We need to confirm that indeed our garage is running correctly.
     * To do this run `docker exec -it tunnelvision_garage /garage status`.
     * You should see something similar to the output below:
@@ -108,15 +84,15 @@ export CPACCESS_SECRET_KEY=CPACCESS_SECRET_KEY
     * Run `docker exec -it tunnelvision_garage /garage key create campuspulse-access-key`.
     * This will create a key which we can use to access the bucket.
   
-  * The Key ID and Secret Key should be listed in previous step output. Insert the `Key ID` as the `S3_KEY` and the `Secret key` as the `S3_SECRET` in the test.sh file.
+  * The Key ID and Secret Key should be listed in previous step output. Insert the `Key ID` as the `S3_KEY` and the `Secret key` as the `S3_SECRET` in the `compose.env` file.
   
   * Before we can run the app, we need to actually assign the key we just created to the bucket we created.
     * Run `docker exec -it tunnelvision_garage /garage bucket allow  --read  --write  --owner  campuspulse-access  --key campuspulse-access-key`.
     *  This makes it so the bucket uses the key we created.
 
-12. Run `source test.sh` to load the new environment variables. Then run `uv run python3 app.py` (this runs the app in development mode).
+1. Run `source compose.env` to load the new environment variables. Then run `uv run python3 app.py` (this runs the app in development mode).
 
-13. You should now have the development server running on localhost:5000 now!
+2.  You should now have the development server running on localhost:5000 now!
 
 ## Configuring Auth
 
