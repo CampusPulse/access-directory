@@ -11,8 +11,9 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 
 * Fork the repo and run the following commands in that directory:
 * [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) (if you dont already have it installed)
-* `cp sample.env compose.env`
-* `[podman or docker] compose up` (this starts up the database and silo for S3)
+* run the docker infrastructure (see the [Docker Infrastructure](#docker-infrastructure) section) to run the data storage layers
+* if you choose to, [Configure Auth](#configuring-auth). We are working on making this not required
+* run `source compose.env` to ensure your application variables are available to the app
 * `uv run python3 app.py` (this runs the app in development mode)
 
 ## Configuring Auth
@@ -54,28 +55,32 @@ to upgrade your schema:
 `uv run flask db upgrade`
 
 ## Docker Infrastructure:
-The docker compose config in this repository is intended to provide a small/simple suite of services for TunnelVision to rely on. This is for development and testing purposes.
+The docker compose config in this repository is intended to provide a small/simple suite of services for CampusPulse Access to rely on. This is for development and testing purposes.
 
 To use this suite:
 
 1. create a file called `compose.env` in the root of the repository. To get started you can make a copy of `sample.env`
-2. fill in appropriate values
+2. fill in appropriate values for the first section:
+   1. create random passwords for `MINIO_ROOT_PASSWORD` (admin ui login) and `POSTGRES_PASSWORD`. We recommend using the [BitWarden Password Generator](https://bitwarden.com/password-generator/)
+   2. decide on the name you want to use for your database user (and potentially also the s3 bucket, they dont have to be the same). Something like `campuspulseaccess` works. 
 3. `docker compose up`
-4. navigate to http://localhost:9001, log in with the root credentials for silo specified above, add create a bucket for CampusPulse Access
-5. while still in the silo console, navigate to "users" on the left and create a user for the application to use. select `tablesReadWrite` for permissions
-6. edit the user you just created and under "Service accounts" create an access key and secret for tunnelvision to use.
-7. Provide the the information to TunnelVision
+4. navigate to http://localhost:9001, log in with the root credentials for silo that you specified above.
+5. create a bucket for CampusPulse Access named according to what you selected earlier
+6. while still in the silo console, navigate to "users" on the left and create a user for the application to use. select `tablesReadWrite` for permissions
+7. edit the user you just created and under "Service accounts" create an access key and secret for CampusPulse Access to use.
+8. Provide the the information to CampusPulse Access by filling in the middle section of the config
    - S3 url: `http://localhost:9000`
    - the s3 secret and key you generated
    - S3 bucket name: whatever you created
    - database host: `localhost`
    - DB user and password: whatever you set in `compose.env` for postgres
    - DB name: should match the db user by default
-
+9. Leave the `docker compose up` running. This provides the database and S3 for the app to connect to
 
 
 ## Running in prod
 
 The app will assume you are using a proxy or some other tool to ensure the application is accessible via HTTPS (https urls are provided as callback and logout urls to auth0)
 
-in prod, the app runs from docker, so the S3 URL should be  `http://silo:9000` instead of the `localhost` address above 
+In prod, the app runs from docker, so the S3 URL should be  `http://silo:9000` instead of the `localhost` address above.
+database host for prod will likely be `db` (the name of that docker service)
