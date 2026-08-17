@@ -56,6 +56,7 @@ from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation,
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from openai import OpenAI
+from config import DefaultConfig
 
 
 app = Flask(__name__)
@@ -66,16 +67,12 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # loading variables from .env file
-load_dotenv()
+load_dotenv("compose.env")
 
 
 logging.info("Starting up...")
 
-configpath = Path("config.py")
-if configpath.exists():
-    app.config.from_pyfile(configpath)
-else:
-    app.config.from_pyfile(Path("config.env.py"))
+app.config.from_object(DefaultConfig())
 
 
 if app.config["JSON_LOGS"] is True:
@@ -124,20 +121,20 @@ if os.environ.get("OPENAI_API_KEY"):
     gptClient = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 
-logging.info(f"Connecting to S3 Bucket {app.config['BUCKET_NAME']}")
+logging.info(f"Connecting to S3 Bucket {os.environ.get('BUCKET_NAME')}")
 
 s3_bucket = S3Bucket(
-    app.config["BUCKET_NAME"],
-    app.config["S3_KEY"],
-    app.config["S3_SECRET"],
-    app.config["S3_URL"],
+    os.environ.get("BUCKET_NAME"),
+    os.environ.get("S3_KEY"),
+    os.environ.get("S3_SECRET"),
+    os.environ.get("S3_URL"),
 )
 
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    f'postgresql://{app.config["DBUSER"]}:{app.config["DBPWD"]}@{app.config["DBHOST"]}:{app.config["DBPORT"]}/{app.config["DBNAME"]}'
+    f'postgresql://{os.environ.get("DBUSER")}:{os.environ.get("DBPWD")}@{os.environ.get("DBHOST")}:{os.environ.get("DBPORT", "5432")}/{os.environ.get("DBNAME")}'
 )
 
-logging.info(f"Connecting to DB {app.config['DBNAME']}")
+logging.info(f"Connecting to DB {os.environ.get('DBNAME')}")
 db.init_app(app)
 
 migrate = Migrate(app, db)
