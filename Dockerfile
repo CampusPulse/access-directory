@@ -3,7 +3,7 @@ FROM python:3.10-slim
 # git is needed for getting the repo commit
 RUN apt-get update && apt-get install -y git libmagic1
 
-COPY --from=ghcr.io/astral-sh/uv:0.4.9 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.10.11 /uv /bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
 ENV UV_PROJECT_ENVIRONMENT=/app/venv
@@ -12,6 +12,8 @@ ENV UV_PROJECT_ENVIRONMENT=/app/venv
 # Set the working directory in the container
 # pipenv doesnt want to be run as root
 RUN useradd -ms /bin/bash campuspulse
+RUN mkdir /app
+RUN chown -R campuspulse /app
 USER campuspulse
 WORKDIR /app
 

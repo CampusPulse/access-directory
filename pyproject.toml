@@ -28,3 +28,8 @@ dependencies = [
     "sqlalchemy==2.0.29",
     "werkzeug==3.0.1",
 ]
+
+[dependency-groups]
+dev = [
+    "awscli>=1.44.62",
+]

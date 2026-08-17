@@ -6,14 +6,93 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 
 
 ## Running Locally
-(Reach out to a maintainer of this repo for credentials for the dev database)
 
+1. Fork the repo, clone it, and run the following commands in the project root directory:
 
-* Fork the repo and run the following commands in that directory:
-* [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) (if you dont already have it installed)
-* `cp sample.env compose.env`
-* `[podman or docker] compose up` (this starts up the database and minio for S3)
-* `uv run python3 app.py` (this runs the app in development mode)
+2. [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) (if you dont already have it installed)
+
+3. `cp sample.env compose.env`. All the values that are in all caps will be replaced as a result of following these instructions
+
+4. Create a `garage.toml` file by running this command in bash:
+```bash
+cat > garage.toml <<EOF
+metadata_dir = "/tmp/meta"
+data_dir = "/tmp/data"
+db_engine = "sqlite"
+
+replication_factor = 1
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+rpc_secret = "$(openssl rand -hex 32)"
+
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.localhost"
+
+[s3_web]
+bind_addr = "[::]:3902"
+root_domain = ".web.garage.localhost"
+index = "index.html"
+
+[k2v_api]
+api_bind_addr = "[::]:3904"
+
+[admin]
+api_bind_addr = "[::]:3903"
+admin_token = "$(openssl rand -base64 32)"
+metrics_token = "$(openssl rand -base64 32)"
+EOF
+```
+
+<!-- 5. Create a random pass key and insert it in `compose.env` as the `GARAGE_SECRET_ACCESS_KEY`. Use [BitWarden Password Manager](https://bitwarden.com/password-generator/). -->
+
+5. Create a random string and insert it in `compose.env` as the `CPACCESS_SECRET_KEY`. *This may not be needed unless youre configuring auth, but just make something up to be safe*
+
+6. Create a random password and insert it into `compose.env` as the value for `POSTGRES_PASSWORD` and `DBPWD`.
+
+7.  `[podman or docker] compose up` (this starts up the database and garage for S3)
+
+8.  First time S3 Key Setup (in another shell)
+  * This sets up S3 for the first time. As long as the `garage-data` docker volume is not deleted this should not need to be repeated. 
+
+  * We need to confirm that indeed our garage is running correctly.
+    * To do this run `docker exec -it tunnelvision_garage /garage status`.
+    * You should see something similar to the output below:
+  ```
+  2026-03-21T23:32:34.362800Z  INFO garage_net::netapp: Connected to 127.0.0.1:3901, negotiating handshake...
+  2026-03-21T23:32:34.404931Z  INFO garage_net::netapp: Connection established to 6ec135b139310866
+  ==== HEALTHY NODES ====
+  ID                Hostname      Address         Tags  Zone  Capacity          DataAvail  Version
+  6ec135b139310866  eb638945d04b  127.0.0.1:3901              NO ROLE ASSIGNED             v2.2.0
+  ```
+  * We need to create a cluster layout for garage. We need to inform garage of the disk space available on each cluster `-c` and the name of the zone for the node `-z`
+    * Run `docker exec -it tunnelvision_garage /garage layout assign -z dc1 -c 1G <NODE_ID>`.
+    * Replace <NODE_ID> with the ID in the previous step which is in the first column of output.
+    * This will have one node with a zone named `dc1` with a capacity of `1G` or one Gigabyte.
+  
+  * Now we need to actually apply the changes we just specified in the previous step.
+    * Run `docker exec -it tunnelvision_garage /garage layout apply --version 1`.
+    * This will apply our changes with an initial version of 1.
+  
+  * Now we need to create a bucket which can be accessed with a key.
+    * Run `docker exec -it tunnelvision_garage /garage bucket create campuspulse-access`.
+    * This will create a new bucket to store the catalog data in.
+  
+  * Now we need to create the key for the bucket.
+    * Run `docker exec -it tunnelvision_garage /garage key create campuspulse-access-key`.
+    * This will create a key which we can use to access the bucket.
+  
+  * The Key ID and Secret Key should be listed in previous step output. Insert the `Key ID` as the `S3_KEY` and the `Secret key` as the `S3_SECRET` in the `compose.env` file.
+  
+  * Before we can run the app, we need to actually assign the key we just created to the bucket we created.
+    * Run `docker exec -it tunnelvision_garage /garage bucket allow  --read  --write  --owner  campuspulse-access  --key campuspulse-access-key`.
+    *  This makes it so the bucket uses the key we created.
+
+1. Run `source compose.env` to load the new environment variables. Then run `uv run python3 app.py` (this runs the app in development mode).
+
+2.  You should now have the development server running on localhost:5000 now!
 
 ## Configuring Auth
 
