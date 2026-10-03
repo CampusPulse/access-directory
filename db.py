@@ -100,6 +100,8 @@ class AccessPoint(Base):
     remarks: Mapped[str]
     active: Mapped[bool]  # Whether the access point is still in use
 
+    location = relationship(Location, back_populates="access_points")
+
     __mapper_args__ = {
         "polymorphic_identity": "access_point",
         "polymorphic_on": "type",
