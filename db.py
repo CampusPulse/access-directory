@@ -80,6 +80,8 @@ class Location(Base):
     additional_info: Mapped[Optional[str]]  # Example: "The accessible entrance between X and Y"
     access_points = relationship("AccessPoint", back_populates="location")
 
+    building = relationship(Building, back_populates="locations")
+
     def human_name(self):
         if self.nickname is not None and self.nickname != "":
             return self.nickname
