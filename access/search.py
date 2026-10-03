@@ -26,7 +26,7 @@ def searchAccessPoints(query):
     # Build the SQLAlchemy 2.0 select statement
     stmt = (
         select(poly)
-        .outerjoin(poly.location)  # Join Location model/relationship
+        .outerjoin(Location, poly.location_id == Location.id)
         .where(
             searchable_document.op('@@')(
                 func.websearch_to_tsquery('english', query)
