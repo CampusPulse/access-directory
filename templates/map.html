@@ -22,37 +22,112 @@ Map - CampusPulse Access
         maxBounds: v1 // Restrict the map to the campus bounds
     });
 
-    map.on('load', () => {
+    map.on('load', async () => {
 
-        // Add the GeoJSON source
         map.addSource("accesspoints", {
             type: "geojson",
             data: '/map.geojson',
             cluster: true,
+
+            clusterProperties: {
+                statusPriority: [
+                    "max",
+                    [
+                        "match",
+                        ["get", "status"],
+                        "BROKEN", 3,
+                        "IN_PROGRESS", 2,
+                        "VERIFIED", 1,
+                        0
+                    ]
+                ],
+                        
+            }
         });
 
-        // Add a symbol layer
+        function createPin(color) {
+            const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="50" viewBox="0 0 40 50">
+                <path
+                    d="M20 0C8.95 0 0 8.95 0 20c0 15 20 30 20 30s20-15 20-30C40 8.95 31.05 0 20 0z"
+                    fill="${color}"
+                    stroke="#000000"
+                    stroke-width="2"
+                />
+                <circle cx="20" cy="20" r="7" fill="#ffffff"/>
+            </svg>
+            `;
+
+            return new Promise((resolve) => {
+                const image = new Image(40, 50);
+
+                image.onload = () => resolve(image);
+
+                image.src ='data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+            });
+        }
+
+        const colors = {
+            UNKNOWN: "#66ff00",
+            BROKEN: "#ff000d",
+            IN_PROGRESS: "#FFFF00",
+            FIXED: "#66ff00",
+            VERIFIED: "#66ff00"
+        };
+
+        for (const [status, color] of Object.entries(colors)) {
+            const image = await createPin(color);
+            map.addImage(`pin-${status}`, image);
+        }
+
         map.addLayer({
-            id: "unclustered-point",
-            type: 'circle',
-            source: 'accesspoints',
+            id: "clusters",
+            type: "circle",
+            source: "accesspoints",
+            filter: ["has","point_count"],
+
             paint: {
                 "circle-color": [
                     "match",
-                    ["get", 'status'],
-                    "UNKNOWN",
-                    "#66ff00",
-                    "BROKEN",
-                    "#ff000d",
-                    "IN_PROGRESS",
-                    "#FFFF00",
-                    "FIXED",
-                    "#66ff00",
-                    "VERIFIED",
-                    "#66ff00",
-                    /*default */
+                    ["get", "statusPriority"],
+                    // BROKEN
+                    3, "#ff000d",
+                    // IN_PROGRESS
+                    2, "#FFFF00",
+                    // VERIFIED
+                    1, "#66ff00",
+                    // Default
                     "#66ff00"
-                ]
+                ],
+
+                "circle-radius": 10,
+                "circle-stroke-color": "#000000",
+                "circle-stroke-width": 2
+            }
+        });
+
+        map.addLayer({
+            id: "unclustered-point",
+            type: "symbol",
+            source: "accesspoints",
+            filter: [ "!", ["has","point_count"]],
+            layout: {
+                "icon-image": [
+                    "match",
+                    ["get", "status"],
+
+                    "UNKNOWN", "pin-UNKNOWN",
+                    "BROKEN", "pin-BROKEN",
+                    "IN_PROGRESS", "pin-IN_PROGRESS",
+                    "FIXED", "pin-FIXED",
+                    "VERIFIED", "pin-VERIFIED",
+
+                    "pin-UNKNOWN"
+                ],
+
+                "icon-size": 0.8,
+                "icon-anchor": "bottom",
+                "icon-allow-overlap": true
             }
         });
 
@@ -65,17 +140,42 @@ Map - CampusPulse Access
 
             new mapboxgl.Popup()
                 .setLngLat(coordinates)
-                .setHTML(
-                    `Building: ${building}<br>
-            Room: ${room}<br>
-            Status: ${status}<br>
-            <a href="https://access.campuspulse.app/access_points/${id}">Report Link</a>`
-                )
+                .setHTML(`
+                    Building: ${building}<br>
+                    Room: ${room}<br>
+                    Status: ${status}<br>
+                    <a href="https://access.campuspulse.app/access_points/${id}">
+                        Report Link
+                    </a>
+                `)
                 .addTo(map);
         });
-            
-        // })
-        // .catch(error => console.error('Error loading GeoJSON:', error));
+        map.on(
+            'click',
+            'clusters',
+            (e) => {
+                const features =
+                    map.queryRenderedFeatures(
+                        e.point,
+                        {
+                            layers: ['clusters']
+                        }
+                    );
+
+                const clusterId =
+                    features[0].properties.cluster_id;
+
+                map.getSource('accesspoints').getClusterExpansionZoom(clusterId,(err, zoom) => {
+                    if (err) {
+                        return;
+                    }
+                    map.easeTo({
+                        center: features[0].geometry.coordinates, zoom: zoom
+                    });
+                });
+            }
+        );
+
         
     });
 </script>
