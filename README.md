@@ -8,13 +8,11 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 ## Running Locally
 (Reach out to a maintainer of this repo for credentials for the dev database)
 
-
 * Fork the repo and run the following commands in that directory:
 * [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) (if you dont already have it installed)
 * run the docker infrastructure (see the [Docker Infrastructure](#docker-infrastructure) section) to run the data storage layers
-* if you choose to, [Configure Auth](#configuring-auth). We are working on making this not required
-* run `source compose.env` to ensure your application variables are available to the app
-* `uv run python3 app.py` (this runs the app in development mode)
+* if you choose to, [Configure Auth](#configuring-auth). This is optional. If debug mode is enabled and auth0 is not configured you will be an admin.
+* `uv run --env-file=compose.env python3 app.py` (this runs the app in development mode if the `DEBUG="True"` variable is set)
 
 ## Configuring Auth
 
@@ -30,7 +28,7 @@ This is a fork of [TunnelVision](https://github.com/wilsonmcdade/tunnelvision)
 
 ## Configuring AI Features
 
-This app optionally makes use of an OpenAI API key to provide admins with suggested first-pass alt-text for uploaded images.
+This app optionally makes use of an OpenAI API key to provide admins with suggested first-pass alt-text for uploaded images. It is not required to configure or use.
 
 To make this work:
 1. register for an API key from OpenAI (requires funding the account with at least $5).

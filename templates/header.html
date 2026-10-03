@@ -149,14 +149,18 @@
                     <img alt="github logo" title="Git: {{ config['GIT_REVISION'] }}" src="/static/images/github.svg" style="width: 30px;">
                 </a>
                 {% if authsession %}
-                <a class="nav-link" href="/logout">
-                    {% if is_admin %}
-                    Logout <span style="text-decoration: underline;">{{authsession.userinfo.name}}</span>
+                    {% if authsession.userinfo.sub.startswith("debug") %}
+                        <span>Hello <span style="text-decoration: underline;">{{authsession.userinfo.name}}</span></span>
                     {% else %}
-                    Logout {{authsession.userinfo.name}}
-                    {% endif %}
+                        <a class="nav-link" href="/logout">
+                            {% if is_admin %}
+                            Logout <span style="text-decoration: underline;">{{authsession.userinfo.name}}</span>
+                            {% else %}
+                            Logout {{authsession.userinfo.name}}
+                            {% endif %}
 
-                </a>
+                        </a>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
