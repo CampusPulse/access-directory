@@ -21,7 +21,6 @@ from db import (
     func,
     text,
     inspect,
-    with_polymorphic,
     ShelterType,
     ButtonActivation,
     MountSurface,
@@ -59,6 +58,7 @@ from openai import OpenAI
 from config import DefaultConfig
 from auth0service import is_auth_configured, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info
 
+from search import searchAccessPoints
 
 app = Flask(__name__)
 CORS(app,origins=["*" if app.config["DEBUG"] else "https://*.campuspulse.app"], allow_headers=[
@@ -410,27 +410,6 @@ def limit_height(pil_img, height_limit):
     # set new dimensions
     return pil_img.resize((width, height))
 
-
-def searchAccessPoints(query):
-    """
-    Search all access points given query
-    """
-    return list(
-        map(
-            access_point_json,
-            db.session.execute(
-                db.select(AccessPoint)
-                .where(
-                    text(
-                        "access_point.text_search_index @@ websearch_to_tsquery(:query)"
-                    )
-                )
-                .order_by(AccessPoint.id)
-                .limit(150),
-                {"query": query},
-            ).scalars(),
-        )
-    )
 
 
 def getAccessPointsPaginated(page_num):
