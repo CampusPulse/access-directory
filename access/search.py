@@ -17,12 +17,10 @@ def searchAccessPoints(query):
     # Cast non-string types (like Enums, Integers) to String for text indexing
     searchable_document = func.to_tsvector(
         'english',
-        func.coalesce(poly.remarks, '') + ' ' +
         func.coalesce(Location.nickname, '') + ' ' +
         # func.coalesce(Location.building_code, '') + ' ' +
         func.coalesce(cast(poly.DoorButton.shelter, String), '') + ' ' +
-        func.coalesce(cast(poly.DoorButton.activation, String), '') + ' ' +
-        func.coalesce(poly.Elevator.manufacturer, '')
+        func.coalesce(cast(poly.DoorButton.activation, String), '') + ' '
     )
 
     # Build the SQLAlchemy 2.0 select statement
