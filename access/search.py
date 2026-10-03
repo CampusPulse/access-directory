@@ -38,11 +38,4 @@ def searchAccessPoints(query):
         .limit(150)
     )
 
-    scalars = db.session.scalars(stmt).all()
-
-    return list(
-        map(
-            access_point_json,
-            scalars,
-        )
-    )
+    return db.session.scalars(stmt).all()

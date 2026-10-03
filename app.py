@@ -58,7 +58,7 @@ from openai import OpenAI
 from config import DefaultConfig
 from auth0service import is_auth_configured, save_user_details, check_for_admin_role, get_logged_in_user_id, get_logged_in_user, get_logged_in_user_info
 
-from search import searchAccessPoints
+from access.search import searchAccessPoints as coreSearchAccessPoints
 
 app = Flask(__name__)
 CORS(app,origins=["*" if app.config["DEBUG"] else "https://*.campuspulse.app"], allow_headers=[
@@ -410,6 +410,17 @@ def limit_height(pil_img, height_limit):
     # set new dimensions
     return pil_img.resize((width, height))
 
+
+def searchAccessPoints(query):
+    """
+    Search all access points given query
+    """
+    return list(
+        map(
+            access_point_json,
+            coreSearchAccessPoints(query)
+        )
+    )
 
 
 def getAccessPointsPaginated(page_num):
