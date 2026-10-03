@@ -52,7 +52,7 @@ class Building(Base):
     short_name: Mapped[Optional[str]]  # Example: "Eastman"
     address: Mapped[Optional[str]]  # Optional: Full address if needed
     additional_info: Mapped[Optional[str]]  # Example: "Renovated in 2020"
-    locations = relationship("Location", backref="building")
+    locations = relationship("Location", back_populates="building")
 
     def human_name(self):
         if self.short_name is not None and self.short_name != "":
@@ -78,7 +78,7 @@ class Location(Base):
     latitude: Mapped[Optional[int]] # northing
     longitude: Mapped[Optional[int]] # easting
     additional_info: Mapped[Optional[str]]  # Example: "The accessible entrance between X and Y"
-    access_points = relationship("AccessPoint", backref="location")
+    access_points = relationship("AccessPoint", back_populates="location")
 
     def human_name(self):
         if self.nickname is not None and self.nickname != "":
