@@ -865,7 +865,7 @@ def catalog():
                 authsession=get_logged_in_user(debug_mode=app.debug),
                 is_admin = check_for_admin_role(get_logged_in_user_id(debug_mode=app.debug)),
                 page=(page+1),
-                murals=getAccessPointsPaginated(page)
+                accessPoints=getAccessPointsPaginated(page)
             )
     else:
         return render_template(
