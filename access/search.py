@@ -1,7 +1,7 @@
 from sqlalchemy import select, func, text, cast, String
 from sqlalchemy.orm import with_polymorphic
 
-from db import AccessPoint, Location, db
+from db import AccessPoint, Location, Building, db
 
 
 
@@ -18,7 +18,9 @@ def searchAccessPoints(query):
     searchable_document = func.to_tsvector(
         'english',
         func.coalesce(Location.nickname, '') + ' ' +
-        # func.coalesce(Location.building_code, '') + ' ' +
+        func.coalesce(Building.name, '') + ' ' +
+        func.coalesce(Building.short_name, '') + ' ' +
+        func.coalesce(Building.acronym, '') + ' ' +
         func.coalesce(cast(poly.DoorButton.shelter, String), '') + ' ' +
         func.coalesce(cast(poly.DoorButton.activation, String), '') + ' '
     )
@@ -27,6 +29,7 @@ def searchAccessPoints(query):
     stmt = (
         select(poly)
         .outerjoin(Location, poly.location_id == Location.id)
+        .outerjoin(Building, Location.building_id == Building.id)
         .where(
             searchable_document.op('@@')(
                 func.websearch_to_tsquery('english', query)
