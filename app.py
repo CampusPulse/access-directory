@@ -949,6 +949,11 @@ if is_auth_configured():
 
     @app.route("/logout")
     def logout():
+
+        uid = get_logged_in_user_id(debug_mode=app.debug)
+        if uid.startswith("debug"):
+            return
+
         session.clear()
         return redirect(
             "https://"
