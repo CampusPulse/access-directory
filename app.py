@@ -11,6 +11,7 @@ import hashlib
 import re
 from functools import wraps
 from random import shuffle
+import json
 from PIL import Image as PilImage
 from relative_datetime import DateTimeUtils
 from PIL.ExifTags import TAGS as EXIF_TAGS, Base as ExifBase
@@ -1128,6 +1129,8 @@ def changedetection_webhook():
         return ("Empty Body", 400)
 
     app.logger.info("Processing change detection data")
+
+    notif_data = json.loads(raw_data)
 
     return "OK", 200
 @app.route("/add_ticket/<item_id>", methods=["POST"])
