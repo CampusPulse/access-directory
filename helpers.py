@@ -151,7 +151,7 @@ class ServiceNowStatus:
 		timestamp = timestamp_author.split(" - ")[0]
 		author = timestamp_author.split(" - ")[1]
 		comment = comments_group.find_all('table')[1].find('td')
-		for e in soup.findAll('br'):
+		for e in soup.find_all('br'):
 			e.decompose()
 		comment = "".join(comment.contents)
 		dtstamp = parser.parse(timestamp, tzinfos={"EDT": -4*3600})
