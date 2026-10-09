@@ -83,9 +83,7 @@ class MapLocation():
 
     @staticmethod
     def from_lat_long(lat:float, long:float):
-        
-
-        return int(lat * (10 ** MapLocation.PRECISION)), int(long * (10 ** MapLocation.PRECISION))
+        return int(round(lat * (10 ** MapLocation.PRECISION),0)), int(round(long * (10 ** MapLocation.PRECISION),0))
     
     @staticmethod
     def to_lat_long(lat:int, long: int):
