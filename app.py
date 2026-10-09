@@ -54,7 +54,7 @@ import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
 from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType
-from access.parse.sheet import SpreadsheetDiff
+from access.parse.sheet import SpreadsheetDiff, SpreadsheetStatus
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from openai import OpenAI
@@ -1140,6 +1140,8 @@ def changedetection_webhook():
 
     diff = SpreadsheetDiff.from_lines(lines)
 
+    for change in diff:
+        status = SpreadsheetStatus.from_diff(change)
     # spreadsheet dict is now populated
 
     return "OK", 200
