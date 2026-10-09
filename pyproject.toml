@@ -28,3 +28,16 @@ dependencies = [
     "sqlalchemy==2.0.29",
     "werkzeug==3.0.1",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+
+[tool.pytest.ini_options]
+addopts = "-ra -s"
+pythonpath = "."
+testpaths = [
+    "tests/"
+]

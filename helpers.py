@@ -12,6 +12,8 @@ ANY_FLOOR_CHAR = "_"
 
 
 def floor_to_integer(floor_str:str):
+    if floor_str is None:
+        raise ValueError(f"Invalid floor value {floor_str}")
     floor_str = str(floor_str)
 
     if floor_str in ("N", "_"):
@@ -83,9 +85,7 @@ class MapLocation():
 
     @staticmethod
     def from_lat_long(lat:float, long:float):
-        
-
-        return int(lat * (10 ** MapLocation.PRECISION)), int(long * (10 ** MapLocation.PRECISION))
+        return int(round(lat * (10 ** MapLocation.PRECISION),0)), int(round(long * (10 ** MapLocation.PRECISION),0))
     
     @staticmethod
     def to_lat_long(lat:int, long: int):
@@ -153,7 +153,7 @@ class ServiceNowStatus:
 		timestamp = timestamp_author.split(" - ")[0]
 		author = timestamp_author.split(" - ")[1]
 		comment = comments_group.find_all('table')[1].find('td')
-		for e in soup.findAll('br'):
+		for e in soup.find_all('br'):
 			e.decompose()
 		comment = "".join(comment.contents)
 		dtstamp = parser.parse(timestamp, tzinfos={"EDT": -4*3600})
