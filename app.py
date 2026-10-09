@@ -1111,6 +1111,25 @@ def email_webhook():
     return ("", 200)
 
 
+@app.route("/changedetection_webhook", methods=["POST"])
+def changedetection_webhook():
+    webhook_credential = os.getenv("WEBHOOK_CREDENTIAL")
+
+    # Security check
+    if request.args.get("token") != webhook_credential:
+        return ("Unauthorized", 401)
+
+    # ChangeDetection.io typically sends data in the 'content' field or raw body
+    # Adjust this based on your ChangeDetection notification settings
+    raw_data = request.form.get("content") or request.data.decode("utf-8")
+    
+    if not raw_data:
+        app.logger.warning("No data received in webhook")
+        return ("Empty Body", 400)
+
+    app.logger.info("Processing change detection data")
+
+    return "OK", 200
 @app.route("/add_ticket/<item_id>", methods=["POST"])
 @requires_admin
 def add_ticket(item_id):
