@@ -9,6 +9,14 @@ class SpreadsheetUpdateType(str, enum.Enum):
     PARTS_WAITING = "Parts on Order"
     VENDOR_WAITING = "Pending Vendor"
 
+def work_order_validation(wo:str|None):
+    """ Remove "NO WO" and other invalid values from a work order string """
+    if wo is None:
+        return None
+    if " " in wo.strip():
+        return None
+    return wo
+
 @dataclass
 class DiffEntry:
     building: Optional[str]
@@ -18,6 +26,10 @@ class DiffEntry:
     status: str
     notes: Optional[str] = None
     ticket: Optional[str] = None
+
+    def __post_init__(self):
+        if self.ticket is not None:
+            self.ticket = work_order_validation(self.ticket)
 
     @staticmethod
     def is_status_value(value:str):
