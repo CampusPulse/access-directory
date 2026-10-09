@@ -10,8 +10,6 @@ import requests
 import os
 
 from access.parse.servicenow import ServiceNowStatus, ServiceNowUpdateType
-from access.parse.sheet import SpreadsheetUpdateType, split_on_gaps
-
 
 ANY_FLOOR_CHAR = "_"
 
