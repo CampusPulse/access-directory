@@ -53,7 +53,7 @@ import pandas as pd
 import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
-from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType
+from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType, split_on_gaps
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from openai import OpenAI
@@ -1131,6 +1131,30 @@ def changedetection_webhook():
     app.logger.info("Processing change detection data")
 
     notif_data = json.loads(raw_data)
+
+    lines = notif_data.get("message").split("\n")
+    
+    # remove first two and last line, as they are just --- and the name of the thing that changed
+    lines = lines[2:-1]
+
+    # this is a dict storing the from/to change entries, keyed by line number
+    spreadsheet = {}
+
+    for line in lines:
+        info = split_on_gaps(line, gap_size=2)
+
+        change = info[0].replace("(", "").replace(")", "")
+        if change == "changed":
+            change = "from"
+        line_num = info[1]   
+        if spreadsheet.get(str(line_num)) is None:
+            spreadsheet[str(line_num)] = {
+                change: info[2:]
+            }
+        else:
+            spreadsheet[str(line_num)][change] = info[2:]
+
+    # spreadsheet dict is now populated
 
     return "OK", 200
 @app.route("/add_ticket/<item_id>", methods=["POST"])
