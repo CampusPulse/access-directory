@@ -188,7 +188,7 @@ class ServiceNowStatus:
 class DiffEntry:
     building: Optional[str]
     id_number: str
-    location: str
+    discriminator: str
     floors: str
     status: str
     notes: Optional[str] = None
