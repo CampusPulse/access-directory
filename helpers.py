@@ -12,6 +12,8 @@ ANY_FLOOR_CHAR = "_"
 
 
 def floor_to_integer(floor_str:str):
+    if floor_str is None:
+        raise ValueError(f"Invalid floor value {floor_str}")
     floor_str = str(floor_str)
 
     if floor_str in ("N", "_"):
