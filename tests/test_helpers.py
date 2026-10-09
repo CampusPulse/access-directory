@@ -9,6 +9,7 @@ from helpers import (
     ServiceNowStatus,
     ANY_FLOOR_CHAR,
 )
+from pathlib import Path
 
 # ==========================================
 # 1. Floor Conversion Tests
@@ -133,19 +134,7 @@ def test_service_now_status_from_subject(subject, expected_type, expected_ref, e
 
 
 def test_service_now_comment_from_body():
-    sample_html = """
-    <div>
-        <strong>Comments</strong>
-        <div>
-            <table>
-                <tr><td>John Doe - 2026-10-03 14:00:00 EDT</td></tr>
-            </table>
-            <table>
-                <tr><td>Issue has been resolved.<br>Thank you.</td></tr>
-            </table>
-        </div>
-    </div>
-    """
+    sample_html = Path("tests/comments_added.html").read_text()
     comment_str, dt = ServiceNowStatus.commentFromBody(sample_html)
-    assert comment_str == "John Doe: Issue has been resolved.Thank you."
+    assert comment_str == "Michael Bay: Button box has been repaired.....ABC"
     assert isinstance(dt, datetime)
