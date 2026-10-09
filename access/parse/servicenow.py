@@ -1,4 +1,5 @@
 import enum
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 from dateutil import parser

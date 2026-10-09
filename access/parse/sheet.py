@@ -1,8 +1,8 @@
 import enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
-class SpreadsheetUpdateType(enum.Enum, str):
+class SpreadsheetUpdateType(str, enum.Enum):
     IN_SERVICE = "In service"
     INVESTIGATING = "Investigating"
     OUT_OF_SERVICE = "Out of Service"
@@ -49,7 +49,7 @@ class DiffEntry:
 @dataclass
 class SpreadsheetDiff:
 	# this is a dict storing the from/to change entries, keyed by line number
-	diff_by_line:dict = {}
+	diff_by_line:dict = field(default_factory=dict)
 
 	@classmethod
 	def from_lines(cls, lines: list):
