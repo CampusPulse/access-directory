@@ -3,6 +3,7 @@ import enum
 from dateutil import parser
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
+from typing import Optional
 
 from flask import session
 import requests
@@ -183,6 +184,42 @@ class ServiceNowStatus:
 		return cls(timestamp, status_type, ref, comment)
 
 
+@dataclass
+class DiffEntry:
+    building: Optional[str]
+    id_number: str
+    location: str
+    floors: str
+    status: str
+    notes: Optional[str] = None
+    ticket: Optional[str] = None
+
+    @staticmethod
+    def is_status_value(value:str):
+        options = [
+            "In service",
+            "Investigating",
+            "Out of Service",
+            "Parts on Order",
+            "Pending Vendor"
+        ]
+        return value in options
+
+
+    @classmethod
+    def from_diff_list(cls, diff_list:list):
+        if len(diff_list) < 4:
+            raise ValueError(f"diff list too short: {diff_list}")
+        
+        status_index = [cls.is_status_value(v) for v in diff_list].index(True)
+
+        if status_index == 4:
+            return cls(*diff_list)
+        elif status_index == 3:
+            diff_list.insert(0, None)
+            return cls(*diff_list)
+        else:
+            raise ValueError(f"encountered unforeseen index of status value: {status_index}")
 
 
 def split_on_gaps(value:str, gap_size=3) -> list:

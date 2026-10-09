@@ -1149,10 +1149,10 @@ def changedetection_webhook():
         line_num = info[1]   
         if spreadsheet.get(str(line_num)) is None:
             spreadsheet[str(line_num)] = {
-                change: info[2:]
+                change: DiffEntry(info[2:]*)
             }
         else:
-            spreadsheet[str(line_num)][change] = info[2:]
+            spreadsheet[str(line_num)][change] = DiffEntry(info[2:]*)
 
     # spreadsheet dict is now populated
 
