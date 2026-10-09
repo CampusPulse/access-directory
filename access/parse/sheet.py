@@ -88,6 +88,22 @@ class SpreadsheetDiff:
 
 
 
+@dataclass
+class SpreadsheetStatus:
+    elevator_id: str
+    status_type: SpreadsheetUpdateType
+    ticket_ref: str
+    comment: Optional[str] = None
+
+    @classmethod
+    def from_diff(cls, diff:dict):
+        last = diff.get("from")
+        current = diff.get("into")
+
+        ticket_num = current.ticket or last.ticket
+        return cls(current.id_number, current.status, ticket_num, current.notes)
+
+
 def split_on_gaps(value:str, gap_size=3) -> list:
     """Split a string on gaps larger than a certain size
 
