@@ -8,6 +8,7 @@ from helpers import (
     ServiceNowUpdateType,
     ServiceNowStatus,
     ANY_FLOOR_CHAR,
+    split_on_gaps
 )
 from pathlib import Path
 
@@ -138,3 +139,11 @@ def test_service_now_comment_from_body():
     comment_str, dt = ServiceNowStatus.commentFromBody(sample_html)
     assert comment_str == "Michael Bay: Button box has been repaired.....ABC"
     assert isinstance(dt, datetime)
+
+
+@pytest.mark.parametrize("subject, expected", [
+    ("a            b           c         d", ["a", "b", "c", "d"]),
+    ("a            b           c    d", ["a", "b", "c", "d"]),
+])
+def test_split_on_gaps(subject, expected):
+    assert split_on_gaps(subject) == expected

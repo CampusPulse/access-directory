@@ -182,3 +182,18 @@ class ServiceNowStatus:
 			comment, timestamp = cls.commentFromBody(body)
 		return cls(timestamp, status_type, ref, comment)
 
+
+
+
+def split_on_gaps(value:str, gap_size=3) -> list:
+    """Split a string on gaps larger than a certain size
+
+    Args:
+        input (str): the input string to split
+        gap_size (int, optional): the size of the gap, in spaces/chars, to count for a split. Defaults to 3.
+
+    Returns:
+        list: the elements in the list split by the desired delimiter
+    """
+    roughsplit = value.split(" " * gap_size)
+    return [i.strip() for i in roughsplit if i.strip() != '']
