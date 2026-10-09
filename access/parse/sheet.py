@@ -46,6 +46,31 @@ class DiffEntry:
         else:
             raise ValueError(f"encountered unforeseen index of status value: {status_index}")
 
+@dataclass
+class SpreadsheetDiff:
+	# this is a dict storing the from/to change entries, keyed by line number
+	diff_by_line:dict = {}
+
+	@classmethod
+	def from_lines(cls, lines: list):
+		spreadsheet = {}
+		for line in lines:
+			info = split_on_gaps(line, gap_size=2)
+
+			change = info[0].replace("(", "").replace(")", "")
+			if change == "changed":
+				change = "from"
+			line_num = info[1]   
+			diffentry = DiffEntry.from_diff_list(info[2:])
+			if spreadsheet.get(str(line_num)) is None:
+				spreadsheet[str(line_num)] = {
+					change: diffentry
+				}
+			else:
+				spreadsheet[str(line_num)][change] = diffentry
+
+		return cls(spreadsheet)
+
 
 def split_on_gaps(value:str, gap_size=3) -> list:
     """Split a string on gaps larger than a certain size
