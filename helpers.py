@@ -184,6 +184,13 @@ class ServiceNowStatus:
 		return cls(timestamp, status_type, ref, comment)
 
 
+class SpreadsheetUpdateType(enum.StrEnum):
+    IN_SERVICE = "In service"
+    INVESTIGATING = "Investigating"
+    OUT_OF_SERVICE = "Out of Service"
+    PARTS_WAITING = "Parts on Order"
+    VENDOR_WAITING = "Pending Vendor"
+
 @dataclass
 class DiffEntry:
     building: Optional[str]
