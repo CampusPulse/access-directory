@@ -103,7 +103,7 @@ class MapLocation():
         return long, lat
 
 
-class SpreadsheetUpdateType(enum.StrEnum):
+class SpreadsheetUpdateType(enum.Enum, str):
     IN_SERVICE = "In service"
     INVESTIGATING = "Investigating"
     OUT_OF_SERVICE = "Out of Service"
