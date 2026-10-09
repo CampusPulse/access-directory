@@ -49,7 +49,7 @@ class DiffEntry:
 @dataclass
 class SpreadsheetDiff:
 	# this is a dict storing the from/to change entries, keyed by line number
-	diff_by_line:dict = field(default_factory=dict)
+	by_line:dict = field(default_factory=dict)
 
 	@classmethod
 	def from_lines(cls, lines: list):
@@ -70,6 +70,10 @@ class SpreadsheetDiff:
 				spreadsheet[str(line_num)][change] = diffentry
 
 		return cls(spreadsheet)
+
+	def __iter__(self):
+		yield from self.by_line.values()
+
 
 
 def split_on_gaps(value:str, gap_size=3) -> list:
