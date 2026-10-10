@@ -92,31 +92,34 @@ class DiffEntry:
 
 @dataclass
 class SpreadsheetDiff:
-	# this is a dict storing the from/to change entries, keyed by line number
-	by_line:dict = field(default_factory=dict)
+    # this is a dict storing the from/to change entries, keyed by line number
+    by_line:dict = field(default_factory=dict)
 
-	@classmethod
-	def from_lines(cls, lines: list):
-		spreadsheet = {}
-		for line in lines:
-			info = split_on_gaps(line, gap_size=2)
+    @classmethod
+    def from_lines(cls, lines: list):
+        spreadsheet = {}
+        for line in lines:
+            info = split_on_gaps(line, gap_size=2)
 
-			change = info[0].replace("(", "").replace(")", "")
-			if change == "changed":
-				change = "from"
-			line_num = info[1]   
-			diffentry = DiffEntry.from_diff_list(info[2:])
-			if spreadsheet.get(str(line_num)) is None:
-				spreadsheet[str(line_num)] = {
-					change: diffentry
-				}
-			else:
-				spreadsheet[str(line_num)][change] = diffentry
+            change = info[0].replace("(", "").replace(")", "")
+            if change == "changed":
+                change = "from"
+            line_num = info[1]   
+            diffentry = DiffEntry.from_diff_list(info[2:])
+            if spreadsheet.get(str(line_num)) is None:
+                spreadsheet[str(line_num)] = {
+                    change: diffentry
+                }
+            else:
+                spreadsheet[str(line_num)][change] = diffentry
 
-		return cls(spreadsheet)
+        return cls(spreadsheet)
 
-	def __iter__(self):
-		yield from self.by_line.values()
+    def __iter__(self):
+        yield from self.by_line.values()
+
+    def __len__(self):
+        return len(self.by_line.values())
 
 
 
