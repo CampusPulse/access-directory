@@ -38,11 +38,11 @@ class DiffEntry:
     floors: str
     status: str
     notes: Optional[str] = None
-    ticket: Optional[str] = None
+    tickets: Optional[list[str]] = None
 
     def __post_init__(self):
-        if self.ticket is not None:
-            self.ticket = work_order_validation(self.ticket)
+        if self.tickets is not None:
+            self.tickets = [work_order_validation(t) for t in self.tickets if t is not None]
 
     @staticmethod
     def is_status_value(value:str):
