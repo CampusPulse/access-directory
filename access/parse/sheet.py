@@ -22,6 +22,14 @@ def work_order_validation(wo:str|None):
         return None
     return wo
 
+def extract_valid_work_orders(wo: str| None) -> list:
+    valid_tickets = []
+    for part in wo.split(" "):
+        if work_order_validation(part):
+            valid_tickets.append(part)
+    return valid_tickets
+
+
 @dataclass
 class DiffEntry:
     building: Optional[str]
