@@ -69,6 +69,7 @@ class DiffEntry:
 
         if status_index == 3:
             diff_list.insert(0, None)
+            status_index += 1
         elif status_index not in (3,4):
             raise ValueError(f"encountered unforeseen index of status value: {status_index}")
 
@@ -136,7 +137,17 @@ class SpreadsheetStatus:
         current = diff.get("into")
 
         ticket_nums = current.tickets or last.tickets
-        return cls(current.id_number, current.status, ticket_nums, current.notes)
+
+        status = current.status
+        notes = current.notes
+
+        # detect "in service, but" in notes
+        if current.notes.strip().lower().startswith("in service"):
+            status = SpreadsheetUpdateType.IN_SERVICE
+
+            notes = current.status.value + " " + current.notes
+
+        return cls(current.id_number, status, ticket_nums, notes)
 
 
 def split_on_gaps(value:str, gap_size=3) -> list:
