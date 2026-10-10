@@ -293,6 +293,8 @@ def link_report_to_access_point(database, report:Report, access_point_id:int) ->
             report = found_report
         else:
             report = Report()
+            database.session.add(report)
+            database.session.flush()
 
 
     association = database.session.execute(
