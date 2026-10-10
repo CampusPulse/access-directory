@@ -229,23 +229,27 @@ def get_item_report(item:Union[AccessPoint, int]):
 def validate_ticket_number(ticket_number:str) -> bool:
     return ticket_number is not None and ticket_number != "" and ticket_number.startswith("WOT")
 
-def find_or_make_report_by_ticket(database, ticket_number:str):
+def find_or_make_report_by_ticket(database, ticket_number:str|None):
+    report = None
+    if ticket_number is None:
+        report = Report()
+    else:
 
-    if not validate_ticket_number(ticket_number):
-        raise ValueError(f"Invalid Ticket Number {ticket_number}")
+        if not validate_ticket_number(ticket_number):
+            raise ValueError(f"Invalid Ticket Number {ticket_number}")
 
-    report = database.session.execute(
-        database.select(Report).where(Report.ref == ticket_number)
-    ).scalar()
+        report = database.session.execute(
+            database.select(Report).where(Report.ref == ticket_number)
+        ).scalar()
 
-    if report is None:
-        # create new report and status
-        report = Report(
-            ref=ticket_number
-        )
+        if report is None:
+            # create new report and status
+            report = Report(
+                ref=ticket_number
+            )
 
-        database.session.add(report)
-        database.session.flush()
+    database.session.add(report)
+    database.session.flush()
     return report
 
 
