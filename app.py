@@ -260,12 +260,19 @@ def link_ticket_to_access_point(database, ticket_id, access_point_id):
 
 
 def link_report_to_access_point(database, report, access_point_id):
-     # create new association
-    association = AccessPointReports(
-        report_id=report.id,
-        access_point_id=access_point_id
-    )
-    database.session.add(association)
+
+    association = database.session.execute(
+        database.select(AccessPointReports)
+        .where(AccessPointReports.report_id == report.id, AccessPointReports.access_point_id == access_point_id )
+    ).scalar()
+
+    if association is None:
+        # create new association
+        association = AccessPointReports(
+            report_id=report.id,
+            access_point_id=access_point_id
+        )
+        database.session.add(association)
     return association
 
 
