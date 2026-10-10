@@ -274,13 +274,13 @@ def find_report_by_ticket(database, ticket_number:str|None):
     return report
 
 
-def link_ticket_to_access_point(database, ticket_id, access_point_id):
+def link_ticket_to_access_point(database, ticket_id, access_point_id:int) -> tuple[AccessPointReports, Report]:
     report = find_report_by_ticket(db, ticket_id)
 
     return link_report_to_access_point(database, report, access_point_id)
 
 
-def link_report_to_access_point(database, report:Report, access_point_id:int):
+def link_report_to_access_point(database, report:Report, access_point_id:int) -> tuple[AccessPointReports, Report]:
 
     if report is None:
         # attempt to look up the most recent (sorted by id) report for this access point
@@ -307,7 +307,7 @@ def link_report_to_access_point(database, report:Report, access_point_id:int):
             access_point_id=access_point_id
         )
         database.session.add(association)
-    return association
+    return association, report
 
 def make_unique_status(
     database,
@@ -1308,7 +1308,7 @@ def changedetection_webhook():
             report = find_report_by_ticket(db, ticket)
             
             if access_point is not None:
-                association = link_report_to_access_point(db, report, access_point.id)
+                association, report = link_report_to_access_point(db, report, access_point.id)
             if report:
                 reports.append(report)
 
@@ -1339,7 +1339,7 @@ def add_ticket(item_id):
     if not validate_ticket_number(ticket_ref):
         return "invalid ticket number", 400
 
-    link = link_ticket_to_access_point(db, ticket_ref, item_id)
+    link, report = link_ticket_to_access_point(db, ticket_ref, item_id)
     
     db.session.commit()
 
