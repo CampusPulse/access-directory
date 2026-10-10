@@ -1,5 +1,5 @@
 import pytest
-from access.parse.sheet import split_on_gaps
+from access.parse.sheet import split_on_gaps, work_order_validation
 from access.parse.servicenow import ServiceNowUpdateType, ServiceNowStatus
 from pathlib import Path
 from datetime import datetime
@@ -19,6 +19,16 @@ def test_split_on_gaps(subject, expected):
 
 
 
+@pytest.mark.parametrize("wo, expected", [
+    ("NO WO", None),
+    ("NO - WO", None),
+    ("WOT0123456", "WOT0123456"),
+    ("WOT01234567", None),
+    ("WO0123456", None),
+    ("blah blah", None)
+])
+def test_validate_work_order(wo, expected):
+    assert work_order_validation(wo) == expected
 
 # ==========================================
 # ServiceNow Email Parsing Tests
