@@ -182,6 +182,8 @@ def lookup_access_point_for_concordance_id(session, identifier:str):
     if concordance:
         return concordance.access_point
 
+def validate_ticket_number(ticket_number:str) -> bool:
+    return ticket_ref is not None and ticket_ref != "" and ticket_ref.startswith("WOT")
 
 def access_point_json(access_point: AccessPoint):
     """
@@ -1160,7 +1162,7 @@ def add_ticket(item_id):
         return "Not found", 404
 
     ticket_ref = request.form.get("ticket_ref")
-    if ticket_ref is None or ticket_ref == "" or not ticket_ref.startswith("WOT"):
+    if not validate_ticket_number(ticket_ref):
         return "invalid ticket number", 400
 
     report = db.session.execute(
