@@ -185,6 +185,26 @@ def lookup_access_point_for_concordance_id(session, identifier:str):
 def validate_ticket_number(ticket_number:str) -> bool:
     return ticket_ref is not None and ticket_ref != "" and ticket_ref.startswith("WOT")
 
+def find_or_make_report(database, ticket_number:str):
+
+    if not validate_ticket_number(ticket_number):
+        raise ValueError(f"Invalid Ticket Number {ticket_number}")
+
+    report = database.session.execute(
+        database.select(Report).where(Report.ref == ticket_number)
+    ).scalar()
+
+    if report is None:
+        # create new report and status
+        report = Report(
+            ref=ticket_ref
+        )
+
+        database.session.add(report)
+        database.session.flush()
+    return report
+
+
 def access_point_json(access_point: AccessPoint):
     """
     Create a JSON object for a access_point
@@ -1165,18 +1185,8 @@ def add_ticket(item_id):
     if not validate_ticket_number(ticket_ref):
         return "invalid ticket number", 400
 
-    report = db.session.execute(
-        db.select(Report).where(Report.ref == ticket_ref)
-    ).scalar()
 
-    if report is None:
-        # create new report and status
-        report = Report(
-            ref=ticket_ref
-        )
-
-        db.session.add(report)
-        db.session.flush()
+    report = find_or_make_report(ticket_ref)
     
     # create new association
     association = AccessPointReports(
