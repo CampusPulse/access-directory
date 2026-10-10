@@ -54,7 +54,7 @@ import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
 from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType
-from access.parse.sheet import SpreadsheetDiff, SpreadsheetStatus
+from access.parse.sheet import SpreadsheetDiff, SpreadsheetStatus, SpreadsheetUpdateType
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from openai import OpenAI
@@ -1139,6 +1139,14 @@ def changedetection_webhook():
     lines = lines[2:-1]
 
     diff = SpreadsheetDiff.from_lines(lines)
+
+    statusMap = {
+        SpreadsheetUpdateType.OUT_OF_SERVICE: (StatusType.BROKEN, "Filed"),
+        SpreadsheetUpdateType.IN_SERVICE:  (StatusType.FIXED , "Fixed"),
+        SpreadsheetUpdateType.INVESTIGATING:  (StatusType.IN_PROGRESS, "Investigating"),
+        SpreadsheetUpdateType.PARTS_WAITING:  (StatusType.IN_PROGRESS, "Waiting for Parts"),
+        SpreadsheetUpdateType.VENDOR_WAITING:  (StatusType.IN_PROGRESS, "Waiting for Service")
+    }
 
     for change in diff:
         status = SpreadsheetStatus.from_diff(change)
