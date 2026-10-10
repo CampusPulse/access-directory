@@ -139,6 +139,9 @@ class Report(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     ref: Mapped[Optional[str]] # ticket number/reference
 
+    def __repr__(self):
+        return f"Report<id: {self.id}, ref: {self.ref}>"
+
 
 
 class AccessPointConcordances(Base):
