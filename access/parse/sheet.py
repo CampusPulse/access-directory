@@ -69,6 +69,7 @@ class DiffEntry:
 
         if status_index == 3:
             diff_list.insert(0, None)
+            status_index += 1
         elif status_index not in (3,4):
             raise ValueError(f"encountered unforeseen index of status value: {status_index}")
 
