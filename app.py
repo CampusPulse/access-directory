@@ -1287,8 +1287,11 @@ def changedetection_webhook():
             statusItem = make_unique_status(db, report, status, status_type, statusNotes)
 
         db.session.commit()
+    
+    app.logger.info(f"Processed {len(diff)} new reports from spreadsheet")
 
     return ("Processed", 200)
+
 
 @app.route("/add_ticket/<item_id>", methods=["POST"])
 @requires_admin
