@@ -205,6 +205,22 @@ def find_or_make_report(database, ticket_number:str):
     return report
 
 
+def link_ticket_to_access_point(database, ticket_id, access_point_id):
+    report = find_or_make_report(db, ticket_id)
+
+    return link_report_to_access_point(database, report, access_point_id)
+
+
+def link_report_to_access_point(database, report, access_point_id):
+     # create new association
+    association = AccessPointReports(
+        report_id=report.id,
+        access_point_id=access_point_id
+    )
+    database.session.add(association)
+    return association
+
+
 def access_point_json(access_point: AccessPoint):
     """
     Create a JSON object for a access_point
@@ -1205,14 +1221,7 @@ def add_ticket(item_id):
     if not validate_ticket_number(ticket_ref):
         return "invalid ticket number", 400
 
-    report = find_or_make_report(db, ticket_ref)
-    
-    # create new association
-    association = AccessPointReports(
-        report_id=report.id,
-        access_point_id=item_id
-    )
-    db.session.add(association)
+    link = link_ticket_to_access_point(db, ticket_ref, item_id)
     
     db.session.commit()
 
