@@ -1171,10 +1171,30 @@ def changedetection_webhook():
     }
 
     for change in diff:
-        status = SpreadsheetStatus.from_diff(change)
-    # spreadsheet dict is now populated
+        statusUpdate = SpreadsheetStatus.from_diff(change)
 
-    return "OK", 200
+        report = find_or_make_report(db, statusUpdate.ticket_ref)
+
+        status_type, status = statusMap[statusUpdate.status_type]
+
+        statusNotes = ""
+        if statusUpdate.comment is not None and statusUpdate.comment != "":
+            statusNotes = statusUpdate.comment
+
+        # create new status
+        status = Status(
+            report_id=report.id,
+            status=status,
+            status_type=status_type,
+            timestamp=db.func.now(),
+            notes=statusNotes
+        )
+        db.session.add(status)
+
+        db.session.commit()
+
+    return ("Processed", 200)
+
 @app.route("/add_ticket/<item_id>", methods=["POST"])
 @requires_admin
 def add_ticket(item_id):
@@ -1185,8 +1205,7 @@ def add_ticket(item_id):
     if not validate_ticket_number(ticket_ref):
         return "invalid ticket number", 400
 
-
-    report = find_or_make_report(ticket_ref)
+    report = find_or_make_report(db, ticket_ref)
     
     # create new association
     association = AccessPointReports(
