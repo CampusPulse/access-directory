@@ -245,25 +245,29 @@ def report_has_fix(database, report:Union[Report, int]):
     return any([s.status_type == StatusType.FIXED for s in statuses])
 
 
+def find_report_by_ticket(database, ticket_number:str|None):
+    """ This attempts to look up a report by ticket number or create one if it doesnt exist.
+    
+    It cannot deduplicate reports without a ticket number so that is out of scope and will return None for downstream processing to handle with more information
 
-def find_or_make_report_by_ticket(database, ticket_number:str|None):
+    """
+
     report = None
     if ticket_number is None:
-        report = Report()
-    else:
+        return None
+    
+    if not validate_ticket_number(ticket_number):
+        raise ValueError(f"Invalid Ticket Number {ticket_number}")
 
-        if not validate_ticket_number(ticket_number):
-            raise ValueError(f"Invalid Ticket Number {ticket_number}")
+    report = database.session.execute(
+        database.select(Report).where(Report.ref == ticket_number)
+    ).scalar()
 
-        report = database.session.execute(
-            database.select(Report).where(Report.ref == ticket_number)
-        ).scalar()
-
-        if report is None:
-            # create new report and status
-            report = Report(
-                ref=ticket_number
-            )
+    if report is None:
+        # create new report and status
+        report = Report(
+            ref=ticket_number
+        )
 
     database.session.add(report)
     database.session.flush()
@@ -271,7 +275,7 @@ def find_or_make_report_by_ticket(database, ticket_number:str|None):
 
 
 def link_ticket_to_access_point(database, ticket_id, access_point_id):
-    report = find_or_make_report_by_ticket(db, ticket_id)
+    report = find_report_by_ticket(db, ticket_id)
 
     return link_report_to_access_point(database, report, access_point_id)
 
@@ -1301,10 +1305,12 @@ def changedetection_webhook():
         reports = []
         for ticket in statusUpdate.ticket_refs:
 
-            report = find_or_make_report_by_ticket(db, ticket)
-            reports.append(report)
+            report = find_report_by_ticket(db, ticket)
+            
             if access_point is not None:
                 association = link_report_to_access_point(db, report, access_point.id)
+            if report:
+                reports.append(report)
 
         status_type, status = statusMap[statusUpdate.status_type]
 
