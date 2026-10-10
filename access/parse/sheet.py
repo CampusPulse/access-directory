@@ -1,6 +1,7 @@
 import enum
 from dataclasses import dataclass, field
 from typing import Optional
+import re
 
 class SpreadsheetUpdateType(str, enum.Enum):
     IN_SERVICE = "In service"
@@ -14,6 +15,10 @@ def work_order_validation(wo:str|None):
     if wo is None:
         return None
     if " " in wo.strip():
+        return None
+
+    wot_match = re.search(r"^(WOT\d{7})$", wo)
+    if not wot_match:
         return None
     return wo
 
