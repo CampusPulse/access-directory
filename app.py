@@ -1267,10 +1267,14 @@ def changedetection_webhook():
         statusUpdate = SpreadsheetStatus.from_diff(change)
 
         access_point = lookup_access_point_for_concordance_id(db.session, statusUpdate.elevator_id)
+        
+        reports = []
+        for ticket in statusUpdate.ticket_refs:
 
-        report = find_or_make_report_by_ticket(db, statusUpdate.ticket_ref)
-        if access_point is not None:
-            association = link_report_to_access_point(db, report, access_point.id)
+            report = find_or_make_report_by_ticket(db, ticket)
+            reports.append(report)
+            if access_point is not None:
+                association = link_report_to_access_point(db, report, access_point.id)
 
         status_type, status = statusMap[statusUpdate.status_type]
 
@@ -1279,7 +1283,8 @@ def changedetection_webhook():
             statusNotes = statusUpdate.comment
 
         # create new status (if unique)
-        statusItem = make_unique_status(db, report, status, status_type, statusNotes)
+        for report in reports:
+            statusItem = make_unique_status(db, report, status, status_type, statusNotes)
 
         db.session.commit()
 

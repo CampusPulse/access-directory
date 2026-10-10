@@ -120,7 +120,7 @@ class SpreadsheetDiff:
 class SpreadsheetStatus:
     elevator_id: str
     status_type: SpreadsheetUpdateType
-    ticket_ref: str
+    ticket_refs: list[str]
     comment: Optional[str] = None
 
     @classmethod
@@ -128,8 +128,8 @@ class SpreadsheetStatus:
         last = diff.get("from")
         current = diff.get("into")
 
-        ticket_num = current.ticket or last.ticket
-        return cls(current.id_number, current.status, ticket_num, current.notes)
+        ticket_nums = current.tickets or last.tickets
+        return cls(current.id_number, current.status, ticket_nums, current.notes)
 
 
 def split_on_gaps(value:str, gap_size=3) -> list:
