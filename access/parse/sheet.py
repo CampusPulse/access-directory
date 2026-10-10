@@ -63,13 +63,28 @@ class DiffEntry:
         
         status_index = [cls.is_status_value(v) for v in diff_list].index(True)
 
-        if status_index == 4:
-            return cls(*diff_list)
-        elif status_index == 3:
+        if status_index == 3:
             diff_list.insert(0, None)
-            return cls(*diff_list)
-        else:
+        elif status_index not in (3,4):
             raise ValueError(f"encountered unforeseen index of status value: {status_index}")
+
+        # the list should now be normalized to a known length, at least up to the status field
+        end_index = len(diff_list) - 1
+        extra_field_count = end_index - status_index
+        if extra_field_count == 0:
+            # no comments or WO #s
+            pass
+        elif extra_field_count == 1:
+            # comments
+            pass
+        elif extra_field_count == 2:
+            # comments and WOs (potentially multiple)
+            # convert the, potentially multiple, work orders to a list
+            diff_list[status_index+2] = extract_valid_work_orders(diff_list[status_index+2])
+        
+
+        return cls(*diff_list)
+            
 
 @dataclass
 class SpreadsheetDiff:
