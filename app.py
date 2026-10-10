@@ -182,6 +182,50 @@ def lookup_access_point_for_concordance_id(session, identifier:str):
     if concordance:
         return concordance.access_point
 
+
+def get_item_status(item: Union[AccessPoint, int]):
+    """Fetch the most recent status for the provided item.
+
+    Args:
+        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch status for (or its integer ID)
+
+    Returns:
+        Status: the status of the access point, or None if none were found
+    """
+    item_id = item.id if isinstance(item, AccessPoint) else item
+    status = db.session.execute(
+        db.select(Status)
+        .join(AccessPointReports, AccessPointReports.report_id == Status.report_id)
+        .where(AccessPointReports.access_point_id == item_id)
+        .order_by(Status.timestamp.desc())
+    ).scalars().first()
+    
+    return status
+
+def get_item_report(item:Union[AccessPoint, int]):
+    """Fetch the latest report for the provided item.
+
+    While you can get this using get_item_status and accessing it through the associated report,
+    that method can miss scenarios where a report has been created but there is no status yet
+    This can happen when associating a ticket before any email has come in yet.
+
+    Args:
+        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch the report for (or its integer ID)
+
+    Returns:
+        Report: the report of the access point, or None if none were found
+    """
+    item_id = item.id if isinstance(item, AccessPoint) else item
+    report = db.session.execute(
+        db.select(Report)
+        .join(AccessPointReports, AccessPointReports.report_id == Report.id)
+        .where(AccessPointReports.access_point_id == item_id)
+        .order_by(Report.id.desc())
+    ).scalars().first()
+    
+    return report
+
+
 def validate_ticket_number(ticket_number:str) -> bool:
     return ticket_number is not None and ticket_number != "" and ticket_number.startswith("WOT")
 
@@ -1365,50 +1409,6 @@ def associate_thumbnail(file_hash, thumbnail_file, item_identifier):
     )
 
     db.session.commit()
-
-
-def get_item_status(item: Union[AccessPoint, int]):
-    """Fetch the most recent status for the provided item.
-
-    Args:
-        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch status for (or its integer ID)
-
-    Returns:
-        Status: the status of the access point, or None if none were found
-    """
-    item_id = item.id if isinstance(item, AccessPoint) else item
-    status = db.session.execute(
-        db.select(Status)
-        .join(AccessPointReports, AccessPointReports.report_id == Status.report_id)
-        .where(AccessPointReports.access_point_id == item_id)
-        .order_by(Status.timestamp.desc())
-    ).scalars().first()
-    
-    return status
-
-def get_item_report(item:Union[AccessPoint, int]):
-    """Fetch the latest report for the provided item.
-
-    While you can get this using get_item_status and accessing it through the associated report,
-    that method can miss scenarios where a report has been created but there is no status yet
-    This can happen when associating a ticket before any email has come in yet.
-
-    Args:
-        item (Union[AccessPoint, int]): The item (in this case AccessPoint) to fetch the report for (or its integer ID)
-
-    Returns:
-        Report: the report of the access point, or None if none were found
-    """
-    item_id = item.id if isinstance(item, AccessPoint) else item
-    report = db.session.execute(
-        db.select(Report)
-        .join(AccessPointReports, AccessPointReports.report_id == Report.id)
-        .where(AccessPointReports.access_point_id == item_id)
-        .order_by(Report.id.desc())
-    ).scalars().first()
-    
-    return report
-
 
 
 def deleteTagGivenName(name):
