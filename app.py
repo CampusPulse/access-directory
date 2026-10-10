@@ -275,6 +275,36 @@ def link_report_to_access_point(database, report, access_point_id):
         database.session.add(association)
     return association
 
+def make_unique_status(
+    database,
+    report: Report,
+    status_text:str,
+    category: StatusType,
+    note_text: str,
+    timestamp: datetime | None = None
+):
+    
+    status_update = database.session.execute(
+        database.select(Status)
+        .where(
+            Status.report_id == report.id,
+            Status.status == status_text,
+            Status.status_type == category,
+            Status.notes == note_text)
+    ).scalar()
+
+    if status_update is None:
+    
+        status_update = Status(
+            report = report,
+            status = status_text,
+            status_type = category,
+            timestamp = timestamp or database.func.now(),
+            notes = note_text
+        )
+        database.session.add(status_update)
+    return status_update
+
 
 def access_point_json(access_point: AccessPoint):
     """
@@ -1191,16 +1221,8 @@ def email_webhook():
         statusNotes = subject
 
     # create new status
-    status = Status(
-        report_id=report.id,
-        status=status,
-        status_type=status_type,
-        timestamp=statusUpdate.timestamp,
-        notes=statusNotes
-    )
-    db.session.add(status)
+    statusItem = make_unique_status(db, report, status, status_type, statusNotes, statusUpdate.timestamp)
 
-    
     db.session.commit()
 
     return ("", 200)
@@ -1252,15 +1274,8 @@ def changedetection_webhook():
         if statusUpdate.comment is not None and statusUpdate.comment != "":
             statusNotes = statusUpdate.comment
 
-        # create new status
-        status = Status(
-            report_id=report.id,
-            status=status,
-            status_type=status_type,
-            timestamp=db.func.now(),
-            notes=statusNotes
-        )
-        db.session.add(status)
+        # create new status (if unique)
+        statusItem = make_unique_status(db, report, status, status_type, statusNotes)
 
         db.session.commit()
 
@@ -1323,14 +1338,7 @@ def add_status(item_id):
     else:
         current_report = prior_report
 
-    status_update = Status(
-        report = current_report,
-        status = status_text,
-        status_type = category,
-        timestamp = datetime.utcnow(),
-        notes = note_text
-    )
-    db.session.add(status_update)
+    status_update = make_unique_status(db, current_report, status_text, category, note_text)
     db.session.commit()
 
     return redirect(f"/access_points/{item_id}")
