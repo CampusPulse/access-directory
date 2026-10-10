@@ -54,7 +54,7 @@ import json_log_formatter
 from pathlib import Path
 from dotenv import load_dotenv
 from helpers import floor_to_integer, RoomNumber, integer_to_floor, MapLocation, ServiceNowStatus, ServiceNowUpdateType
-from access.parse.sheet import SpreadsheetDiff, SpreadsheetStatus, SpreadsheetUpdateType
+from access.parse.sheet import SpreadsheetDiff, SpreadsheetStatus, SpreadsheetUpdateType, validate_ticket_number
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from openai import OpenAI
@@ -245,8 +245,6 @@ def report_has_fix(database, report:Union[Report, int]):
     return any([s.status_type == StatusType.FIXED for s in statuses])
 
 
-def validate_ticket_number(ticket_number:str) -> bool:
-    return ticket_number is not None and ticket_number != "" and ticket_number.startswith("WOT")
 
 def find_or_make_report_by_ticket(database, ticket_number:str|None):
     report = None

@@ -22,6 +22,10 @@ def work_order_validation(wo:str|None):
         return None
     return wo
 
+def validate_ticket_number(ticket_number:str) -> bool:
+    """ Function for general consumption that returns validation results as booleans """
+    return work_order_validation(ticket_number) is not None
+
 def extract_valid_work_orders(wo: str| None) -> list:
     valid_tickets = []
     for part in wo.split(" "):
