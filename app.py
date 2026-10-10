@@ -183,7 +183,7 @@ def lookup_access_point_for_concordance_id(session, identifier:str):
         return concordance.access_point
 
 def validate_ticket_number(ticket_number:str) -> bool:
-    return ticket_ref is not None and ticket_ref != "" and ticket_ref.startswith("WOT")
+    return ticket_number is not None and ticket_number != "" and ticket_number.startswith("WOT")
 
 def find_or_make_report(database, ticket_number:str):
 
@@ -197,7 +197,7 @@ def find_or_make_report(database, ticket_number:str):
     if report is None:
         # create new report and status
         report = Report(
-            ref=ticket_ref
+            ref=ticket_number
         )
 
         database.session.add(report)
