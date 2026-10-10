@@ -10,9 +10,13 @@
 
 
 <div class="container-fluid">
-    <div class="row text-center">
-        {% for mural in murals: %}
-            {{ muralcard(mural) }}
+    <div class="row">
+        {% for mural in accessPoints %}
+        {% if loop.index is divisibleby 18 %}
+        {{ muralcard(mural, True, page) }}
+        {% else %}
+        {{ muralcard(mural) }}
+        {% endif %}
         {% endfor %}
     </div>
 </div>
