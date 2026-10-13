@@ -142,7 +142,7 @@ class SpreadsheetStatus:
         notes = current.notes
 
         # detect "in service, but" in notes
-        if current.notes.strip().lower().startswith("in service"):
+        if notes and notes.strip().lower().startswith("in service"):
             status = SpreadsheetUpdateType.IN_SERVICE
 
             notes = current.status.value + " " + current.notes
