@@ -1295,14 +1295,15 @@ def changedetection_webhook():
         access_point = lookup_access_point_for_concordance_id(db.session, statusUpdate.elevator_id)
         
         reports = []
-        for ticket in statusUpdate.ticket_refs:
+        if statusUpdate.ticket_refs is not None:
+            for ticket in statusUpdate.ticket_refs:
 
-            report = find_report_by_ticket(db, ticket)
-            
-            if access_point is not None:
-                association, report = link_report_to_access_point(db, report, access_point.id)
-            if report:
-                reports.append(report)
+                report = find_report_by_ticket(db, ticket)
+                
+                if access_point is not None:
+                    association, report = link_report_to_access_point(db, report, access_point.id)
+                if report:
+                    reports.append(report)
 
         status_type, status = statusMap[statusUpdate.status_type]
 
