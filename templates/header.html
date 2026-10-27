@@ -62,6 +62,25 @@
             border-radius: 15px;
         }
 
+        /* Catalog cards: stretch card content to the full card height so the
+  	      status chip sits at the bottom and lines up across a row */
+        .mural-card > div,
+        .mural-card > div > a {
+           display: flex;
+           flex-direction: column;
+           flex: 1 1 auto;
+        }
+
+        .mural-card .card-body {
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+        }
+
+        .mural-card .card-body > span.chip {
+           margin-top: auto;
+        }
+
         .navbar-brand {
             font-size: 1.5rem;
             margin-top: 0;
